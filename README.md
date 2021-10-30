@@ -1,4 +1,4 @@
-<p align="center"><img align="center" style="margin-bottom:-6px" src="https://i.imgur.com/kGAUCNo_d.webp?maxwidth=128&fidelity=grand"></p>
+<p align="center"><img align="center" style="margin-bottom:-6px" src="https://i.imgur.com/BiaHJA7.png?maxwidth=128&fidelity=grand"></p>
 
 
 <h2 style="font-size:2.5rem;" align="center">Simply-XP</h2>

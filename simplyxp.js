@@ -5,6 +5,8 @@ const { join } = require("path");
 
 let key;
 
+
+
 async function connect(db, options = []) {
   if (!db) throw new Error("[XP] Database URL was not provided");
 
