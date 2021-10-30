@@ -29,6 +29,15 @@ xp.addXP(message.author.id, message.guild.id, {
 })
 ```
 
+- ## Returns `<Object>`
+
+```
+{
+    level: 1,
+    xp: 10
+}
+```
+
 ## Options
 
 - no options ;(

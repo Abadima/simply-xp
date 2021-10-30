@@ -18,6 +18,8 @@ let xp = require('simply-xp')
 xp.create(message.author.id, message.guild.id)
 ```
 
+- ## Returns `<Boolean>`
+
 ### Options
 
 - no options ;(

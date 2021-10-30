@@ -33,13 +33,13 @@ yarn add simply-xp
 let xp = require('simply-xp')
 ```
 
-- connect()
-- create()
-- addXP()
-- setXP()
-- rank()
-- lvlRole()
-- fetch()
+- [connect()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/connect.md)
+- [create()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/create.md)
+- [addXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/addXP.md)
+- [setXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/setXP.md)
+- [rank()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/rank.md)
+- [lvlRole()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/lvlRole.md)
+- [fetch()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/fetch.md)
 
 <br>
 
