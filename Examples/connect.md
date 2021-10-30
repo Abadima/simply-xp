@@ -1,6 +1,6 @@
 # connect
 
-This is an example of `connect()`
+Connects to Database | `connect`
 
 ### With Customization
 
