@@ -33,8 +33,8 @@ xp.addXP(message.author.id, message.guild.id, {
 
 ```
 {
-    level: 1,
-    xp: 10
+   level: 1,
+   xp: 10
 }
 ```
 

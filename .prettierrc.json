@@ -4,5 +4,5 @@
 	"semi": false,
 	"singleQuote": true,
 	"useTabs": true,
-	"bracketSpacing": true
+	"bracketSpacing": false
 }

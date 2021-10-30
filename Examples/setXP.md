@@ -22,7 +22,7 @@ xp.setXP(message.author.id, message.guild.id, 100)
 
 ```
 {
-	xp: 100
+   xp: 100
 }
 ```
 

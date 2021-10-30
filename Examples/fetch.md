@@ -14,12 +14,12 @@ xp.fetch(userID, guildID)
 
 ```
 {
-    level: 1,
-    xp: 1000,
-    reqxp: 10000,
-    rank: 1,
-    shortxp: 1k,
-    shortreq: 10k
+   level: 1,
+   xp: 1000,
+   reqxp: 10000,
+   rank: 1,
+   shortxp: 1k,
+   shortreq: 10k
 }
 ```
 
