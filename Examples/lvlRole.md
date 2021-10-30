@@ -8,13 +8,13 @@ Have Level Roles without killing brain cells | `lvlRole`
 let xp = require('simply-xp')
 
 xp.lvlRole(message, userID, {
-	data: [
-		{
-			level: 'Number', // level number
-			role: 'role id' // role id
-		}
-		// etc..
-	]
+  data: [
+    {
+      level: 'Number', // level number
+      role: 'role id' // role id
+    }
+    // etc..
+  ]
 })
 ```
 
@@ -24,13 +24,13 @@ xp.lvlRole(message, userID, {
 let xp = require('simply-xp')
 
 xp.lvlRole(message, message.author.id, {
-	data: [
-		{
-			level: '10',
-			role: '123456789012345'
-		}
-		// etc..
-	]
+  data: [
+    {
+      level: '10',
+      role: '123456789012345'
+    }
+    // etc..
+  ]
 })
 ```
 

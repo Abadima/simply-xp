@@ -24,8 +24,8 @@ xp.addXP(message.author.id, message.guild.id, 10)
 let xp = require('simply-xp')
 
 xp.addXP(message.author.id, message.guild.id, {
-	min: 10,
-	max: 25
+  min: 10,
+  max: 25
 })
 ```
 
@@ -33,8 +33,8 @@ xp.addXP(message.author.id, message.guild.id, {
 
 ```
 {
-   level: 1,
-   xp: 10
+  level: 1,
+  xp: 10
 }
 ```
 

@@ -8,7 +8,7 @@ Connects to Database | `connect`
 let xp = require('simply-xp')
 
 xp.connect(mongoURI, {
-	notify: true
+  notify: true
 })
 ```
 

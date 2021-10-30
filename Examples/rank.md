@@ -8,8 +8,8 @@ Generate Rank Card without canvacord madness | `rank`
 let xp = require('simply-xp')
 
 xp.rank(message, userID, guildID, {
-	background: 'image url', // default: Rainbow Background
-	color: 'Hex Code' // default: #075FFF
+  background: 'image url', // default: Rainbow Background
+  color: 'Hex Code' // default: #075FFF
 })
 ```
 
