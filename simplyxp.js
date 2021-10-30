@@ -5,7 +5,10 @@ const { join } = require("path");
 
 let key;
 
-
+ /**
+  * @param {string} db
+  * @param {import('./index').connectOptions} options
+  */
 
 async function connect(db, options = []) {
   if (!db) throw new Error("[XP] Database URL was not provided");
@@ -19,6 +22,11 @@ async function connect(db, options = []) {
   if (options.notify === false) return; else
     return console.log('{ XP } Database Connected');
 }
+
+/**
+  * @param {string} userID
+  * @param {string} guildID
+  */
 
 async function create(userID, guildID) {
   if (!userID) throw new Error("[XP] User ID was not provided.")
@@ -34,6 +42,12 @@ async function create(userID, guildID) {
     guild: guildID
   });
 }
+
+/**
+  * @param {string} userID
+  * @param {string} guildID
+  * @param {string} xp
+  */
 
 async function addXP(userID, guildID, xp) {
 
@@ -114,6 +128,12 @@ async function addXP(userID, guildID, xp) {
 
 }
 
+/**
+  * @param {string} userID
+  * @param {string} guildID
+  * @param {string} xp
+  */
+
 async function setXP(userID, guildID, xp) {
 
   if (!userID) throw new Error("[XP] User ID was not provided.")
@@ -150,6 +170,11 @@ async function setXP(userID, guildID, xp) {
 
   return { xp }
 }
+
+/**
+  * @param {string} userID
+  * @param {string} guildID
+  */
 
 async function fetch(userID, guildID) {
   if (!userID) throw new Error("[XP] User ID was not provided.")
@@ -205,6 +230,13 @@ async function fetch(userID, guildID) {
     shortreq: shortReqXP
   }
 }
+
+/**
+  * @param {Discord.Message} message
+  * @param {string} userID
+  * @param {string} guildID
+  * @param {import('./index').rankOptions} options
+  */
 
 async function rank(message, userID, guildID, options = []) {
 
@@ -477,6 +509,12 @@ async function rank(message, userID, guildID, options = []) {
   }
 
 }
+
+/**
+  * @param {Discord.Message} message
+  * @param {string} userID
+  * @param {import('./index').lvlRoleOptions} options
+  */
 
 async function lvlRole(message, userID, options = []) {
   let data = options.data
