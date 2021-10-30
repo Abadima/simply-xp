@@ -2,7 +2,7 @@
 
 This is an example of `connect()`
 
-With Customization
+### With Customization
 
 ```js
 let xp = require('simply-xp')
@@ -12,7 +12,7 @@ xp.connect(mongoURI, {
 })
 ```
 
-Without Customization
+### Without Customization
 
 ```js
 let xp = require('simply-xp')
@@ -22,4 +22,4 @@ xp.connect(mongoURI)
 
 ## Options
 
-- notify (Boolean) - Notifies when DB is connected
+- **notify** `(Boolean)` - Notifies when DB is connected
