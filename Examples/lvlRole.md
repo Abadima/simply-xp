@@ -4,18 +4,13 @@ Have Level Roles without killing brain cells | `lvlRole`
 
 ### Usage
 
+It Checks and gives the role if the user has the level..
+**_Required ! `roleSetup`_**
+
 ```js
 let xp = require('simply-xp')
 
-xp.lvlRole(message, userID, {
-  data: [
-    {
-      level: 'Number', // level number
-      role: 'role id' // role id
-    }
-    // etc..
-  ]
-})
+xp.lvlRole(message, userID, guildID)
 ```
 
 ### Example
@@ -23,24 +18,7 @@ xp.lvlRole(message, userID, {
 ```js
 let xp = require('simply-xp')
 
-xp.lvlRole(message, message.author.id, {
-  data: [
-    {
-      level: '10',
-      role: '123456789012345'
-    }
-    // etc..
-  ]
-})
+xp.lvlRole(message, message.author.id, message.guild.id)
 ```
 
-- ## Returns `<Boolean>`
-
-### Options
-
-- **data** `(Array)` - Data for giving roles when getting the level specified
-
-### Data Options
-
-- **level** `(Number)` - Gives role when the specified level is reached
-- **role** `(Role ID)` - Role ID for giving the role when level is reached
+- ## Returns `<void>`

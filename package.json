@@ -1,46 +1,48 @@
 {
-	"name": "simply-xp",
-	"version": "0.0.5",
-	"description": "A Simple, Easy and Beginner Friendly XP System",
-	"main": "simplyxp.js",
-	"typings": "index.d.ts",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"prepare": "husky install"
-	},
-	"author": "Rahuletto",
-	"keywords": [
-		"xp",
-		"simply",
-		"easy",
-		"xp-system",
-		"system",
-		"mongoose",
-		"discord",
-		"discord xp",
-		"discord-xp",
-		"simply-djs",
-		"discord.js",
-		"simplydjs",
-		"weky",
-		"nuggies",
-		"experience",
-		"level role",
-		"amari",
-		"package"
-	],
-	"license": "Apache-2.0",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Rahuletto/simply-xp"
-	},
-	"dependencies": {
-		"discord.js": "^13.3.0",
-		"mongoose": "^6.0.12"
-	},
-	"devDependencies": {
-		"discord.js": "^13.2.0",
-		"husky": "^7.0.0",
-		"pretty-quick": "^3.1.1"
-	}
+  "name": "simply-xp",
+  "version": "1.0.0",
+  "description": "A Simple, Easy and Beginner Friendly XP System",
+  "main": "simplyxp.js",
+  "typings": "index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky install"
+  },
+  "author": "Rahuletto",
+  "keywords": [
+    "xp",
+    "simply",
+    "easy",
+    "xp-system",
+    "system",
+    "mongoose",
+    "discord",
+    "discord xp",
+    "discord-xp",
+    "simply-djs",
+    "discord.js",
+    "simplydjs",
+    "weky",
+    "nuggies",
+    "experience",
+    "level role",
+    "amari",
+    "package",
+    "leaderboard",
+    "mee6"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Rahuletto/simply-xp"
+  },
+  "dependencies": {
+    "discord.js": "^13.3.0",
+    "mongoose": "^6.0.12"
+  },
+  "devDependencies": {
+    "discord.js": "^13.2.0",
+    "husky": "^7.0.0",
+    "pretty-quick": "^3.1.1"
+  }
 }

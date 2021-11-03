@@ -27,8 +27,17 @@ yarn add simply-xp
 ```
 
 <br>
- 
-# 🎉 Functions 🎉
+
+# 🎉 What's New 🎉
+
+- Fixed Missing Mongoose Model
+- New `leaderboard`, `roleSetup`
+- `lvlRole` redefined.. Multi guild Support
+- New Examples
+- Typings `[TS]`
+
+# 🖥 Functions 🖥
+
 ```js
 let xp = require('simply-xp')
 ```
@@ -38,8 +47,14 @@ let xp = require('simply-xp')
 - [addXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/addXP.md)
 - [setXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/setXP.md)
 - [rank()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/rank.md)
-- [lvlRole()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/lvlRole.md)
 - [fetch()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/fetch.md)
+- [leaderboard()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/leaderboard.md)
+- [lvlRole()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/lvlRole.md) | Requires: [roleSetup()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/roleSetup.md)
+- [roleSetup()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/roleSetup.md) | Requires: [lvlRole()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/lvlRole.md)
+
+Overwhelmed by these functions ?? Got ya covered !
+
+- [Introduction](https://github.com/Rahuletto/simply-xp/blob/main/Examples/intro.md)
 
 <br>
 
@@ -50,6 +65,7 @@ let xp = require('simply-xp')
 - Rank Card Maker
 - Beginner Friendly
 - Easier than other XP Systems
+- Inbuilt Auto Roles system
 
 ## **Need Help ? Join the [Discord Server](https://discord.gg/3JzDV9T5Fn)**
 
