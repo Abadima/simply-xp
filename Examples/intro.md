@@ -44,6 +44,8 @@ client.on('messageCreate', async (message) => {
 
 **_Options of [addXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/addXP.md)_**
 
+--------------------
+
 - **Rank Command**
 
 _Confused by discord-xp ?_ **XD** we have the easiest rank system ever
@@ -75,6 +77,8 @@ xp.rank(interaction, member.id, interaction.guild.id).then((img) => {
 
 **_Options of [rank()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/rank.md)_**
 
+--------------------
+
 - **Leaderboard Command**
 
 Simpler than ever !
@@ -95,6 +99,8 @@ if(lead.length <= 1) {
 ```
 
 **_Options of [leaderboard()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/leaderboard.md)_**
+
+--------------------
 
 - **Level Roles**
 
