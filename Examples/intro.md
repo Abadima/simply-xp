@@ -35,7 +35,6 @@ client.on('messageCreate', async (message) => {
   if (!message.guild) return
   if (message.author.bot) return
 
-  const random = Math.floor(Math.random() * 29) + 1 // Min 1, Max 30
   xp.addXP(message.author.id, message.guild.id, {
     min: 1,
     max: 30
