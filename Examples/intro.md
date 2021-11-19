@@ -39,6 +39,7 @@ xp.addXP(message.author.id, message.guild.id, {
 
 **_Options of [addXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/addXP.md)_**
 
+<<<<<<< HEAD
 **Level Up Message**
 
 Using addXP, we can make Level Up announcements by using 'levelUp' event
@@ -61,6 +62,10 @@ In levelUp event. the data returns `<Object>`
    guildID
  }
 ```
+
+## =======
+
+> > > > > > > 29907780092372a5cbe649d884176ef8c6a64590
 
 - **Rank Command**
 
@@ -93,6 +98,8 @@ xp.rank(interaction, member.id, interaction.guild.id).then((img) => {
 
 **_Options of [rank()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/rank.md)_**
 
+---
+
 - **Leaderboard Command**
 
 Simpler than ever !
@@ -123,6 +130,8 @@ xp.charts(message).then((attach) => {
   message.reply({ files: [attach] })
 })
 ```
+
+**_Options of [charts()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/charts.md)_**
 
 - **Level Roles**
 

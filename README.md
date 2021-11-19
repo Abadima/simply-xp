@@ -45,6 +45,8 @@ yarn add simply-xp
 - Easier than other XP Systems
 - Inbuilt Auto Roles system
 
+`Inspired by discord-xp`
+
 # 🖥 Functions 🖥
 
 ```js
@@ -73,5 +75,5 @@ Overwhelmed by these functions ?? Got ya covered !
    
  <h1>👥 Contact us | Support</h1>
  <p>
-<a href="https://discord.gg/3JzDV9T5Fn"><img src="https://media.discordapp.net/attachments/867344514943156254/891314222837936168/9sG4YFfuxxvPzCfcJO6XXnuAAAAAElFTkSuQmCC.png" /></a>
+<a href="https://discord.gg/3JzDV9T5Fn"><img src="https://invidget.switchblade.xyz/3JzDV9T5Fn" /></a>
 </p>
