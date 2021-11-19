@@ -31,18 +31,36 @@ client.on('messageCreate', async (message) => {
 Hard to understand and make a randomizer ?? No Problem ! We have built in randomizer
 
 ```js
-client.on('messageCreate', async (message) => {
-  if (!message.guild) return
-  if (message.author.bot) return
-
-  xp.addXP(message.author.id, message.guild.id, {
-    min: 1,
-    max: 30
-  })
+xp.addXP(message.author.id, message.guild.id, {
+  min: 1,
+  max: 30
 })
 ```
 
 **_Options of [addXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/addXP.md)_**
+
+**Level Up Message**
+
+Using addXP, we can make Level Up announcements by using 'levelUp' event
+
+```js
+client.on('levelUp', async (message, data) => {
+  message.reply(
+    `${message.author}, *Level Up!* Now you are in ***Level ${data.level}***. Using simply-xp`
+  )
+})
+```
+
+In levelUp event. the data returns `<Object>`
+
+```
+ {
+   xp,
+   level,
+   userID,
+   guildID
+ }
+```
 
 - **Rank Command**
 
@@ -95,6 +113,16 @@ if(lead.length <= 1) {
 ```
 
 **_Options of [leaderboard()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/leaderboard.md)_**
+
+- **Charts** (Using ChartJS)
+
+Make Charts cuz why not ;)
+
+```js
+xp.charts(message).then((attach) => {
+  message.reply({ files: [attach] })
+})
+```
 
 - **Level Roles**
 

@@ -10,6 +10,17 @@ export declare function connect(
   options?: connectOptions
 ): Promise<any>
 
+export type chartsOptions = {
+  position?: string
+  background?: HexColorString
+  type?: 'bar' | 'line' | 'radar' | 'doughnut' | 'polarArea'
+}
+
+export declare function charts(
+  message: Message,
+  options?: chartsOptions
+): Promise<any>
+
 export type rankOptions = {
   slash?: boolean
   background?: string

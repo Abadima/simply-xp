@@ -30,11 +30,20 @@ yarn add simply-xp
 
 # 🎉 What's New 🎉
 
-- Fixed Missing Mongoose Model
-- New `leaderboard`, `roleSetup`
-- `lvlRole` redefined.. Multi guild Support
+- Fixed create()
+- New `charts`
+- addXP now fires levelUp event [Most awaited]
 - New Examples
-- Typings `[TS]`
+- Bug Fixes
+
+# But Why ?
+
+- Easiest XP System in Discord.js
+- Fastest Support ever
+- Rank Card Maker
+- Beginner Friendly
+- Easier than other XP Systems
+- Inbuilt Auto Roles system
 
 # 🖥 Functions 🖥
 
@@ -57,15 +66,6 @@ Overwhelmed by these functions ?? Got ya covered !
 - [Introduction](https://github.com/Rahuletto/simply-xp/blob/main/Examples/intro.md)
 
 <br>
-
-# But Why ?
-
-- Easiest XP System in Discord.js
-- Fastest Support ever
-- Rank Card Maker
-- Beginner Friendly
-- Easier than other XP Systems
-- Inbuilt Auto Roles system
 
 ## **Need Help ? Join the [Discord Server](https://discord.gg/3JzDV9T5Fn)**
 

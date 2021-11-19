@@ -4,8 +4,6 @@ const levels = require('./models/level.js')
 const lrole = require('./models/lvlrole.js')
 const { join } = require('path')
 
-let key
-
 /**
  * @param {string} db
  * @param {import('./index').connectOptions} options
@@ -14,7 +12,6 @@ let key
 async function connect(db, options = []) {
   if (!db) throw new Error('[XP] Database URL was not provided')
 
-  key = db
   mongoose.connect(db, {
     useNewUrlParser: true,
     useUnifiedTopology: true
@@ -42,6 +39,9 @@ async function create(userID, guildID) {
     user: userID,
     guild: guildID
   })
+  await newuser
+    .save()
+    .catch((e) => console.log(`[XP] Failed to save new use to database`))
 
   return true
 }
@@ -52,12 +52,14 @@ async function create(userID, guildID) {
  * @param {string} xp
  */
 
-async function addXP(userID, guildID, xp) {
+async function addXP(message, userID, guildID, xp) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
 
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
 
   if (!xp) throw new Error('[XP] XP amount is not provided.')
+
+  let { client } = message
 
   let min
   let max
@@ -105,13 +107,15 @@ async function addXP(userID, guildID, xp) {
 
     await newUser
       .save()
-      .catch((e) => console.log(`[XP] Failed to save new use to database`))
+      .catch((e) => console.log(`[XP] Failed to save new user to database`))
 
     return {
       level: 0,
       exp: 0
     }
   }
+  let level1 = user.level
+
   user.xp += parseInt(xp, 10)
   user.level = Math.floor(0.1 * Math.sqrt(user.xp))
 
@@ -121,12 +125,23 @@ async function addXP(userID, guildID, xp) {
       console.log(`[XP] Failed to add XP | User: ${userID} | Err: ${e}`)
     )
 
-  let level = Math.floor(0.1 * Math.sqrt(user.xp))
+  let level = user.level
 
   xp = user.xp
 
   if (user.xp === 0 || Math.sign(user.xp) === -1) {
     xp = 0
+  }
+
+  if (level1 !== level) {
+    let data = {
+      xp,
+      level,
+      userID,
+      guildID
+    }
+
+    client.emit('levelUp', message, data)
   }
 
   return {
@@ -307,6 +322,86 @@ async function fetch(userID, guildID) {
     shortxp: shortXP,
     shortreq: shortReqXP
   }
+}
+
+/**
+ * @param {Discord.Message} message
+ * @param {import('./index').chartsOptions} options
+ */
+
+async function charts(message, options = []) {
+  let { client } = message
+  const ChartJSImage = require('chart.js-image')
+
+  let post = Number(options.position) || 5
+
+  let uzer = []
+  let xxp = []
+  await leaderboard(client, message.guild.id).then((lead) => {
+    lead.forEach((m) => {
+      if (m.position <= post) {
+        xxp.push(m.xp)
+        uzer.push(m.tag)
+      }
+    })
+  })
+
+  const line_chart = ChartJSImage()
+    .chart({
+      type: options.type || 'bar',
+      data: {
+        labels: uzer,
+        datasets: [
+          {
+            label: 'Leaderboards',
+            data: xxp,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.5)',
+              'rgba(255, 159, 64, 0.5)',
+              'rgba(255, 205, 86, 0.5)',
+              'rgba(75, 192, 192, 0.5)',
+              'rgba(54, 162, 235, 0.5)',
+              'rgba(153, 102, 255, 0.5)',
+              'rgb(201, 203, 207, 0.5)'
+            ],
+            borderColor: [
+              'rgb(255, 99, 132)',
+              'rgb(255, 159, 64)',
+              'rgb(255, 205, 86)',
+              'rgb(75, 192, 192)',
+              'rgb(54, 162, 235)',
+              'rgb(153, 102, 255)',
+              'rgb(201, 203, 207)'
+            ],
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        plugins: {
+          legend: {
+            labels: {
+              font: {
+                family: 'Courier New'
+              }
+            }
+          }
+        },
+        title: {
+          display: true,
+          text: 'XP Datasheet'
+        }
+      }
+    })
+    .backgroundColor(options.background || '#2F3136')
+    .width(940) // 500px
+    .height(520) // 300px
+
+  const attachment = new Discord.MessageAttachment(
+    line_chart.toURL(),
+    `chart.png`
+  )
+  return attachment
 }
 
 /**
@@ -614,7 +709,7 @@ class roleSetup {
             console.log(`[XP] Failed to remove lvlrole to database | ${e}`)
           )
 
-        return true
+        return 'Added the role to levelRole'
       }
     } else {
       throw new Error(
@@ -653,7 +748,7 @@ class roleSetup {
               console.log(`[XP] Failed to remove lvlrole to database | ${e}`)
             )
 
-          return true
+          return 'Deleting the role from levelRole'
         } else if (o + 1 === rol[i].lvlrole.length) {
           if (rol[i].lvlrole[o].lvl === options.level) {
             let yikes = await lrole.findOneAndUpdate(
@@ -671,7 +766,7 @@ class roleSetup {
                 console.log(`[XP] Failed to remove lvlrole to database | ${e}`)
               )
 
-            return true
+            return 'Deleting the role from levelRole'
           } else throw new Error('Level Role with this level not found')
         }
       }
@@ -731,12 +826,12 @@ async function lvlRole(message, userID, guildID) {
 module.exports = {
   connect: connect,
   create: create,
+  charts: charts,
   addXP: addXP,
   rank: rank,
   fetch: fetch,
   setXP: setXP,
   leaderboard: leaderboard,
   roleSetup: roleSetup,
-  lvlRole,
-  lvlRole
+  lvlRole: lvlRole
 }

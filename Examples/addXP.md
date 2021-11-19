@@ -38,6 +38,23 @@ xp.addXP(message.author.id, message.guild.id, {
 }
 ```
 
+- ## Fires `levelUp` event
+
+```js
+client.on('levelUp', async (message, data) => {})
+```
+
+- - ### data Returns `<Object>`
+
+```
+{
+  xp,
+  level,
+  userID,
+  guildID
+}
+```
+
 ## Options
 
 - no options ;(
