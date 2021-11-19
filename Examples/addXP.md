@@ -7,7 +7,7 @@ Add XP to a user | `addXP`
 ```js
 let xp = require('simply-xp')
 
-xp.addXP(userID, guildID, xp)
+xp.addXP(message, userID, guildID, xp)
 ```
 
 ### Example
@@ -15,7 +15,7 @@ xp.addXP(userID, guildID, xp)
 ```js
 let xp = require('simply-xp')
 
-xp.addXP(message.author.id, message.guild.id, 10)
+xp.addXP(message, message.author.id, message.guild.id, 10)
 ```
 
 - **_Tip:_** It has built in randomizer.. Use it by
@@ -23,7 +23,7 @@ xp.addXP(message.author.id, message.guild.id, 10)
 ```js
 let xp = require('simply-xp')
 
-xp.addXP(message.author.id, message.guild.id, {
+xp.addXP(message, message.author.id, message.guild.id, {
   min: 10,
   max: 25
 })

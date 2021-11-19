@@ -32,7 +32,7 @@ yarn add simply-xp
 
 - Fixed create()
 - New `charts`
-- addXP now fires levelUp event [Most awaited]
+- addXP redefined ! and now fires levelUp event [Most awaited]
 - New Examples
 - Bug Fixes
 
