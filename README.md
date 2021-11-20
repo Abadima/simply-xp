@@ -35,6 +35,7 @@ yarn add simply-xp
 - addXP redefined ! and now fires levelUp event [Most awaited]
 - New Examples
 - Bug Fixes
+- roleSetup bug fixes
 
 # But Why ?
 

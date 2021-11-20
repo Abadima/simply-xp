@@ -24,14 +24,14 @@ client.on('messageCreate', async (message) => {
   if (message.author.bot) return
 
   const random = Math.floor(Math.random() * 29) + 1 // Min 1, Max 30
-  xp.addXP(message.author.id, message.guild.id, random)
+  xp.addXP(message, message.author.id, message.guild.id, random)
 })
 ```
 
 Hard to understand and make a randomizer ?? No Problem ! We have built in randomizer
 
 ```js
-xp.addXP(message.author.id, message.guild.id, {
+xp.addXP(message, message.author.id, message.guild.id, {
   min: 1,
   max: 30
 })
@@ -39,7 +39,6 @@ xp.addXP(message.author.id, message.guild.id, {
 
 **_Options of [addXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/addXP.md)_**
 
-<<<<<<< HEAD
 **Level Up Message**
 
 Using addXP, we can make Level Up announcements by using 'levelUp' event
@@ -62,10 +61,6 @@ In levelUp event. the data returns `<Object>`
    guildID
  }
 ```
-
-## =======
-
-> > > > > > > 29907780092372a5cbe649d884176ef8c6a64590
 
 - **Rank Command**
 

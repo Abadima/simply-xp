@@ -222,6 +222,7 @@ async function leaderboard(client, guildID) {
   const led = []
 
   function shortener(count) {
+    f
     const COUNT_ABBRS = ['', 'k', 'M', 'T']
 
     const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000))
@@ -276,6 +277,8 @@ async function fetch(userID, guildID) {
       xp: 0,
       level: 0
     })
+
+    await user.save()
   }
 
   const leaderboard = await levels
@@ -333,28 +336,17 @@ async function charts(message, options = []) {
   let { client } = message
   const ChartJSImage = require('chart.js-image')
 
-  let post = Number(options.position) || 5
-
-  let uzer = []
-  let xxp = []
-  await leaderboard(client, message.guild.id).then((lead) => {
-    lead.forEach((m) => {
-      if (m.position <= post) {
-        xxp.push(m.xp)
-        uzer.push(m.tag)
-      }
-    })
-  })
+  let data = options.data
 
   const line_chart = ChartJSImage()
     .chart({
       type: options.type || 'bar',
       data: {
-        labels: uzer,
+        labels: data.user,
         datasets: [
           {
             label: 'Leaderboards',
-            data: xxp,
+            data: data.xp,
             backgroundColor: [
               'rgba(255, 99, 132, 0.5)',
               'rgba(255, 159, 64, 0.5)',
@@ -420,7 +412,7 @@ async function rank(message, userID, guildID, options = []) {
     user: userID,
     guild: guildID
   })
-  if (!user) return false
+  if (!user) return 'NO_DATA'
 
   const leaderboard = await levels
     .find({
@@ -695,18 +687,27 @@ class roleSetup {
     if (roll) {
       if (rol) throw new Error('Level Already Exist. Use delete')
       else if (!rol) {
-        let newrol = new lrole({
-          gid: guildID,
-          lvlrole: {
-            lvl: options.level,
-            role: options.role
-          }
+        let newrol = await lrole.findOne({
+          gid: guildID
         })
+
+        if (!newrol) {
+          newrol = new lrole({
+            gid: guildID,
+            lvlrole: []
+          })
+
+          await newrol.save()
+        }
+
+        newrol.lvlrole.push({ lvl: options.level, role: options.role })
+
+        console.log(newrol)
 
         await newrol
           .save()
           .catch((e) =>
-            console.log(`[XP] Failed to remove lvlrole to database | ${e}`)
+            console.log(`[XP] Failed to add lvlrole to database | ${e}`)
           )
 
         return 'Added the role to levelRole'
@@ -729,47 +730,36 @@ class roleSetup {
     let rol = await lrole.find({
       gid: guildID
     })
+    console.log(rol)
+    if (!rol || rol.length === 0)
+      throw new Error('Level role with this level does not exist')
+    rol = rol[0].lvlrole.find((item) => item.lvl === options.level) || undefined
 
-    for (let i = 0; rol.length > i; i++) {
-      for (let o = 0; rol[i].lvlrole.length > o; o++) {
-        if (rol[i].lvlrole[o].lvl === options.level) {
-          let yikes = await lrole.findOneAndUpdate(
-            {
-              gid: guildID
-            },
-            {
-              $pull: { lvlrole: { lvl: options.level } }
-            }
-          )
-
-          await yikes
-            .save()
-            .catch((e) =>
-              console.log(`[XP] Failed to remove lvlrole to database | ${e}`)
-            )
-
-          return 'Deleting the role from levelRole'
-        } else if (o + 1 === rol[i].lvlrole.length) {
-          if (rol[i].lvlrole[o].lvl === options.level) {
-            let yikes = await lrole.findOneAndUpdate(
-              {
-                gid: guildID
-              },
-              {
-                $pull: { lvlrole: { lvl: options.level } }
-              }
-            )
-
-            await yikes
-              .save()
-              .catch((e) =>
-                console.log(`[XP] Failed to remove lvlrole to database | ${e}`)
-              )
-
-            return 'Deleting the role from levelRole'
-          } else throw new Error('Level Role with this level not found')
+    if (rol) {
+      let newrol = await lrole.findOneAndUpdate(
+        {
+          gid: guildID
+        },
+        {
+          $pull: { lvlrole: { lvl: options.level } }
         }
-      }
+      )
+
+      return 'Deleting the role from levelRole'
+    } else throw new Error('Level role with this level does not exist')
+  }
+
+  static async fetch(client, guildID, options = []) {
+    let rol = await lrole.find({
+      gid: guildID
+    })
+
+    if (!rol || rol.length === 0)
+      throw new Error('There is no levelRole in this guild')
+    rol = rol[0].lvlrole.find((item) => item.lvl === options.level) || undefined
+
+    if (rol) {
+      return rol[0].lvlrole
     }
   }
 }
