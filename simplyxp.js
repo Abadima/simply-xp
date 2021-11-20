@@ -455,10 +455,10 @@ async function rank(message, userID, guildID, options = []) {
     try {
       const Canvas = require('canvas')
       const { registerFont } = require('canvas')
-      registerFont('./Fonts/Poppins-SemiBold.ttf', {
+      registerFont(join(__dirname, 'Fonts', 'Poppins-SemiBold.ttf'), {
         family: 'Poppins-Regular'
       })
-      registerFont('./Fonts/Poppins-SemiBold.ttf', {
+      registerFont(join(__dirname, 'Fonts', 'Poppins-SemiBold.ttf'), {
         family: 'Poppins-Bold'
       })
 

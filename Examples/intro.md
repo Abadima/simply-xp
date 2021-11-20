@@ -111,7 +111,40 @@ if(lead.length <= 1) {
     lead = 'No One is in the leaderboard'
 }
 
-     message.reply({ content: ` ${lead.replaceAll(',', '\n')} `})
+     message.reply({ content: ` ${lead.toString().replaceAll(',', '\n')} `})
+```
+
+**_Pagination for leaderboard_** (using simply-djs)
+
+```js
+let simplydjs = require('simply-djs')
+
+await xp.leaderboard(client, message.guild.id, 30).then(board => {
+   let a = []
+      let b = []
+
+     board.forEach(user => {
+       if (user.position <= 15) {
+            a.push(`• ${user.tag} - XP: ${user.shortxp}`)
+          } else if (user.position > 15 && user.position <= 30) {
+            b.push(`• ${user.tag} - XP: ${user.shortxp}`)
+          }
+     })
+
+let emb = new Discord.MessageEmbed()
+        .setTitle('Leaderboard')
+        .setDescription(`***1 - 15 Users*** **leaderboard**\n\`\`\`\n${a.toString().replaceAll(',', '\n')}\n\`\`\``)
+        .setColor('#075FFF')
+
+
+      let emb2 = new Discord.MessageEmbed()
+        .setTitle('Leaderboard')
+        .setDescription(`***16 - 30 Users*** **leaderboard**\n\`\`\`\n${b.toString().replaceAll(',', '\n')}\n\`\`\``)
+        .setColor('#6a48d1')
+
+      let pg = [emb, emb2]
+      simplydjs.embedPages(client, message, pg, { slash: false })
+
 ```
 
 **_Options of [leaderboard()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/leaderboard.md)_**

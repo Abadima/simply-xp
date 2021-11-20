@@ -10,6 +10,20 @@ let xp = require('simply-xp')
 await xp.leaderboard(client, message.guild.id)
 ```
 
+You have the ability to limit the user count of the leaderboard
+
+```js
+await xp.leaderboard(client, message.guild.id, limit)
+```
+
+### Example
+
+```js
+let xp = require('simply-xp')
+
+await xp.leaderboard(client, message.guild.id, 10)
+```
+
 - ## Returns `<Array of Objects>`
 
 ```
@@ -38,5 +52,5 @@ await xp.leaderboard(client, message.guild.id).then(board => {
        lead.push(`• ${user.tag} - XP: ${user.shortxp}`)
      })
 
-     message.reply({ content: ` ${lead.replaceAll(',', '\n')} `})
+     message.reply({ content: ` ${lead.toString().replaceAll(',', '\n')} `})
 ```
