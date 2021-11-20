@@ -203,26 +203,23 @@ async function setXP(userID, guildID, xp) {
  * @param {string} guildID
  */
 
-async function leaderboard(client, guildID) {
+async function leaderboard(client, guildID, limit) {
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
 
   let g = client.guilds.cache.get(guildID)
 
   let wo = g.members.cache.size
 
-  var lead = await levels
+  let leaderboard = await levels
     .find({
       guild: guildID
     })
     .sort([['xp', 'descending']])
     .exec()
 
-  let leaderboard = lead.slice(0, wo)
-
   const led = []
 
   function shortener(count) {
-    f
     const COUNT_ABBRS = ['', 'k', 'M', 'T']
 
     const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000))
@@ -233,6 +230,16 @@ async function leaderboard(client, guildID) {
 
   leaderboard.map((key) => {
     let user = g.members.cache.get(key.user)
+    if (key.xp === 0) return
+
+    let pos =
+      leaderboard.findIndex(
+        (i) => i.guild === key.guild && i.user === key.user
+      ) + 1
+
+    if (limit) {
+      if (pos > Number(limit)) return
+    }
 
     let shortXP = shortener(key.xp)
 
@@ -244,10 +251,7 @@ async function leaderboard(client, guildID) {
       xp: key.xp,
       shortxp: shortXP,
       level: key.level,
-      position:
-        leaderboard.findIndex(
-          (i) => i.guild === key.guild && i.user === key.user
-        ) + 1,
+      position: pos,
       username: user.user.username,
       tag: user.user.tag
     })
@@ -336,17 +340,27 @@ async function charts(message, options = []) {
   let { client } = message
   const ChartJSImage = require('chart.js-image')
 
-  let data = options.data
+  let data = []
+  let uzern = []
+
+  await leaderboard(client, message.guild.id).then((e) => {
+    e.forEach((m) => {
+      if (m.position <= 5) {
+        data.push(m.xp)
+        uzern.push(m.tag)
+      }
+    })
+  })
 
   const line_chart = ChartJSImage()
     .chart({
       type: options.type || 'bar',
       data: {
-        labels: data.user,
+        labels: uzern,
         datasets: [
           {
             label: 'Leaderboards',
-            data: data.xp,
+            data: data,
             backgroundColor: [
               'rgba(255, 99, 132, 0.5)',
               'rgba(255, 159, 64, 0.5)',
@@ -412,7 +426,7 @@ async function rank(message, userID, guildID, options = []) {
     user: userID,
     guild: guildID
   })
-  if (!user) return 'NO_DATA'
+  if (!user) throw new Error('[XP] NO_DATA | User has no XP data.')
 
   const leaderboard = await levels
     .find({
@@ -441,10 +455,10 @@ async function rank(message, userID, guildID, options = []) {
     try {
       const Canvas = require('canvas')
       const { registerFont } = require('canvas')
-      registerFont(join(__dirname, 'Fonts', 'Poppins-SemiBold.ttf'), {
+      registerFont('./Fonts/Poppins-SemiBold.ttf', {
         family: 'Poppins-Regular'
       })
-      registerFont(join(__dirname, 'Fonts', 'Poppins-SemiBold.ttf'), {
+      registerFont('./Fonts/Poppins-SemiBold.ttf', {
         family: 'Poppins-Bold'
       })
 
@@ -466,6 +480,17 @@ async function rank(message, userID, guildID, options = []) {
       const name = member.tag
       const noSymbols = (string) => string.replace(/[\u007f-\uffff]/g, '')
 
+      let fsiz = '45px'
+      if (message.guild.name.length >= 23) {
+        fsiz = '38px'
+      }
+      if (message.guild.name.length >= 40) {
+        fsiz = '28px'
+      }
+      if (message.guild.name.length >= 63) {
+        fsiz = '22px'
+      }
+
       let BackgroundRadius = '20',
         BackGroundImg =
           options.background ||
@@ -476,8 +501,8 @@ async function rank(message, userID, guildID, options = []) {
         DrawLayerColor = '#000000',
         DrawLayerOpacity = '0.4',
         BoxColor = options.color || '#096DD1',
-        LevelBarFill = '#ffffff',
-        LevelBarBackground = '#ffffff',
+        LevelBarFill = options.lvlbar || '#ffffff',
+        LevelBarBackground = options.lvlbarBg || '#ffffff',
         Rank = options.rank,
         TextEXP = shortener(options.currentXP) + ' xp',
         LvlText = `Level ${shortener(options.level)}`,
@@ -605,8 +630,9 @@ async function rank(message, userID, guildID, options = []) {
       ctx.stroke()
       ctx.clip()
       ctx.fillStyle = '#ffffff'
-      ctx.font = '45px "Poppins-Bold"'
-      ctx.fillText(message.guild.name, 75 + 450, 355)
+      ctx.font = `${fsiz} "Poppins-Bold"`
+      ctx.textAlign = 'center'
+      ctx.fillText(message.guild.name, 60 + 660, 355)
       ctx.globalAlpha = '0.2'
       ctx.fillRect(390, 305, 660, 70)
       ctx.restore()
@@ -702,8 +728,6 @@ class roleSetup {
 
         newrol.lvlrole.push({ lvl: options.level, role: options.role })
 
-        console.log(newrol)
-
         await newrol
           .save()
           .catch((e) =>
@@ -730,7 +754,7 @@ class roleSetup {
     let rol = await lrole.find({
       gid: guildID
     })
-    console.log(rol)
+
     if (!rol || rol.length === 0)
       throw new Error('Level role with this level does not exist')
     rol = rol[0].lvlrole.find((item) => item.lvl === options.level) || undefined

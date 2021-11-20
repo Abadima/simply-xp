@@ -42,7 +42,7 @@ export type lvlremoveOptions = {
 }
 
 /** For levelUp event */
-export type levelUpData = {
+export type Data = {
   xp: string
   level: number
   userID: string
@@ -51,6 +51,6 @@ export type levelUpData = {
 
 declare module 'discord.js' {
   export interface ClientEvents {
-    levelUp: [Message, levelUpData]
+    levelUp: [Message, Data]
   }
 }

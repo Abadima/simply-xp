@@ -34,8 +34,10 @@ yarn add simply-xp
 - New `charts`
 - addXP redefined ! and now fires levelUp event [Most awaited]
 - New Examples
+- New Typings for levelUp
+- rankCard fix and more customizations !
+- leaderboard is much cooler.
 - Bug Fixes
-- roleSetup bug fixes
 
 # But Why ?
 
