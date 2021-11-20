@@ -426,7 +426,7 @@ async function rank(message, userID, guildID, options = []) {
     user: userID,
     guild: guildID
   })
-  if (!user) throw new Error('[XP] NO_DATA | User has no XP data.')
+  if (!user) console.error('[XP] NO_DATA | User has no XP data.')
 
   const leaderboard = await levels
     .find({
