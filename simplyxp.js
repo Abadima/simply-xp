@@ -6,6 +6,7 @@ const { join } = require('path')
 
 const Canvas = require('canvas')
 const { registerFont } = require('canvas')
+const { constants } = require('crypto')
 registerFont(join(__dirname, 'Fonts', 'Poppins-Regular.ttf'), {
   family: 'PoppinsRegular'
 })
@@ -18,7 +19,7 @@ registerFont(join(__dirname, 'Fonts', 'Poppins-SemiBold.ttf'), {
  * @param {import('./index').connectOptions} options
  */
 
-async function connect(db, options = []) {
+function connect(db, options = []) {
   if (!db) throw new Error('[XP] Database URL was not provided')
 
   mongoose.connect(db, {
@@ -27,35 +28,37 @@ async function connect(db, options = []) {
   })
 
   if (options.notify === false) return
-  else return console.log('{ XP } Database Connected')
+  console.log('{ XP } Database Connected')
+  return
 }
 
 /**
  * @param {string} userID
  * @param {string} guildID
  */
-
 async function create(userID, guildID) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
-
   if (!guildID) throw new Error('[XP] User ID was not provided.')
 
-  let uzer = await levels.findOne({ user: userID, guild: guildID })
-
-  if (uzer) return false
+  let user = await levels.findOne({ user: userID, guild: guildID })
+  if (user) return user
 
   const newuser = new levels({
     user: userID,
     guild: guildID
   })
-  await newuser
-    .save()
-    .catch((e) => console.log(`[XP] Failed to save new use to database`))
 
-  return true
+  try {
+    user = await newuser.save()
+  } catch (e) {
+    console.log(`[XP] Failed to save new use to database`)
+  }
+
+  return user
 }
 
 /**
+ * @param {Discord.Message} message
  * @param {string} userID
  * @param {string} guildID
  * @param {string} xp
@@ -63,70 +66,44 @@ async function create(userID, guildID) {
 
 async function addXP(message, userID, guildID, xp) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
-
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
-
   if (!xp) throw new Error('[XP] XP amount is not provided.')
 
-  let { client } = message
+  const { client } = message
 
-  let min
-  let max
-  if (xp.min) {
-    if (!xp.max)
+  let xpNum = 0
+  if (xp.min || xp.max) {
+    if (!xp.min) {
       throw new Error(
-        '[XP] XP min amount is provided but max amount is not provided.'
+        `[XP] XP max amount is provided but min amount is not provided.`
       )
-
-    min = Number(xp.min)
-
-    if (Number(xp.min).toString() === 'NaN')
-      throw new Error('[XP] XP amount (min) is not a number.')
-  }
-
-  if (xp.max) {
-    if (!xp.min)
+    } else if (!xp.max) {
       throw new Error(
-        '[XP] XP max amount is provided but min amount is not provided.'
+        `[XP] XP min amount is provided but max amount is not provided.`
       )
-
-    max = Number(xp.max)
-
-    if (Number(xp.max).toString() === 'NaN')
-      throw new Error('[XP] XP amount (max) is not a number.')
-  }
-
-  if (xp.min && xp.max) {
-    let randomNumber = Math.floor(Math.random() * (max - min) + min)
-
-    xp = randomNumber
-  }
-
-  const user = await levels.findOne({ user: userID, guild: guildID })
-
-  let lvl = Math.floor(0.1 * Math.sqrt(xp))
-
-  if (!user) {
-    const newUser = new levels({
-      user: userID,
-      guild: guildID,
-      xp: xp,
-      level: lvl
-    })
-
-    await newUser
-      .save()
-      .catch((e) => console.log(`[XP] Failed to save new user to database`))
-
-    return {
-      level: 0,
-      exp: 0
     }
-  }
-  let level1 = user.level
 
-  user.xp += parseInt(xp, 10)
-  user.level = Math.floor(0.1 * Math.sqrt(user.xp))
+    let min = Math.abs(Number(xp.min)),
+      max = Math.abs(Number(xp.max))
+
+    if (isNaN(min)) throw new Error('[XP] XP amount min is not a number.')
+    if (isNaN(max)) throw new Error('[XP] XP amount max is not a number.')
+    if (max - min <= 0) throw new Error('[XP] XP max must be bigger than min.')
+
+    xpNum = Math.floor(Math.random() * (max - min) + min)
+  } else {
+    const num = Number(xp)
+    if (isNaN(num)) throw new Error('[XP] XP amount is not a number.')
+    xpNum = num
+  }
+
+  const user = await create(userID, guildID)
+
+  let oldLevel = user.level,
+    newLevel = Math.floor(0.1 * Math.sqrt(user.xp))
+
+  user.xp += xpNum
+  user.level = newLevel
 
   await user
     .save()
@@ -134,68 +111,36 @@ async function addXP(message, userID, guildID, xp) {
       console.log(`[XP] Failed to add XP | User: ${userID} | Err: ${e}`)
     )
 
-  let level = user.level
+  const xp = user.xp
 
-  xp = user.xp
-
-  if (user.xp === 0 || Math.sign(user.xp) === -1) {
-    xp = 0
-  }
-
-  if (level1 !== level) {
-    let data = {
+  if (oldLevel !== newLevel) {
+    client.emit('levelUp', message, {
       xp,
-      level,
+      level: newLevel,
       userID,
       guildID
-    }
-
-    client.emit('levelUp', message, data)
+    })
   }
 
-  return {
-    level,
-    xp
-  }
+  return user.toJSON()
 }
 
 /**
  * @param {string} userID
  * @param {string} guildID
- * @param {string} xp
+ * @param {number} xpNum
  */
-
 async function setXP(userID, guildID, xp) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
-
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
+  if (!xpNum) throw new Error('[XP] XP amount is not provided.')
 
-  if (!xp) throw new Error('[XP] XP amount is not provided.')
+  const xpNum = Number(xp)
+  if (isNan(xpNum)) throw new Error('[XP] XP amount is not a number.')
 
-  if (Number(xp).toString() === 'NaN')
-    throw new Error('[XP] XP amount is not a number.')
+  const user = await create(userID, guildID)
 
-  const user = await levels.findOne({ user: userID, guild: guildID })
-
-  let lvl = Math.floor(0.1 * Math.sqrt(xp))
-
-  if (!user) {
-    const newUser = new levels({
-      user: userID,
-      guild: guildID,
-      xp: xp,
-      level: lvl
-    })
-
-    await newUser
-      .save()
-      .catch((e) => console.log(`[XP] Failed to save new use to database`))
-
-    return {
-      xp: 0
-    }
-  }
-  user.xp = xp
+  user.xp = xpNum
   user.level = Math.floor(0.1 * Math.sqrt(user.xp))
 
   await user
@@ -204,69 +149,65 @@ async function setXP(userID, guildID, xp) {
       console.log(`[XP] Failed to set XP | User: ${userID} | Err: ${e}`)
     )
 
-  return { xp }
+  return user.toJSON()
+}
+
+function shortener(count) {
+  const COUNT_ABBRS = ['', 'k', 'M', 'T']
+
+  const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000))
+  let result = (count / Math.pow(1000, i)).toFixed(2)
+  result += `${COUNT_ABBRS[i]}`
+  return result
 }
 
 /**
  * @param {Discord.Client} client
  * @param {string} guildID
+ * @param {number} limit
  */
-
 async function leaderboard(client, guildID, limit) {
+  if (!client) throw new Error('[XP] Client was not provided.')
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
+  if (limit && isNan(Number(limit)))
+    throw new Error('[XP] Limit is not a number.')
 
-  let g = client.guilds.cache.get(guildID)
-
-  let wo = g.members.cache.size
-
-  let leaderboard = await levels
+  const guild = await client.guilds.fetch(guildID)
+  const leaderboard = await levels
     .find({
       guild: guildID
     })
     .sort([['xp', 'descending']])
     .exec()
 
-  const led = []
+  return leaderboard.map((dbUser) => {
+    let member = guild.members.cache.get(dbUser.user)
+    if (!member) return
 
-  function shortener(count) {
-    const COUNT_ABBRS = ['', 'k', 'M', 'T']
-
-    const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000))
-    let result = parseFloat((count / Math.pow(1000, i)).toFixed(2))
-    result += `${COUNT_ABBRS[i]}`
-    return result
-  }
-
-  leaderboard.map((key) => {
-    let user = g.members.cache.get(key.user)
-    if (key.xp === 0) return
+    if (dbUser.xp === 0) return
 
     let pos =
       leaderboard.findIndex(
-        (i) => i.guild === key.guild && i.user === key.user
+        (i) => i.guild === dbUser.guild && i.user === dbUser.user
       ) + 1
 
     if (limit) {
       if (pos > Number(limit)) return
     }
 
-    let shortXP = shortener(key.xp)
+    let shortxp = shortener(dbUser.xp)
 
-    if (!user) return
-
-    led.push({
-      guildID: key.guild,
-      userID: key.user,
-      xp: key.xp,
-      shortxp: shortXP,
-      level: key.level,
+    return {
+      guildID: dbUser.guild,
+      userID: dbUser.user,
+      xp: dbUser.xp,
+      level: dbUser.level,
+      shortxp,
       position: pos,
-      username: user.user.username,
-      tag: user.user.tag
-    })
+      username: member.user.username,
+      tag: member.user.tag
+    }
   })
-
-  return led
 }
 
 /**
@@ -276,23 +217,9 @@ async function leaderboard(client, guildID, limit) {
 
 async function fetch(userID, guildID) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
-
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
 
-  let user = await levels.findOne({
-    user: userID,
-    guild: guildID
-  })
-  if (!user) {
-    user = new levels({
-      user: userID,
-      guild: guildID,
-      xp: 0,
-      level: 0
-    })
-
-    await user.save()
-  }
+  let user = await create(userID, guildID)
 
   const leaderboard = await levels
     .find({
@@ -301,42 +228,20 @@ async function fetch(userID, guildID) {
     .sort([['xp', 'descending']])
     .exec()
 
-  if (user === null)
-    return {
-      level: 0,
-      xp: 0,
-      reqxp: 100,
-      rank: leaderboard.findIndex((i) => i.user === userID) + 1,
-      shortxp: 0,
-      shortreq: 100
-    }
+  let rank = (position = leaderboard.findIndex((i) => i.user === userID) + 1)
 
-  user.position = leaderboard.findIndex((i) => i.user === userID) + 1
-
-  let targetxp = user.level + 1
-
-  let target = targetxp * targetxp * 100
-
-  function shortener(count) {
-    const COUNT_ABBRS = ['', 'k', 'M', 'T']
-
-    const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000))
-    let result = parseFloat((count / Math.pow(1000, i)).toFixed(2))
-    result += `${COUNT_ABBRS[i]}`
-    return result
-  }
-
-  let shortXP = shortener(user.xp)
-
-  let shortReqXP = shortener(target)
+  let targetxp = user.level + 1,
+    reqxp = targetxp * targetxp * 100,
+    shortxp = shortener(user.xp),
+    shortreq = shortener(reqxp)
 
   return {
     level: user.level,
     xp: user.xp,
-    reqxp: target,
-    rank: user.position,
-    shortxp: shortXP,
-    shortreq: shortReqXP
+    reqxp,
+    rank,
+    shortxp,
+    shortreq
   }
 }
 
@@ -431,18 +336,7 @@ async function rank(message, userID, guildID, options = []) {
 
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
 
-  let user = await levels.findOne({
-    user: userID,
-    guild: guildID
-  })
-  if (!user) {
-    user = await levels.create({
-      user: userID,
-      guild: guildID,
-      xp: 0,
-      level: 0
-    })
-  }
+  let user = await create(userID, guildID)
 
   const leaderboard = await levels
     .find({
@@ -451,17 +345,15 @@ async function rank(message, userID, guildID, options = []) {
     .sort([['xp', 'descending']])
     .exec()
 
-  user.position = leaderboard.findIndex((i) => i.user === userID) + 1
-
+  let rank = leaderboard.findIndex((i) => i.user === userID) + 1
   let targetxp = user.level + 1
-
-  let target = targetxp * targetxp * 100
+  let neededXP = targetxp * targetxp * 100
 
   return rankCard(message, {
     level: user.level,
     currentXP: user.xp,
-    neededXP: target,
-    rank: user.position,
+    neededXP,
+    rank,
     member: message.guild.members.cache.get(userID)?.user,
     ...options
   })
@@ -807,57 +699,46 @@ class roleSetup {
  */
 
 async function lvlRole(message, userID, guildID) {
-  let e = await lrole.find({
+  let lvlRoles = await lrole.find({
     gid: guildID
   })
 
-  if (!e) return
+  if (!lvlRoles || lvlRoles.length === 0) return
 
-  let user = await levels.findOne({
-    user: userID,
-    guild: guildID
-  })
-  if (!user) {
-    const newuser = new levels({
-      user: userID,
-      guild: guildID
-    })
+  let user = await create(userId, guildID)
 
-    await newuser
-      .save()
-      .catch((e) => console.log(`[XP] Failed to save new user to database`))
-  }
+  for (let lvlRoleDoc of lvlRoles) {
+    let { lvlrole: roles } = lvlRoleDoc
+    for (let lvlRole of roles) {
+      if (user.level < Number(lvlRole.lvl)) continue
 
-  e.forEach((ee) => {
-    ee = ee.lvlrole
+      let member = message.guild.members.cache.get(userID)
 
-    ee.forEach((xd) => {
-      if (user && user.level >= Number(xd.lvl)) {
-        let u = message.guild.members.cache.get(userID)
-
-        let real = message.guild.roles.cache.find((r) => r.id === xd.role)
-        if (!real) return
-        else {
-          u.roles.add(real).catch((err) => {
-            message.channel.send(
-              '[XP] ERROR: Role is higher than me. `MISSING_PERMISSIONS`'
-            )
-          })
-        }
+      let dscRole = message.guild.roles.cache.find((r) => r.id === lvlRole.role)
+      if (!dscRole) {
+        lvlRoleDoc.lvlrole = roles.filter((l) => l.role !== lvlRole.role)
+        await lvlRoleDoc.save()
+        continue
       }
-    })
-  })
+
+      member.roles.add(dscRole).catch((err) => {
+        message.channel.send(
+          '[XP] ERROR: Role is higher than me. `MISSING_PERMISSIONS`'
+        )
+      })
+    }
+  }
 }
 
 module.exports = {
-  connect: connect,
-  create: create,
-  charts: charts,
-  addXP: addXP,
-  rank: rank,
-  fetch: fetch,
-  setXP: setXP,
-  leaderboard: leaderboard,
-  roleSetup: roleSetup,
-  lvlRole: lvlRole
+  connect,
+  create,
+  charts,
+  addXP,
+  rank,
+  fetch,
+  setXP,
+  leaderboard,
+  roleSetup,
+  lvlRole
 }

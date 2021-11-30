@@ -1,14 +1,89 @@
-import { Message } from 'discord.js'
+import { Client, Message, MessageAttachment } from 'discord.js'
+import mongoose from 'mongoose'
 
 type HexColorString = `#${string}` | string
+type levelRole = {
+  _id: mongoose.Types.ObjectId
+  gid: string
+  lvlrole: { lvl: string; role: string }[]
+}
+type levelRoleDoc = mongoose.Document<any, any, levelRole>
+
+type User = {
+  _id: mongoose.Types.ObjectId
+  user: string
+  guild: string
+  xp: number
+  level: number
+}
+type UserDoc = mongoose.Document<any, any, User>
 
 export type connectOptions = {
   notify?: boolean
 }
-export declare function connect(
-  db: string,
-  options?: connectOptions
-): Promise<any>
+export declare function connect(db: string, options?: connectOptions): void
+
+/**
+ * Creates a new user in the database if there isn't one yet and returns it
+ */
+export declare function create(
+  userID: string,
+  guildID: string
+): Promise<UserDoc>
+
+/**
+ * Adds a given amount of XP to the user, when max/min amounts are provided a random value inbetween will be chosen
+ */
+export declare function addXP(
+  message: Message,
+  userID: string,
+  guildID: string,
+  xp: string | number | { min: string | number; max: string | number }
+): Promise<levelRole>
+
+/**
+ * Sets the amount of XP the user has and returns the new user data with the newly calculated level
+ */
+export declare function setXP(
+  userID: string,
+  guildID: string,
+  xp: string | number
+): Promise<User>
+
+/**
+ * Returns a list of users sorted by their amount of xp
+ */
+export declare function leaderboard(
+  client: Client,
+  guildID: string,
+  limit?: string | number
+): Promise<
+  {
+    guildID: string
+    userID: string
+    xp: number
+    level: number
+    shortxp: string
+    position: number
+    username: string
+    tag: string
+  }[]
+>
+
+/**
+ * Fetches the user data from the database and returns it
+ */
+export declare function fetch(
+  userID: string,
+  guildID: string
+): Promise<{
+  level: number
+  xp: number
+  reqxp: number
+  rank: number
+  shortxp: string
+  shortreq: string
+}>
 
 export type chartsOptions = {
   position?: string
@@ -31,7 +106,16 @@ export declare function rank(
   userID: string,
   guildID: string,
   options?: rankOptions
-): Promise<any>
+): Promise<MessageAttachment>
+
+/**
+ * Checks and gives the role if the user has the required level
+ */
+export declare function lvlRole(
+  message: Message,
+  userID: string,
+  guildID: string
+): Promise<void>
 
 export type lvladdOptions = {
   level: string
@@ -42,7 +126,7 @@ export type lvlremoveOptions = {
 }
 
 /** For levelUp event */
-export type Data = {
+export type levelUpData = {
   xp: string
   level: number
   userID: string
@@ -51,6 +135,6 @@ export type Data = {
 
 declare module 'discord.js' {
   export interface ClientEvents {
-    levelUp: [Message, Data]
+    levelUp: [Message, levelUpData]
   }
 }

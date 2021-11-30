@@ -1,5 +1,8 @@
 const mongoose = require('mongoose')
 
+/**
+ * @type {mongoose.Schema<{ user: string, guild: string, xp: number, level:number}>}
+ */
 const Levelz = new mongoose.Schema({
   user: { type: String },
   guild: { type: String },
