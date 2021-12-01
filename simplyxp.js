@@ -1,12 +1,12 @@
-let Discord = require('discord.js')
+const Discord = require('discord.js')
 const mongoose = require('mongoose')
 const levels = require('./models/level.js')
 const lrole = require('./models/lvlrole.js')
 const { join } = require('path')
+const ChartJSImage = require('chart.js-image')
 
 const Canvas = require('canvas')
 const { registerFont } = require('canvas')
-const { constants } = require('crypto')
 registerFont(join(__dirname, 'Fonts', 'Poppins-Regular.ttf'), {
   family: 'PoppinsRegular'
 })
@@ -15,10 +15,8 @@ registerFont(join(__dirname, 'Fonts', 'Poppins-SemiBold.ttf'), {
 })
 
 /**
- * @param {string} db
- * @param {import('./index').connectOptions} options
+ * @type {import('./index').connect}
  */
-
 function connect(db, options = []) {
   if (!db) throw new Error('[XP] Database URL was not provided')
 
@@ -33,8 +31,7 @@ function connect(db, options = []) {
 }
 
 /**
- * @param {string} userID
- * @param {string} guildID
+ * @type {import('./index').create}
  */
 async function create(userID, guildID) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
@@ -58,12 +55,8 @@ async function create(userID, guildID) {
 }
 
 /**
- * @param {Discord.Message} message
- * @param {string} userID
- * @param {string} guildID
- * @param {string} xp
+ * @type {import('./index').addXP}
  */
-
 async function addXP(message, userID, guildID, xp) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
@@ -126,9 +119,7 @@ async function addXP(message, userID, guildID, xp) {
 }
 
 /**
- * @param {string} userID
- * @param {string} guildID
- * @param {number} xpNum
+ * @type {import('./index').setXP}
  */
 async function setXP(userID, guildID, xp) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
@@ -162,9 +153,7 @@ function shortener(count) {
 }
 
 /**
- * @param {Discord.Client} client
- * @param {string} guildID
- * @param {number} limit
+ * @type {import('./index').leaderboard}
  */
 async function leaderboard(client, guildID, limit) {
   if (!client) throw new Error('[XP] Client was not provided.')
@@ -211,10 +200,8 @@ async function leaderboard(client, guildID, limit) {
 }
 
 /**
- * @param {string} userID
- * @param {string} guildID
+ * @type {import('./index').fetch}
  */
-
 async function fetch(userID, guildID) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
@@ -246,35 +233,29 @@ async function fetch(userID, guildID) {
 }
 
 /**
- * @param {Discord.Message} message
- * @param {import('./index').chartsOptions} options
+ * @type {import('./index').charts}
  */
-
-async function charts(message, options = []) {
+async function charts(message, options = {}) {
   let { client } = message
-  const ChartJSImage = require('chart.js-image')
 
-  let data = []
-  let uzern = []
-
-  await leaderboard(client, message.guild.id).then((e) => {
-    e.forEach((m) => {
-      if (m.position <= 5) {
-        data.push(m.xp)
-        uzern.push(m.tag)
-      }
-    })
-  })
+  let xpArr = []
+  let tagArr = []
+  for (let e of await leaderboard(client, message.guild.id)) {
+    if (e.position <= 5) {
+      xpArr.push(e.xp)
+      tagArr.push(e.tag)
+    }
+  }
 
   const line_chart = ChartJSImage()
     .chart({
       type: options.type || 'bar',
       data: {
-        labels: uzern,
+        labels: tagArr,
         datasets: [
           {
             label: 'Leaderboards',
-            data: data,
+            data: xpArr,
             backgroundColor: [
               'rgba(255, 99, 132, 0.5)',
               'rgba(255, 159, 64, 0.5)',
@@ -325,12 +306,8 @@ async function charts(message, options = []) {
 }
 
 /**
- * @param {Discord.Message} message
- * @param {string} userID
- * @param {string} guildID
- * @param {import('./index').rankOptions} options
+ * @type {import('./index').rank}
  */
-
 async function rank(message, userID, guildID, options = []) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
 
@@ -360,10 +337,7 @@ async function rank(message, userID, guildID, options = []) {
 }
 
 /**
- *
- * @param {Discord.Message} message
- * @param {*} options
- * @returns
+ * @type {import('./index').rankCard}
  */
 async function rankCard(message, options = []) {
   try {
@@ -598,10 +572,9 @@ class roleSetup {
   /**
    * @param {Discord.Client} client
    * @param {string} guildID
-   * @param {import('./index').lvladdOptions} options
+   * @param {import('./index').lvlAddOptions} options
    */
-
-  static async add(client, guildID, options = []) {
+  static async add(client, guildID, options = {}) {
     let rol = await lrole.findOne({
       gid: guildID,
       lvlrole: {
@@ -651,10 +624,9 @@ class roleSetup {
   /**
    * @param {Discord.Client} client
    * @param {string} guildID
-   * @param {import('./index').lvlremoveOptions} options
+   * @param {import('./index').lvlRemoveOptions} options
    */
-
-  static async remove(client, guildID, options = []) {
+  static async remove(client, guildID, options = {}) {
     let rol = await lrole.find({
       gid: guildID
     })
@@ -677,7 +649,14 @@ class roleSetup {
     } else throw new Error('Level role with this level does not exist')
   }
 
-  static async fetch(client, guildID, options = []) {
+  /**
+   *
+   * @param {Discord.Client} client
+   * @param {string} guildID
+   * @param {import('./index').lvlRemoveOptions} options
+   * @returns
+   */
+  static async fetch(client, guildID, options = {}) {
     let rol = await lrole.find({
       gid: guildID
     })
@@ -693,11 +672,8 @@ class roleSetup {
 }
 
 /**
- * @param {Discord.Message} message
- * @param {string} userID
- * @param {string} guildID
+ * @type {import('./index').lvlRole}
  */
-
 async function lvlRole(message, userID, guildID) {
   let lvlRoles = await lrole.find({
     gid: guildID

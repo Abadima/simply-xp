@@ -94,13 +94,16 @@ export type chartsOptions = {
 export declare function charts(
   message: Message,
   options?: chartsOptions
-): Promise<any>
+): Promise<MessageAttachment>
 
 export type rankOptions = {
   slash?: boolean
   background?: string
   color?: HexColorString
 }
+/**
+ * Returns a MessageAttachment with the generated rankCard image
+ */
 export declare function rank(
   message: Message,
   userID: string,
@@ -117,12 +120,37 @@ export declare function lvlRole(
   guildID: string
 ): Promise<void>
 
-export type lvladdOptions = {
+export type lvlAddOptions = {
   level: string
   role: string
 }
-export type lvlremoveOptions = {
+export type lvlRemoveOptions = {
   level: string
+}
+
+export declare class roleSetup {
+  public static add(
+    client: Discord.Client,
+    guildID: string,
+    options?: lvlAddOptions
+  ): Promise<string>
+
+  public static add(
+    client: Discord.Client,
+    guildID: string,
+    options?: lvlAddOptions
+  ): Promise<string>
+
+  public static fetch(
+    client: any,
+    guildID: any,
+    options?: {}
+  ): Promise<
+    {
+      lvl: string
+      role: string
+    }[]
+  >
 }
 
 /** For levelUp event */
