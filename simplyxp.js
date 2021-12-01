@@ -17,7 +17,7 @@ registerFont(join(__dirname, 'Fonts', 'Poppins-SemiBold.ttf'), {
 /**
  * @type {import('./index').connect}
  */
-function connect(db, options = []) {
+function connect(db, options = {}) {
   if (!db) throw new Error('[XP] Database URL was not provided')
 
   mongoose.connect(db, {
@@ -40,7 +40,7 @@ async function create(userID, guildID) {
   let user = await levels.findOne({ user: userID, guild: guildID })
   if (user) return user
 
-  const newuser = new levels({
+  let newuser = new levels({
     user: userID,
     guild: guildID
   })
@@ -62,7 +62,7 @@ async function addXP(message, userID, guildID, xp) {
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
   if (!xp) throw new Error('[XP] XP amount is not provided.')
 
-  const { client } = message
+  let { client } = message
 
   let xpNum = 0
   if (xp.min || xp.max) {
@@ -85,12 +85,12 @@ async function addXP(message, userID, guildID, xp) {
 
     xpNum = Math.floor(Math.random() * (max - min) + min)
   } else {
-    const num = Number(xp)
+    let num = Number(xp)
     if (isNaN(num)) throw new Error('[XP] XP amount is not a number.')
     xpNum = num
   }
 
-  const user = await create(userID, guildID)
+  let user = await create(userID, guildID)
 
   let oldLevel = user.level,
     newLevel = Math.floor(0.1 * Math.sqrt(user.xp))
@@ -104,11 +104,9 @@ async function addXP(message, userID, guildID, xp) {
       console.log(`[XP] Failed to add XP | User: ${userID} | Err: ${e}`)
     )
 
-  const xp = user.xp
-
   if (oldLevel !== newLevel) {
     client.emit('levelUp', message, {
-      xp,
+      xp: user.xp,
       level: newLevel,
       userID,
       guildID
@@ -124,12 +122,12 @@ async function addXP(message, userID, guildID, xp) {
 async function setXP(userID, guildID, xp) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
-  if (!xpNum) throw new Error('[XP] XP amount is not provided.')
+  if (!xp) throw new Error('[XP] XP amount is not provided.')
 
-  const xpNum = Number(xp)
-  if (isNan(xpNum)) throw new Error('[XP] XP amount is not a number.')
+  let xpNum = Number(xp)
+  if (isNaN(xpNum)) throw new Error('[XP] XP amount is not a number.')
 
-  const user = await create(userID, guildID)
+  let user = await create(userID, guildID)
 
   user.xp = xpNum
   user.level = Math.floor(0.1 * Math.sqrt(user.xp))
@@ -144,9 +142,9 @@ async function setXP(userID, guildID, xp) {
 }
 
 function shortener(count) {
-  const COUNT_ABBRS = ['', 'k', 'M', 'T']
+  let COUNT_ABBRS = ['', 'k', 'M', 'T']
 
-  const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000))
+  let i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000))
   let result = (count / Math.pow(1000, i)).toFixed(2)
   result += `${COUNT_ABBRS[i]}`
   return result
@@ -158,35 +156,32 @@ function shortener(count) {
 async function leaderboard(client, guildID, limit) {
   if (!client) throw new Error('[XP] Client was not provided.')
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
-  if (limit && isNan(Number(limit)))
+  if (limit && isNaN(Number(limit)))
     throw new Error('[XP] Limit is not a number.')
 
-  const guild = await client.guilds.fetch(guildID)
-  const leaderboard = await levels
+  let guild = await client.guilds.fetch(guildID)
+  let leaderboard = await levels
     .find({
       guild: guildID
     })
     .sort([['xp', 'descending']])
     .exec()
 
-  return leaderboard.map((dbUser) => {
+  let arr = []
+  for (let dbUser of leaderboard) {
     let member = guild.members.cache.get(dbUser.user)
-    if (!member) return
-
-    if (dbUser.xp === 0) return
-
     let pos =
       leaderboard.findIndex(
         (i) => i.guild === dbUser.guild && i.user === dbUser.user
       ) + 1
 
-    if (limit) {
-      if (pos > Number(limit)) return
-    }
+    if (dbUser.xp === 0) continue
+    if (!member) continue
+    if (limit && pos > Number(limit)) continue
 
     let shortxp = shortener(dbUser.xp)
 
-    return {
+    arr.push({
       guildID: dbUser.guild,
       userID: dbUser.user,
       xp: dbUser.xp,
@@ -195,8 +190,10 @@ async function leaderboard(client, guildID, limit) {
       position: pos,
       username: member.user.username,
       tag: member.user.tag
-    }
-  })
+    })
+  }
+
+  return arr
 }
 
 /**
@@ -208,7 +205,7 @@ async function fetch(userID, guildID) {
 
   let user = await create(userID, guildID)
 
-  const leaderboard = await levels
+  let leaderboard = await levels
     .find({
       guild: guildID
     })
@@ -247,7 +244,7 @@ async function charts(message, options = {}) {
     }
   }
 
-  const line_chart = ChartJSImage()
+  let line_chart = ChartJSImage()
     .chart({
       type: options.type || 'bar',
       data: {
@@ -298,7 +295,7 @@ async function charts(message, options = {}) {
     .width(940) // 500px
     .height(520) // 300px
 
-  const attachment = new Discord.MessageAttachment(
+  let attachment = new Discord.MessageAttachment(
     line_chart.toURL(),
     `chart.png`
   )
@@ -308,14 +305,14 @@ async function charts(message, options = {}) {
 /**
  * @type {import('./index').rank}
  */
-async function rank(message, userID, guildID, options = []) {
+async function rank(message, userID, guildID, options = {}) {
   if (!userID) throw new Error('[XP] User ID was not provided.')
 
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
 
   let user = await create(userID, guildID)
 
-  const leaderboard = await levels
+  let leaderboard = await levels
     .find({
       guild: guildID
     })
@@ -339,25 +336,15 @@ async function rank(message, userID, guildID, options = []) {
 /**
  * @type {import('./index').rankCard}
  */
-async function rankCard(message, options = []) {
+async function rankCard(message, options = {}) {
   try {
-    function shortener(count) {
-      const COUNT_ABBRS = ['', 'k', 'M', 'T']
+    let member = options.member
 
-      const i =
-        0 === count ? count : Math.floor(Math.log(count) / Math.log(1000))
-      let result = parseFloat((count / Math.pow(1000, i)).toFixed(2))
-      result += `${COUNT_ABBRS[i]}`
-      return result
-    }
-
-    const member = options.member
-
-    const canvas = Canvas.createCanvas(1080, 400),
+    let canvas = Canvas.createCanvas(1080, 400),
       ctx = canvas.getContext('2d')
 
-    const name = member.tag
-    const noSymbols = (string) => string.replace(/[\u007f-\uffff]/g, '')
+    let name = member.tag
+    let noSymbols = (string) => string.replace(/[\u007f-\uffff]/g, '')
 
     let fsiz = '45px'
     if (message.guild.name.length >= 23) {
@@ -526,8 +513,8 @@ async function rankCard(message, options = []) {
     ctx.fillRect(390, 145, 660, 50, 50)
     ctx.restore()
 
-    const percent = (100 * CurrentXP) / NeededXP
-    const progress = (percent * 660) / 100
+    let percent = (100 * CurrentXP) / NeededXP
+    let progress = (percent * 660) / 100
 
     ctx.save()
     RoundedBox(ctx, 390, 145, progress, 50, Number(BarRadius))
@@ -547,8 +534,8 @@ async function rankCard(message, options = []) {
     ctx.fillText('Next Level: ' + shortener(NeededXP) + ' xp', 390, 230)
     ctx.restore()
 
-    const latestXP = Number(CurrentXP) - Number(NeededXP)
-    const textXPEdited = TextXpNeded.replace(/{needed}/g, shortener(NeededXP))
+    let latestXP = Number(CurrentXP) - Number(NeededXP)
+    let textXPEdited = TextXpNeded.replace(/{needed}/g, shortener(NeededXP))
       .replace(/{current}/g, shortener(CurrentXP))
       .replace(/{latest}/g, latestXP)
     ctx.textAlign = 'center'
@@ -557,7 +544,7 @@ async function rankCard(message, options = []) {
     ctx.font = '30px "PoppinsBold"'
     ctx.fillText(textXPEdited, 730, 180)
 
-    const attachment = new Discord.MessageAttachment(
+    let attachment = new Discord.MessageAttachment(
       canvas.toBuffer(),
       AttachmentName
     )
@@ -681,7 +668,7 @@ async function lvlRole(message, userID, guildID) {
 
   if (!lvlRoles || lvlRoles.length === 0) return
 
-  let user = await create(userId, guildID)
+  let user = await create(userID, guildID)
 
   for (let lvlRoleDoc of lvlRoles) {
     let { lvlrole: roles } = lvlRoleDoc

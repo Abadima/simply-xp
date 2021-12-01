@@ -1,22 +1,22 @@
 import { Client, Message, MessageAttachment } from 'discord.js'
-import mongoose from 'mongoose'
+import { Document, Types } from 'mongoose'
 
 type HexColorString = `#${string}` | string
 type levelRole = {
-  _id: mongoose.Types.ObjectId
+  _id: Types.ObjectId
   gid: string
   lvlrole: { lvl: string; role: string }[]
 }
-type levelRoleDoc = mongoose.Document<any, any, levelRole>
+type levelRoleDoc = Document<any, any, levelRole>
 
 type User = {
-  _id: mongoose.Types.ObjectId
+  _id: Types.ObjectId
   user: string
   guild: string
   xp: number
   level: number
 }
-type UserDoc = mongoose.Document<any, any, User>
+type UserDoc = Document<any, any, User>
 
 export type connectOptions = {
   notify?: boolean
@@ -121,7 +121,7 @@ export declare function lvlRole(
 ): Promise<void>
 
 export type lvlAddOptions = {
-  level: string
+  level: string | number
   role: string
 }
 export type lvlRemoveOptions = {
@@ -130,13 +130,13 @@ export type lvlRemoveOptions = {
 
 export declare class roleSetup {
   public static add(
-    client: Discord.Client,
+    client: Client,
     guildID: string,
     options?: lvlAddOptions
   ): Promise<string>
 
   public static add(
-    client: Discord.Client,
+    client: Client,
     guildID: string,
     options?: lvlAddOptions
   ): Promise<string>
@@ -147,7 +147,7 @@ export declare class roleSetup {
     options?: {}
   ): Promise<
     {
-      lvl: string
+      lvl: string | number
       role: string
     }[]
   >
