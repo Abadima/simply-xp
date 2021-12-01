@@ -1,4 +1,7 @@
 .gitignore
+.github
+.prettierrc.json
 .husky
 .vscode
+*.tgz
 Examples
