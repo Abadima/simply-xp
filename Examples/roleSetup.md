@@ -34,6 +34,35 @@ xp.roleSetup.remove(client, guildID, {
 
 - ## Returns `<Boolean>`
 
+**_Fetch Level Role command_**
+
+```js
+xp.roleSetup.fetch(client, guildID)
+```
+
+- ## Returns `<Object>`
+
+**_Find Level Role command_**
+
+```js
+xp.roleSetup.find(client, guildID, level)
+```
+
+- ## Returns `<Object>`
+
+---
+
+## Options
+
+### Options for add
+
+- **level** `(Number)` - Target level for the role
+- **role** `(Role ID)` - Role given when the level is reached
+
+### Options for remove
+
+- **level** `(Number)` - Remove the Target level from Database
+
 ---
 
 ### Examples
@@ -80,14 +109,3 @@ xp.roleSetup
 ```
 
 ---
-
-## Options
-
-### Options for add
-
-- **level** `(Number)` - Target level for the role
-- **role** `(Role ID)` - Role given when the level is reached
-
-### Options for remove
-
-- **level** `(Number)` - Remove the Target level from Database

@@ -54,7 +54,3 @@ client.on('levelUp', async (message, data) => {})
   guildID
 }
 ```
-
-## Options
-
-- no options ;(

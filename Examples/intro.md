@@ -165,12 +165,9 @@ xp.charts(message).then((attach) => {
 
 Auto Roles (or) Level Roles.. Hard to understand, easy to implement !
 
+### Add LevelRole
+
 ```js
-let prefix = '='
-let args = message.content.slice(prefix.length).trim().split(/ +/g)
-
-xp.lvlRole(message, message.author.id, message.guild.id) // Core of level roles
-
 if (message.content.startsWith(`${prefix}addrole`)) {
   // add Level Role to the database
   xp.roleSetup
@@ -189,7 +186,11 @@ if (message.content.startsWith(`${prefix}addrole`)) {
       message.reply({ content: `Error: ${e}` })
     })
 }
+```
 
+### Remove LevelRole
+
+```js
 if (message.content.startsWith(`${prefix}removerole`)) {
   // remove Level Role from the database
   xp.roleSetup
@@ -206,6 +207,32 @@ if (message.content.startsWith(`${prefix}removerole`)) {
       // Catch if there is any error
       message.reply({ content: `Error: ${e}` })
     })
+}
+```
+
+### Fetch LevelRole
+
+```js
+if (message.content.startsWith(`${prefix}fetchrole`)) {
+  // fetch all level roles
+  xp.roleSetup.fetch(client, guildID).then((l) => {
+    // Sending the data
+    if (l) {
+      message.reply({ content: JSON.stringify(l) })
+    }
+  })
+}
+```
+
+### Find LevelRole
+
+```js
+if (message.content.startsWith(`${prefix}findrole`)) {
+  // find a specific level role
+  xp.roleSetup.find(client, guildID, args[1]).then((l) => {
+    // Sending the data
+    message.reply({ content: JSON.stringify(l) })
+  })
 }
 ```
 

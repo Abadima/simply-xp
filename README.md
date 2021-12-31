@@ -30,13 +30,12 @@ yarn add simply-xp
 
 # 🎉 What's New 🎉
 
-- Fixed create()
-- New `charts`
-- addXP redefined ! and now fires levelUp event [Most awaited]
-- New Examples
-- New Typings for levelUp
-- rankCard fix and more customizations !
-- leaderboard is much cooler.
+- Fixed bugs
+- New `addLevel(), setLevel(), reset()`
+- roleSetup redefined.. Redid whole system.
+- New everything.. Everything is now tidy and compact.
+- levelUp event returns role id too !
+- Re-coded to squeeze bugs
 - Bug Fixes
 
 # But Why ?
@@ -47,29 +46,9 @@ yarn add simply-xp
 - Beginner Friendly
 - Easier than other XP Systems
 - Inbuilt Auto Roles system
+- Flexible and simple at the same time
 
-`Inspired by discord-xp`
-
-# 🖥 Functions 🖥
-
-```js
-let xp = require('simply-xp')
-```
-
-- [connect()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/connect.md)
-- [create()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/create.md)
-- [addXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/addXP.md)
-- [setXP()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/setXP.md)
-- [rank()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/rank.md)
-- [fetch()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/fetch.md)
-- [leaderboard()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/charts.md)
-- [charts()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/leaderboard.md)
-- [lvlRole()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/lvlRole.md) | Requires: [roleSetup()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/roleSetup.md)
-- [roleSetup()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/roleSetup.md) | Requires: [lvlRole()](https://github.com/Rahuletto/simply-xp/blob/main/Examples/lvlRole.md)
-
-Overwhelmed by these functions ?? Got ya covered !
-
-- [Introduction](https://github.com/Rahuletto/simply-xp/blob/main/Examples/intro.md)
+`Reconstructed discord-xp to give you things simpler ;)`
 
 <br>
 
