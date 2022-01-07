@@ -40,6 +40,8 @@ async function rank(message, userID, guildID, options = []) {
     rank: user.position,
     background: options.background,
     color: options.color,
+    lvlbar: options.lvlbar,
+    lvlbarBg: options.lvlbarBg,
     member: message.guild.members.cache.get(userID)?.user
   })
 
