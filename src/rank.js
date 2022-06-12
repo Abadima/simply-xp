@@ -88,7 +88,7 @@ async function rank(message, userID, guildID, options = []) {
       let BackgroundRadius = '20',
         BackGroundImg =
           options.background ||
-          'https://media.discordapp.net/attachments/868506665102762034/876750913866461185/photo-1579546929518-9e396f3cc809.png?width=640&height=427',
+          'https://pinebanana.files.wordpress.com/2011/04/rainbow.jpg',
         AttachmentName = 'rank.png',
         Username = noSymbols(name),
         AvatarRoundRadius = '50',
