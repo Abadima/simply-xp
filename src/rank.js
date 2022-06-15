@@ -49,12 +49,7 @@ async function rank(message, userID, guildID, options = []) {
     try {
       const Canvas = require('canvas')
       const { registerFont } = require('canvas')
-      registerFont(join(__dirname, 'Fonts', 'Poppins-SemiBold.ttf'), {
-        family: 'Poppins-Regular'
-      })
-      registerFont(join(__dirname, 'Fonts', 'Poppins-SemiBold.ttf'), {
-        family: 'Poppins-Bold'
-      })
+      registerFont(join(__dirname, 'Fonts', 'Baloo-Regular.ttf'), { family: 'Sans Serif' })
 
       function shortener(count) {
         const COUNT_ABBRS = ['', 'k', 'M', 'T']
@@ -98,7 +93,7 @@ async function rank(message, userID, guildID, options = []) {
         LevelBarFill = options.lvlbar || '#ffffff',
         LevelBarBackground = options.lvlbarBg || '#ffffff',
         Rank = options.rank,
-        TextEXP = shortener(options.currentXP) + ' xp',
+        TextEXP = shortener(options.currentXP) + ' XP',
         LvlText = `Level ${shortener(options.level)}`,
         BarRadius = '20',
         TextXpNeded = '{current}/{needed}',
@@ -176,7 +171,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.fillRect(40 + 30, 30 + 180 + 30 + 50 + 30, 180, 50)
       ctx.globalAlpha = 1
       ctx.fillStyle = '#ffffff'
-      ctx.font = '32px "Poppins-Bold"'
+      ctx.font = '32px "Sans Serif"'
       ctx.textAlign = 'center'
       ctx.fillText(TextEXP, 40 + 30 + 180 / 2, 30 + 180 + 30 + 30 + 50 + 38)
       ctx.restore()
@@ -191,7 +186,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.fillRect(40 + 30, 30 + 180 + 30, 180, 50, 50)
       ctx.globalAlpha = 1
       ctx.fillStyle = '#ffffff'
-      ctx.font = '32px "Poppins-Bold"'
+      ctx.font = '32px "Sans Serif"'
       ctx.textAlign = 'center'
       ctx.fillText(LvlText, 40 + 30 + 180 / 2, 30 + 180 + 30 + 38)
       ctx.restore()
@@ -203,7 +198,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.shadowBlur = 15
       ctx.shadowOffsetX = 1
       ctx.shadowOffsetY = 1
-      ctx.font = '39px "Poppins-Bold"'
+      ctx.font = '39px "Sans Serif"'
       ctx.fillText(Username, 390, 80)
       ctx.restore()
 
@@ -214,7 +209,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.shadowBlur = 15
       ctx.shadowOffsetX = 1
       ctx.shadowOffsetY = 1
-      ctx.font = '55px "Poppins-Bold"'
+      ctx.font = '55px "Sans Serif"'
       ctx.fillText('#' + Rank, canvas.width - 50 - 5, 80)
       ctx.restore()
 
@@ -224,7 +219,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.stroke()
       ctx.clip()
       ctx.fillStyle = '#ffffff'
-      ctx.font = `${fsiz} "Poppins-Bold"`
+      ctx.font = `${fsiz} "Sans Serif"`
       ctx.textAlign = 'center'
       ctx.fillText(message.guild.name, 60 + 660, 355)
       ctx.globalAlpha = '0.2'
@@ -258,8 +253,8 @@ async function rank(message, userID, guildID, options = []) {
       ctx.textAlign = 'left'
       ctx.fillStyle = '#ffffff'
       ctx.globalAlpha = '0.8'
-      ctx.font = '30px "Poppins-Bold"'
-      ctx.fillText('Next Level: ' + shortener(NeededXP) + ' xp', 390, 230)
+      ctx.font = '30px "Sans Serif"'
+      ctx.fillText('Next Level: ' + shortener(NeededXP) + ' XP', 390, 230)
       ctx.restore()
 
       const latestXP = Number(CurrentXP) - Number(NeededXP)
@@ -269,7 +264,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.textAlign = 'center'
       ctx.fillStyle = '#474747'
       ctx.globalAlpha = 1
-      ctx.font = '30px "Poppins-Bold"'
+      ctx.font = '30px "Sans Serif"'
       ctx.fillText(textXPEdited, 730, 180)
 
       const attachment = new Discord.MessageAttachment(
