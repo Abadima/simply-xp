@@ -50,7 +50,7 @@ class roleSetup {
     } else {
       throw new Error(
         'Role ID is invalid. | ' +
-          `Guild ID: ${guildID} | Role ID: ${options.role}`
+        `Guild ID: ${guildID} | Role ID: ${options.role}`
       )
     }
   }
@@ -94,8 +94,7 @@ class roleSetup {
       gid: guildID
     })
 
-    if (!rol || rol.length === 0)
-      throw new Error('There is no levelRole in this guild')
+    if (!rol || rol.length === 0) return
 
     return rol[0].lvlrole
   }
@@ -111,8 +110,7 @@ class roleSetup {
       gid: guildID
     })
 
-    if (!rol || rol.length === 0)
-      throw new Error('There is no levelRole in this guild')
+    if (!rol || rol.length === 0) return
     rol = rol[0].lvlrole.find((item) => item.lvl === level) || undefined
 
     if (rol) {
