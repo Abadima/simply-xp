@@ -2,7 +2,7 @@
 
 <h2 style="font-size:2.5rem;" align="center">Simply-XP</h2>
 
-<h2 align="center">A Simple, Easy and Beginner friendly XP System. <br>Uses Discord.js v13<br><br>Developed by Rahuletto#0243</h2>
+<h2 align="center">A Simple, Easy and Beginner friendly XP System. <br>Uses Discord.js v13<br><br>Developed by Rahuletto#0243 & Maintained by Abadima#6356</h2>
 
 <br>
 <p align="center">
