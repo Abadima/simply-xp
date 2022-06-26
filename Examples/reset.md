@@ -1,6 +1,6 @@
 # reset
 
-Reset data of the user | `reset`
+Resets user data | `reset`
 
 ### Usage
 
@@ -18,4 +18,4 @@ let xp = require('simply-xp')
 xp.reset(message.author.id, message.guild.id)
 ```
 
-- ## Returns `<Boolean>`
+- ## Returns `<Object>`

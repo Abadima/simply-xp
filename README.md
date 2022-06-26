@@ -30,13 +30,8 @@ yarn add simply-xp
 
 # 🎉 What's New 🎉
 
-- Fixed bugs
-- New `addLevel(), setLevel(), reset()`
-- roleSetup redefined.. Redid whole system.
-- New everything.. Everything is now tidy and compact.
-- levelUp event returns role id too !
-- Re-coded to squeeze bugs
-- Bug Fixes
+- We have patched known issues, and we continue to monitor changes!
+- Our rank card has a new font applied
 
 # But Why ?
 
@@ -47,8 +42,6 @@ yarn add simply-xp
 - Easier than other XP Systems
 - Inbuilt Auto Roles system
 - Flexible and simple at the same time
-
-`Reconstructed discord-xp to give you things simpler ;)`
 
 <br>
 

@@ -22,4 +22,4 @@ xp.charts(message, {
 - **position** `(Number)` - Number of users need to be in the chart [Default: 5]
 - **background** `(Hex Code)` - Background Color of the Charts
 - **type** `(String)` - Types from [ChartJS](https://www.chartjs.org/docs/latest/charts/line.html)
-- - Available types: `'line' (or) 'bar' (or) 'radar' (or) 'doughnut' (or) 'polarArea'`
+- - Available types: `'bar' (or) 'doughnut' (or) 'line' (or) 'pie' (or) 'poolarArea' (or) 'radar'`

@@ -10,19 +10,13 @@ async function reset(userID, guildID) {
 
   if (!guildID) throw new Error('[XP] User ID was not provided.')
 
-  let uzer = await levels.findOne({ user: userID, guild: guildID })
+  await levels
+    .findOneAndUpdate({ user: userID, guild: guildID }, { xp: 0, level: 0 })
+    .catch((err) => {
+      throw new Error(err)
+    })
 
-  uzer = new levels({
-    user: userID,
-    guild: guildID,
-    xp: 0,
-    lvl: 0
-  })
-  await uzer
-    .save()
-    .catch((e) => console.log(`[XP] Failed to save new use to database`))
-
-  return true
+  return { user: userID, guild: guildID, xp: 0, level: 0 }
 }
 
 module.exports = reset

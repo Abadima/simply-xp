@@ -18,7 +18,7 @@ async function rank(message, userID, guildID, options = []) {
     user: userID,
     guild: guildID
   })
-  if (!user) console.error('[XP] NO_DATA | User has no XP data.')
+  if (!user) throw new Error('[XP] NO_DATA | User has no XP data.')
 
   const leaderboard = await levels
     .find({
@@ -49,10 +49,26 @@ async function rank(message, userID, guildID, options = []) {
     try {
       const Canvas = require('canvas')
       const { registerFont } = require('canvas')
-      registerFont(join(__dirname, 'Fonts', 'Baloo-Regular.ttf'), { family: 'Sans Serif' })
+      registerFont(join(__dirname, 'Fonts', 'Baloo-Regular.ttf'), {
+        family: 'Sans Serif'
+      })
 
       function shortener(count) {
-        const COUNT_ABBRS = ['', 'k', 'M', 'T']
+        const COUNT_ABBRS = [
+          '',
+          'k',
+          'M',
+          'B',
+          'T',
+          'Q',
+          'Q+',
+          'S',
+          'S+',
+          'O',
+          'N',
+          'D',
+          'U'
+        ]
 
         const i =
           0 === count ? count : Math.floor(Math.log(count) / Math.log(1000))
