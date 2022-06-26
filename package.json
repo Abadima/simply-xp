@@ -1,6 +1,6 @@
 {
   "name": "simply-xp",
-  "version": "1.2.0-test-2",
+  "version": "1.2.0",
   "description": "A Simple, Easy and Beginner Friendly XP System",
   "main": "simplyxp.js",
   "typings": "index.d.ts",
