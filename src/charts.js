@@ -1,4 +1,3 @@
-let Discord = require('discord.js')
 let leaderboard = require('./leaderboard')
 
 /**
@@ -11,11 +10,12 @@ async function charts(message, options = []) {
   const ChartJSImage = require('chart.js-image')
 
   let data = []
+  let pos = options?.position || 5
   let uzern = []
 
   await leaderboard(client, message.guild.id).then((e) => {
     e.forEach((m) => {
-      if (m.position <= 5) {
+      if (m.position <= pos) {
         data.push(m.xp)
         uzern.push(m.tag)
       }
@@ -73,10 +73,10 @@ async function charts(message, options = []) {
     .width(940) // 500px
     .height(520) // 300px
 
-  const attachment = new Discord.MessageAttachment(
-    line_chart.toURL(),
-    `chart.png`
-  )
+  const attachment = {
+    attachment: line_chart.toURL(),
+    name: 'chart.png'
+  }
   return attachment
 }
 

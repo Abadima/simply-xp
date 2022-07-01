@@ -1,4 +1,3 @@
-let Discord = require('discord.js')
 const lrole = require('../src/models/lvlrole.js')
 
 class roleSetup {
@@ -50,7 +49,7 @@ class roleSetup {
     } else {
       throw new Error(
         'Role ID is invalid. | ' +
-        `Guild ID: ${guildID} | Role ID: ${options.role}`
+          `Guild ID: ${guildID} | Role ID: ${options.role}`
       )
     }
   }

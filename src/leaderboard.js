@@ -1,4 +1,3 @@
-let Discord = require('discord.js')
 const levels = require('../src/models/level.js')
 
 /**

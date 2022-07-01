@@ -1,7 +1,9 @@
 try {
   require('discord.js')
 } catch (e) {
-  throw new Error('Discord.js v13 is required for this package to run')
+  console.warn(
+    '[XP] DJS V13 is recommended for this package. \n Debug Notice: \n' + e
+  )
 }
 
 module.exports.roleSetup = require('./src/roleSetup')

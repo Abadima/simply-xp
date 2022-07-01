@@ -1,4 +1,3 @@
-let Discord = require('discord.js')
 const levels = require('../src/models/level.js')
 const { join } = require('path')
 
@@ -283,11 +282,10 @@ async function rank(message, userID, guildID, options = []) {
       ctx.font = '30px "Sans Serif"'
       ctx.fillText(textXPEdited, 730, 180)
 
-      const attachment = new Discord.MessageAttachment(
-        canvas.toBuffer(),
-        AttachmentName
-      )
-
+      const attachment = {
+        attachment: canvas.toBuffer(),
+        name: AttachmentName
+      }
       return attachment
     } catch (err) {
       console.log(`[XP] Error Occured. | rankCard | Error: ${err.stack}`)
