@@ -30,8 +30,10 @@ yarn add simply-xp
 
 # 🎉 What's New 🎉
 
-- We have patched known issues, and we continue to monitor changes!
-- Our rank card has a new font applied
+- We have patched various issues
+- Switched to the true **Chart.js** package!
+- You no longer need to use D.JS for this package, alternatives can work!
+- We have also updated our website guide! We hope you find it useful 😊
 
 # But Why ?
 

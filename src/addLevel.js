@@ -39,8 +39,8 @@ async function addLevel(message, userID, guildID, level) {
   }
   let level1 = user.level
 
-  user.xp += (level * 10) ** 2
-  user.level += Math.floor(0.1 * Math.sqrt(user.xp))
+  user.level += 1
+  user.xp = (user.level * 10) ** 2
 
   await user
     .save()
