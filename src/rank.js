@@ -46,11 +46,11 @@ async function rank(message, userID, guildID, options = []) {
 
   async function rankCard(message, options = []) {
     try {
-      const Canvas = require('canvas')
-      const { registerFont } = require('canvas')
-      registerFont(join(__dirname, 'Fonts', 'Baloo-Regular.ttf'), {
-        family: 'Sans Serif'
-      })
+      const Canvas = require('@napi-rs/canvas')
+      Canvas.GlobalFonts.registerFromPath(
+        join(__dirname, 'Fonts', 'Baloo-Regular.ttf'),
+        'Sans Serif'
+      )
 
       function shortener(count) {
         const COUNT_ABBRS = [
@@ -100,10 +100,11 @@ async function rank(message, userID, guildID, options = []) {
           options.background ||
           'https://pinebanana.files.wordpress.com/2011/04/rainbow.jpg',
         AttachmentName = 'rank.png',
+        AttachmentDesc = 'Rank Card',
         Username = noSymbols(name),
         AvatarRoundRadius = '50',
         DrawLayerColor = '#000000',
-        DrawLayerOpacity = '0.4',
+        DrawLayerOpacity = 0.4,
         BoxColor = options.color || '#096DD1',
         LevelBarFill = options.lvlbar || '#ffffff',
         LevelBarBackground = options.lvlbarBg || '#ffffff',
@@ -164,13 +165,11 @@ async function rank(message, userID, guildID, options = []) {
         ctx.closePath()
       }
 
-      let avatar = await Canvas.loadImage(
-        member.displayAvatarURL({ dynamic: true, format: 'png' })
-      )
+      let avatar = await Canvas.loadImage(member.displayAvatarURL())
       ctx.save()
       RoundedBox(ctx, 40 + 30, 30, 180, 180, Number(AvatarRoundRadius))
       ctx.strokeStyle = BoxColor
-      ctx.lineWidth = '10'
+      ctx.lineWidth = 10
       ctx.stroke()
       ctx.clip()
       ctx.drawImage(avatar, 40 + 30, 30, 180, 180)
@@ -182,7 +181,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.stroke()
       ctx.clip()
       ctx.fillStyle = BoxColor
-      ctx.globalAlpha = '1'
+      ctx.globalAlpha = 1
       ctx.fillRect(40 + 30, 30 + 180 + 30 + 50 + 30, 180, 50)
       ctx.globalAlpha = 1
       ctx.fillStyle = '#ffffff'
@@ -197,7 +196,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.stroke()
       ctx.clip()
       ctx.fillStyle = BoxColor
-      ctx.globalAlpha = '1'
+      ctx.globalAlpha = 1
       ctx.fillRect(40 + 30, 30 + 180 + 30, 180, 50, 50)
       ctx.globalAlpha = 1
       ctx.fillStyle = '#ffffff'
@@ -237,7 +236,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.font = `${fsiz} "Sans Serif"`
       ctx.textAlign = 'center'
       ctx.fillText(message.guild.name, 60 + 660, 355)
-      ctx.globalAlpha = '0.2'
+      ctx.globalAlpha = 0.2
       ctx.fillRect(390, 305, 660, 70)
       ctx.restore()
 
@@ -247,7 +246,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.stroke()
       ctx.clip()
       ctx.fillStyle = LevelBarBackground
-      ctx.globalAlpha = '0.2'
+      ctx.globalAlpha = 0.2
       ctx.fillRect(390, 145, 660, 50, 50)
       ctx.restore()
 
@@ -260,14 +259,14 @@ async function rank(message, userID, guildID, options = []) {
       ctx.stroke()
       ctx.clip()
       ctx.fillStyle = LevelBarFill
-      ctx.globalAlpha = '0.5'
+      ctx.globalAlpha = 0.5
       ctx.fillRect(390, 145, progress, 50, 50)
       ctx.restore()
 
       ctx.save()
       ctx.textAlign = 'left'
       ctx.fillStyle = '#ffffff'
-      ctx.globalAlpha = '0.8'
+      ctx.globalAlpha = 0.8
       ctx.font = '30px "Sans Serif"'
       ctx.fillText('Next Level: ' + shortener(NeededXP) + ' XP', 390, 230)
       ctx.restore()
@@ -284,6 +283,7 @@ async function rank(message, userID, guildID, options = []) {
 
       const attachment = {
         attachment: canvas.toBuffer(),
+        description: AttachmentDesc,
         name: AttachmentName
       }
       return attachment
