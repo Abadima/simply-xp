@@ -32,8 +32,9 @@ yarn add simply-xp
 
 - We have patched various issues
 - Switched to the true **Chart.js** package!
-- You no longer need to use D.JS for this package, alternatives can work!
+- You no longer require to use D.JS for this package, alternatives can work!
 - We have also updated our website guide! We hope you find it useful 😊
+- Updated Various Packages to work universally with DJS V14 & More!
 
 # But Why ?
 
