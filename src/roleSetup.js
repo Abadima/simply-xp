@@ -109,8 +109,8 @@ class roleSetup {
       gid: guildID
     })
 
-    if (!rol || rol.length === 0) return
-    rol = rol[0].lvlrole.find((item) => item.lvl === level) || undefined
+    if (!rol || !rol.length) return
+    rol = rol[0].lvlrole.filter((i) => i.lvl == level) || undefined
 
     if (rol) {
       return rol

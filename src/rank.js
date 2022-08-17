@@ -98,7 +98,7 @@ async function rank(message, userID, guildID, options = []) {
       let BackgroundRadius = '20',
         BackGroundImg =
           options.background ||
-          'https://pinebanana.files.wordpress.com/2011/04/rainbow.jpg',
+          'https://i.ibb.co/QQvMqf7/gradient.jpg',
         AttachmentName = 'rank.png',
         AttachmentDesc = 'Rank Card',
         Username = noSymbols(name),
@@ -167,42 +167,42 @@ async function rank(message, userID, guildID, options = []) {
 
       let avatar = await Canvas.loadImage(member.displayAvatarURL())
       ctx.save()
-      RoundedBox(ctx, 40 + 30, 30, 180, 180, Number(AvatarRoundRadius))
+      RoundedBox(ctx, 70, 30, 180, 180, Number(AvatarRoundRadius))
       ctx.strokeStyle = BoxColor
-      ctx.lineWidth = 10
+      ctx.lineWidth = 15
       ctx.stroke()
       ctx.clip()
-      ctx.drawImage(avatar, 40 + 30, 30, 180, 180)
+      ctx.drawImage(avatar, 70, 30, 180, 180)
       ctx.restore()
 
       ctx.save()
-      RoundedBox(ctx, 40 + 30, 30 + 180 + 30 + 50 + 30, 180, 50, 20)
+      RoundedBox(ctx, 70, 240 + 50 + 30, 180, 50, 20)
       ctx.strokeStyle = '#BFC85A22'
       ctx.stroke()
       ctx.clip()
       ctx.fillStyle = BoxColor
       ctx.globalAlpha = 1
-      ctx.fillRect(40 + 30, 30 + 180 + 30 + 50 + 30, 180, 50)
+      ctx.fillRect(70, 320, 180, 50)
       ctx.globalAlpha = 1
       ctx.fillStyle = '#ffffff'
       ctx.font = '32px "Sans Serif"'
       ctx.textAlign = 'center'
-      ctx.fillText(TextEXP, 40 + 30 + 180 / 2, 30 + 180 + 30 + 30 + 50 + 38)
+      ctx.fillText(TextEXP, 160, 358)
       ctx.restore()
 
       ctx.save()
-      RoundedBox(ctx, 40 + 30, 30 + 180 + 30, 180, 50, 20)
+      RoundedBox(ctx, 70, 240, 180, 50, 20)
       ctx.strokeStyle = '#BFC85A22'
       ctx.stroke()
       ctx.clip()
       ctx.fillStyle = BoxColor
       ctx.globalAlpha = 1
-      ctx.fillRect(40 + 30, 30 + 180 + 30, 180, 50, 50)
+      ctx.fillRect(70, 240, 180, 50, 50)
       ctx.globalAlpha = 1
       ctx.fillStyle = '#ffffff'
       ctx.font = '32px "Sans Serif"'
       ctx.textAlign = 'center'
-      ctx.fillText(LvlText, 40 + 30 + 180 / 2, 30 + 180 + 30 + 38)
+      ctx.fillText(LvlText, 70 + 180 / 2, 278)
       ctx.restore()
 
       ctx.save()
@@ -224,7 +224,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.shadowOffsetX = 1
       ctx.shadowOffsetY = 1
       ctx.font = '55px "Sans Serif"'
-      ctx.fillText('#' + Rank, canvas.width - 50 - 5, 80)
+      ctx.fillText('#' + Rank, canvas.width - 55, 80)
       ctx.restore()
 
       ctx.save()
@@ -235,7 +235,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.fillStyle = '#ffffff'
       ctx.font = `${fsiz} "Sans Serif"`
       ctx.textAlign = 'center'
-      ctx.fillText(message.guild.name, 60 + 660, 355)
+      ctx.fillText(message.guild.name, 720, 355)
       ctx.globalAlpha = 0.2
       ctx.fillRect(390, 305, 660, 70)
       ctx.restore()

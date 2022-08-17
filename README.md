@@ -2,7 +2,7 @@
 
 <h2 style="font-size:2.5rem;" align="center">Simply-XP</h2>
 
-<h2 align="center">A Simple, Easy and Beginner friendly XP System. <br>Uses Discord.js v13<br><br>Developed by Rahuletto#0243 & Maintained by Abadima#6356</h2>
+<h2 align="center">A Simple, Easy and Beginner friendly XP System. <br>Supports Discord.JS<br><br>Developed by Rahuletto#0243 & Maintained by Abadima#6356</h2>
 
 <br>
 <p align="center">
@@ -28,13 +28,12 @@ yarn add simply-xp
 
 <br>
 
-# 🎉 What's New 🎉
+# 🎉 Recent Updates 🎉
 
-- We have patched various issues
-- Switched to the true **Chart.js** package!
-- You no longer require to use D.JS for this package, alternatives can work!
-- We have also updated our website guide! We hope you find it useful 😊
-- Updated Various Packages to work universally with DJS V14 & More!
+- Fixed Various Bugs
+- Updated `Chart.js`
+- D.JS v14 Support
+
 
 # But Why ?
 
