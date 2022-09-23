@@ -282,7 +282,7 @@ async function rank(message, userID, guildID, options = []) {
       ctx.fillText(textXPEdited, 730, 180)
 
       const attachment = {
-        attachment: canvas.toBuffer(),
+        attachment: canvas.toBuffer('image/webp'),
         description: AttachmentDesc,
         name: AttachmentName
       }
