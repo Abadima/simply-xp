@@ -12,11 +12,8 @@ async function leaderboard(client, guildID, limit) {
   let g = client.guilds.cache.get(guildID)
 
   let leaderboard = await levels
-    .find({
-      guild: guildID
-    })
+    .find({ guild: guildID })
     .sort([['xp', 'descending']])
-    .exec()
 
   let led = []
 
@@ -29,9 +26,10 @@ async function leaderboard(client, guildID, limit) {
     return result
   }
 
-  leaderboard.map((key) => {
-    let user = g.members.cache.get(key.user)
+  var led2 = leaderboard.map(async (key) => {
+    let user = await g.members.fetch(key.user).catch(() => undefined)
     if (key.xp === 0) return
+    if (!user) return
 
     let pos =
       leaderboard.findIndex(
@@ -42,28 +40,18 @@ async function leaderboard(client, guildID, limit) {
       if (pos > Number(limit)) return
     }
 
-    let shortXP = shortener(key.xp)
-
-    if (!user) return
-
     led.push({
       guildID: key.guild,
       userID: key.user,
       xp: key.xp,
-      shortxp: shortXP,
+      shortxp: shortener(key.xp),
       level: key.level,
       position: pos,
       username: user.user.username,
       tag: user.user.tag
     })
   })
-
-  led = led.filter(
-    (thing, index, self) =>
-      index === self.findIndex((t) => t.userID === thing.userID)
-  )
-
-  return led
+  return Promise.all(led2).then(() => led)
 }
 
 module.exports = leaderboard
