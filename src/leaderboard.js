@@ -10,6 +10,7 @@ async function leaderboard(client, guildID, limit) {
   if (!guildID) throw new Error('[XP] Guild ID was not provided.')
 
   let g = client.guilds.cache.get(guildID)
+  if (!g) throw new Error('[XP] Guild was not found.')
 
   let leaderboard = await levels
     .find({ guild: guildID })
@@ -27,7 +28,7 @@ async function leaderboard(client, guildID, limit) {
   }
 
   var led2 = leaderboard.map(async (key) => {
-    let user = await g.members.fetch(key.user).catch(() => undefined)
+    let user = g.members.cache.get(key.user)
     if (key.xp === 0) return
     if (!user) return
 
