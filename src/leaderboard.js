@@ -28,14 +28,12 @@ async function leaderboard(client, guildID, limit) {
   }
 
   var led2 = leaderboard.map(async (key) => {
-    let user = g.members.cache.get(key.user)
+    let user = await g.members.cache.get(key.user)
+    if (!user) return levels.deleteOne({ user: key.user, guild: key.guild }) // TEMP: DELETE USER IF NOT IN GUILD
     if (key.xp === 0) return
-    if (!user) return
 
     let pos =
-      leaderboard.findIndex(
-        (i) => i.guild === key.guild && i.user === key.user
-      ) + 1
+      leaderboard.findIndex((i) => i.user === key.user) + 1
 
     if (limit) {
       if (pos > Number(limit)) return
