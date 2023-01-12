@@ -43,7 +43,7 @@ export declare function fetch(userID: string, guildID: string): Promise<any>
 export declare function leaderboard(
   userID: string,
   guildID: string,
-  limit: number
+  limit?: number
 ): Promise<any>
 
 export declare function lvlRole(
