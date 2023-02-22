@@ -22,7 +22,10 @@ export declare function addXP(
   message: Message,
   userID: string,
   guildID: string,
-  xp: number
+  xp: {
+    min: number,
+    max: number
+}
 ): Promise<any>
 
 export type chartsOptions = {
