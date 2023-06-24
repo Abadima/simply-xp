@@ -6,17 +6,17 @@ const levels = require('../src/models/level.js');
  */
 
 async function reset(userID, guildID) {
-    if (!userID) throw new Error('[XP] User ID was not provided.');
+	if (!userID) throw new Error('[XP] User ID was not provided.');
 
-    if (!guildID) throw new Error('[XP] User ID was not provided.');
+	if (!guildID) throw new Error('[XP] User ID was not provided.');
 
-    await levels
-        .findOneAndUpdate({ user: userID, guild: guildID }, { xp: 0, level: 0 })
-        .catch((err) => {
-            throw new Error(err);
-        });
+	await levels
+		.findOneAndUpdate({ user: userID, guild: guildID }, { xp: 0, level: 0 })
+		.catch((err) => {
+			throw new Error(err);
+		});
 
-    return { user: userID, guild: guildID, xp: 0, level: 0 };
+	return { user: userID, guild: guildID, xp: 0, level: 0 };
 }
 
 module.exports = reset;

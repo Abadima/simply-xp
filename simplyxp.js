@@ -1,7 +1,7 @@
 try {
-    require('discord.js');
+	require('discord.js');
 } catch (e) {
-    console.warn('[XP] Discord.js is recommended for this package.');
+	console.warn('[XP] Discord.js is recommended for this package.');
 }
 
 module.exports.roleSetup = require('./src/roleSetup');
