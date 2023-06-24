@@ -1,5 +1,5 @@
-const levels = require('../src/models/level.js')
-let {roleSetup} = require('../simplyxp')
+const levels = require('../src/models/level.js');
+let {roleSetup} = require('../simplyxp');
 
 /**
  * @param {Discord.Message} message
@@ -8,15 +8,15 @@ let {roleSetup} = require('../simplyxp')
  * @param {number} level
  */
 async function addLevel(message, userID, guildID, level) {
-    if (!userID) throw new Error('[XP] User ID was not provided.')
+    if (!userID) throw new Error('[XP] User ID was not provided.');
 
-    if (!guildID) throw new Error('[XP] Guild ID was not provided.')
+    if (!guildID) throw new Error('[XP] Guild ID was not provided.');
 
-    if (!level) throw new Error('[XP] Level amount is not provided.')
+    if (!level) throw new Error('[XP] Level amount is not provided.');
 
-    let {client} = message
+    let {client} = message;
 
-    const user = await levels.findOne({user: userID, guild: guildID})
+    const user = await levels.findOne({user: userID, guild: guildID});
 
     if (!user) {
         const newUser = new levels({
@@ -24,25 +24,25 @@ async function addLevel(message, userID, guildID, level) {
             guild: guildID,
             xp: 0,
             level: 0
-        })
+        });
 
-        await newUser.save().catch(() => console.log(`[XP] Failed to save new user to database`))
+        await newUser.save().catch(() => console.log('[XP] Failed to save new user to database'));
 
-        let xp = (level * 10) ** 2
+        let xp = (level * 10) ** 2;
 
         return {
             level: level,
             exp: xp
-        }
+        };
     }
-    let level1 = user.level
+    let level1 = user.level;
 
-    user.level += parseFloat(level)
-    user.xp = (user.level * 10) ** 2
+    user.level += parseFloat(level);
+    user.xp = (user.level * 10) ** 2;
 
     await user.save().catch((e) =>
         console.log(`[XP] Failed to add Level | User: ${userID} | Err: ${e}`)
-    )
+    );
 
     if (level1 !== level) {
         let data = {
@@ -50,17 +50,17 @@ async function addLevel(message, userID, guildID, level) {
             level: user.level,
             userID,
             guildID
-        }
+        };
 
-        let role = await roleSetup.find(client, guildID, level)
+        let role = await roleSetup.find(client, guildID, level);
 
-        client.emit('levelUp', message, data, role)
+        client.emit('levelUp', message, data, role);
     }
 
     return {
         level: user.level,
         xp: user.xp
-    }
+    };
 }
 
-module.exports = addLevel
+module.exports = addLevel;

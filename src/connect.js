@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
 /**
  * @param {string} db
@@ -6,17 +6,17 @@ const mongoose = require('mongoose')
  */
 
 async function connect(db, options = []) {
-  if (!db) throw new Error('[XP] Database URL was not provided')
-  mongoose.set('strictQuery', true);
+    if (!db) throw new Error('[XP] Database URL was not provided');
+    mongoose.set('strictQuery', true);
   
-  mongoose.connect(db, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
+    mongoose.connect(db, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    });
 
 
-  if (options.notify === false) return
-  else return console.log('{ XP } Database Connected')
+    if (options.notify === false) return;
+    else return console.log('{ XP } Database Connected');
 }
 
-module.exports = connect
+module.exports = connect;

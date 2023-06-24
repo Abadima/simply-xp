@@ -1,4 +1,4 @@
-let leaderboard = require('./leaderboard')
+let leaderboard = require('./leaderboard');
 
 /**
  * @param {Discord.Message} message
@@ -7,27 +7,27 @@ let leaderboard = require('./leaderboard')
 
 async function charts(message, options) {
     try {
-        require('canvas')
+        require('canvas');
     } catch {
-        throw '[XP] This requires canvas to be installed. \n"npm install canvas"'
+        throw '[XP] This requires canvas to be installed. \n"npm install canvas"';
     }
-    const ChartJS = require('chart.js')
-    const Canvas = require('canvas')
-    let {client} = message
+    const ChartJS = require('chart.js');
+    const Canvas = require('canvas');
+    let {client} = message;
 
-    let data = []
-    let pos = options?.position || 5
-    let uzern = []
+    let data = [];
+    let pos = options?.position || 5;
+    let uzern = [];
 
-    let ctx = Canvas.createCanvas(950, 526)
+    let ctx = Canvas.createCanvas(950, 526);
     await leaderboard(client, message.guild.id).then((e) => {
         e.forEach((m) => {
             if (m.position <= pos) {
-                data.push(m.xp)
-                uzern.push(m.tag)
+                data.push(m.xp);
+                uzern.push(m.tag);
             }
-        })
-    })
+        });
+    });
 
     new ChartJS(ctx, {
         type: options.type || 'bar',
@@ -72,21 +72,21 @@ async function charts(message, options) {
             {
                 id: 'simply-xp',
                 beforeDraw: (chart) => {
-                    const ctx = chart.canvas.getContext('2d')
-                    ctx.save()
-                    ctx.globalCompositeOperation = 'destination-over'
-                    ctx.fillStyle = options.background || '#2F3136'
-                    ctx.fillRect(0, 0, chart.width, chart.height)
-                    ctx.restore()
+                    const ctx = chart.canvas.getContext('2d');
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = options.background || '#2F3136';
+                    ctx.fillRect(0, 0, chart.width, chart.height);
+                    ctx.restore();
                 }
             }
         ]
-    }).update()
+    }).update();
 
     return {
         attachment: ctx.toBuffer('image/png'),
         name: 'chart.png'
-    }
+    };
 }
 
-module.exports = charts
+module.exports = charts;
