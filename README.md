@@ -16,6 +16,8 @@
 
 ## 🖥️ <b>How to install ?
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/6cbcb1d12e60438b848c5108bf14d353)](https://app.codacy.com/gh/Abadima/simply-xp?utm_source=github.com&utm_medium=referral&utm_content=Abadima/simply-xp&utm_campaign=Badge_Grade)
+
 ```
 npm install simply-xp
 ```
