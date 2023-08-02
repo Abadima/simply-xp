@@ -1,6 +1,6 @@
 {
   "name": "simply-xp",
-  "version": "2.0.0-dev.0",
+  "version": "2.0.0-dev.0-fix.0",
   "description": "The easiest way to implement xp system",
   "main": "lib/xp.js",
   "typings": "typings",

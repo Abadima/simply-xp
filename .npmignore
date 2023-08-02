@@ -6,5 +6,6 @@ Mini_Docs
 node_modules
 pnpm-lock.yaml
 src
+!lib/src
 Tests
 tsconfig.json
