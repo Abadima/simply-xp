@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "allowSyntheticDefaultImports": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "alwaysStrict": true,
+    "declaration": true,
+    "declarationDir": "typings",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "outDir": "lib",
+    "resolveJsonModule": true,
+    "strict": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "target": "ES2021"
+  },
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "./src/fonts/Baloo-Regular.ttf",
+    "./src/**/*",
+    "xp.ts"
+  ],
+  "paths": {
+    "@src/*": [
+      "src/*"
+    ]
+  }
+}

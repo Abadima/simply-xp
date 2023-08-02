@@ -1,4 +1,10 @@
+.eslintrc.json
+.github
 .gitignore
-.vscode
-Examples
-.tgz
+.idea
+Mini_Docs
+node_modules
+pnpm-lock.yaml
+src
+Tests
+tsconfig.json

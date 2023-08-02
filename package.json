@@ -1,53 +1,71 @@
 {
   "name": "simply-xp",
-  "version": "1.3.5-beta-7",
-  "description": "A Simple, Easy and Beginner Friendly XP System",
-  "main": "simplyxp.js",
-  "typings": "index.d.ts",
+  "version": "2.0.0-dev.0",
+  "description": "The easiest way to implement xp system",
+  "main": "lib/xp.js",
+  "typings": "typings",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "beta": "eslint . --fix && npm update && npm publish --tag beta"
+    "beta": "node Tests/clean.mjs && pnpm update && npm publish --tag beta",
+    "clean": "node Tests/clean.mjs",
+    "dev": "node Tests/clean.mjs && pnpm update && npm publish --tag dev",
+    "docs": "node Tests/jsdocs.cjs",
+    "latest": "node Tests/clean.mjs && pnpm update && npm publish",
+    "test": "node Tests/clean.mjs && node Tests/test.cjs"
   },
   "author": "Rahuletto",
   "keywords": [
-    "xp",
-    "simply",
-    "easy",
-    "xp-system",
-    "system",
-    "mongoose",
-    "discord",
-    "discord xp",
-    "discord-xp",
-    "simply-djs",
-    "discord.js",
-    "simplydjs",
-    "weky",
-    "nuggies",
-    "experience",
-    "level role",
-    "amari",
-    "package",
-    "leaderboard",
-    "mee6",
+    "amaribot",
     "charts",
-    "ChartJS",
-    "level up"
+    "discord",
+    "discord.js",
+    "discord-xp",
+    "easy",
+    "fun",
+    "guilded",
+    "leaderboard",
+    "level role",
+    "level up",
+    "mee6",
+    "mongodb",
+    "package",
+    "simply",
+    "simply-djs",
+    "simplydjs",
+    "sqlite",
+    "system",
+    "xp"
   ],
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Rahuletto/simply-xp"
+    "url": "git+https://github.com/Rahuletto/simply-xp.git"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.41",
-    "chart.js": "^3.9.1",
-    "mongoose": "^6.11.2"
-  },
-  "peerDependencies": {
-    "discord.js": ">=13.12.0"
+    "@napi-rs/canvas": "^0.1.41"
   },
   "devDependencies": {
-    "eslint": "^8.43.0"
+    "@types/better-sqlite3": "^7.6.4",
+    "@types/node": "^20.4.5",
+    "@typescript-eslint/eslint-plugin": "^6.2.1",
+    "@typescript-eslint/parser": "^6.2.1",
+    "better-sqlite3": "8.5.0",
+    "discord.js": "^14.12.1",
+    "eslint": "^8.46.0",
+    "guilded.ts": "^0.20.2",
+    "jsdoc-to-markdown": "^8.0.0",
+    "mongodb": "5.7.0",
+    "typescript": "^5.1.6",
+    "uglify-js": "^3.17.4"
+  },
+  "engines": {
+    "node": ">=15.5.0"
+  },
+  "bugs": {
+    "url": "https://github.com/Rahuletto/simply-xp/issues"
+  },
+  "homepage": "https://simplyxp.js.org",
+  "directories": {
+    "doc": "Mini_Docs",
+    "lib": "lib"
   }
 }

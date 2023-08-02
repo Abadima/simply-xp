@@ -1,57 +1,68 @@
-<p align="center"><img align="center" style="margin-bottom:-6px" src="https://i.imgur.com/BiaHJA7.png?maxwidth=128&fidelity=grand"></p>
+<div class="Heading" style="text-align: center;">
+  <img src="https://i.ibb.co/cCKJ9FS/simplyxp.png" width="320" height="125" alt="XP Logo">
 
-<h2 style="font-size:2.5rem;" align="center">Simply-XP</h2>
-
-<h2 align="center">A Simple, Easy and Beginner friendly XP System. <br>Supports Discord.JS<br><br>Developed by Rahuletto#0243 & Maintained by Abadima#6356</h2>
-
-<br>
-<p align="center">
-   <a href="https://www.npmjs.com/package/simply-xp"><img src="https://img.shields.io/npm/v/simply-xp.svg?style=flat-square" /></a>
- <a href="https://www.npmjs.com/package/simply-xp"><img src="https://img.shields.io/npm/dt/simply-xp?style=flat-square" /></a><br>
-   <a href="https://www.npmjs.com/package/simply-xp"><img src="https://nodei.co/npm/simply-xp.png?downloadRank=true&downloads=true&downloadRank=true&stars=true" /></a><br>
-   <a href="https://discord.gg/3JzDV9T5Fn"><img src="https://invidget.switchblade.xyz/3JzDV9T5Fn" /></a>
-</p>
+<h2>We have levelling! - You handle the rest.</h2>
+<h3>Made by Abadima</h3>
+</div>
 
 <br>
+<div class="badges" style="text-align: center;">
 
-## 🖥️ <b>How to install ?
+[![Downloads](https://img.shields.io/npm/dt/simply-xp?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
+[![Version](https://img.shields.io/npm/v/simply-xp.svg?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
+[![CodeFactor](https://www.codefactor.io/repository/github/abadima/simply-xp/badge?style=for-the-badge)](https://www.codefactor.io/repository/github/abadima/simply-xp)
 
+[![Documentation](https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge)](https://simplyxp.js.org)
+[![Support](https://img.shields.io/badge/Discord-Support-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/hjhnjYJNHX)
+</div>
+
+---
+> CREDITS TO [RAHULETTO](https://github.com/rahuletto) FOR SIMPLY-XP **VERSION 1**
+---
+
+<br>
+
+## 🖥️ <b>[DEV] Installation</b>
+
+```shell
+npm install simply-xp@dev
 ```
-npm install simply-xp
+
+```shell
+pnpm install simply-xp@dev
 ```
 
-(or)
-
-```
-yarn add simply-xp
+```shell
+yarn add simply-xp@dev
 ```
 
 <br>
 
-# 🎉 Recent Updates 🎉
+# ✅ V2 Additions
 
-- Fixed Various Bugs
-- Updated `Chart.js`
-- D.JS v14 Support
+- Added support for `SQLite` database
+- Added `auto_purge` + `debug` option for `connect()` function
+- Added `db` class for extended database functionality
+- Added `leaderboardCard()` function
+- Added `convert()` function
+- Added `migrate` class
 
+# 🎉 V2 Changes 🎉
 
-# But Why ?
+- Better Documentation
+- Better Log Handling (`XpDebug`, `XpError`, `XpInfo`, `XpWarn`)
+- Better Performance
+- Better Code Quality (EsLint)
+- Complete TypeScript Rewrite
+- Deleted `chart.js` dependency
+- `fetch()` now also returns `position`
+- `roleSetup` functions now accept roleID arrays! `["role1", "role2", "role3"]`
+- `reset()` function now accepts "erase" as an optional argument
 
-- Easiest XP System in Discord.js
-- Fastest Support ever
-- Rank Card Maker
-- Beginner Friendly
-- Easier than other XP Systems
-- Inbuilt Auto Roles system
-- Flexible and simple at the same time
+# ⚠️ V2 Breaking Changes ⚠️
 
-<br>
-
-## **Need Help ? Join the [Discord Server](https://discord.gg/3JzDV9T5Fn)**
-
-<br>
-   
- <h1>👥 Contact us | Support</h1>
- <p>
-<a href="https://discord.gg/3JzDV9T5Fn"><img src="https://invidget.switchblade.xyz/3JzDV9T5Fn" /></a>
-</p>
+- `create()` Requires new arguments.
+- `charts()` Requires new arguments.
+- `rank()` is **deprecated**, use `rankCard()` instead.
+- `rankCard()` Requires completely new arguments.
+- `roleSetup()` functions loses `client` argument.
