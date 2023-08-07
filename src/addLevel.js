@@ -1,5 +1,5 @@
-const levels = require('../src/models/level.js');
-let {roleSetup} = require('../simplyxp');
+const levels = require("../src/models/level.js");
+let {roleSetup} = require("../simplyxp");
 
 /**
  * @param {Discord.Message} message
@@ -8,11 +8,11 @@ let {roleSetup} = require('../simplyxp');
  * @param {number} level
  */
 async function addLevel(message, userID, guildID, level) {
-	if (!userID) throw new Error('[XP] User ID was not provided.');
+	if (!userID) throw new Error("[XP] User ID was not provided.");
 
-	if (!guildID) throw new Error('[XP] Guild ID was not provided.');
+	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
 
-	if (!level) throw new Error('[XP] Level amount is not provided.');
+	if (!level) throw new Error("[XP] Level amount is not provided.");
 
 	let {client} = message;
 
@@ -26,7 +26,7 @@ async function addLevel(message, userID, guildID, level) {
 			level: 0
 		});
 
-		await newUser.save().catch(() => console.log('[XP] Failed to save new user to database'));
+		await newUser.save().catch(() => console.log("[XP] Failed to save new user to database"));
 
 		let xp = (level * 10) ** 2;
 
@@ -54,7 +54,7 @@ async function addLevel(message, userID, guildID, level) {
 
 		let role = await roleSetup.find(client, guildID, level);
 
-		client.emit('levelUp', message, data, role);
+		client.emit("levelUp", message, data, role);
 	}
 
 	return {

@@ -1,11 +1,11 @@
-const lrole = require('../src/models/lvlrole.js');
+const lrole = require("../src/models/lvlrole.js");
 
 class roleSetup {
 	/**
-   * @param {Discord.Client} client
-   * @param {string} guildID
-   * @param {import('../index').lvladdOptions} options
-   */
+	 * @param {Discord.Client} client
+	 * @param {string} guildID
+	 * @param {import("../index").lvladdOptions} options
+	 */
 
 	static async add(client, guildID, options = []) {
 		let rol = await lrole.findOne({
@@ -21,7 +21,7 @@ class roleSetup {
 		let roll = g.roles.cache.find((r) => r.id === options.role);
 
 		if (roll) {
-			if (rol) throw new Error('Level Already Exist. Use delete');
+			if (rol) throw new Error("Level Already Exist. Use delete");
 			else if (!rol) {
 				let newrol = await lrole.findOne({
 					gid: guildID
@@ -36,7 +36,7 @@ class roleSetup {
 					await newrol.save();
 				}
 
-				newrol.lvlrole.push({ lvl: options.level, role: options.role });
+				newrol.lvlrole.push({lvl: options.level, role: options.role});
 
 				await newrol
 					.save()
@@ -48,17 +48,17 @@ class roleSetup {
 			}
 		} else {
 			throw new Error(
-				'Role ID is invalid. | ' +
-          `Guild ID: ${guildID} | Role ID: ${options.role}`
+				"Role ID is invalid. | " +
+				`Guild ID: ${guildID} | Role ID: ${options.role}`
 			);
 		}
 	}
 
 	/**
-   * @param {Discord.Client} client
-   * @param {string} guildID
-   * @param {import('../index').lvlremoveOptions} options
-   */
+	 * @param {Discord.Client} client
+	 * @param {string} guildID
+	 * @param {import("../index").lvlremoveOptions} options
+	 */
 
 	static async remove(client, guildID, options = []) {
 		let rol = await lrole.find({
@@ -66,7 +66,7 @@ class roleSetup {
 		});
 
 		if (!rol || rol.length === 0)
-			throw new Error('Level role with this level does not exist');
+			throw new Error("Level role with this level does not exist");
 		rol = rol[0].lvlrole.find((item) => item.lvl === options.level) || undefined;
 
 		if (rol) {
@@ -75,18 +75,18 @@ class roleSetup {
 					gid: guildID
 				},
 				{
-					$pull: { lvlrole: { lvl: options.level } }
+					$pull: {lvlrole: {lvl: options.level}}
 				}
 			);
 
 			return true;
-		} else throw new Error('Level role with this level does not exist');
+		} else throw new Error("Level role with this level does not exist");
 	}
 
 	/**
-   * @param {Discord.Client} client
-   * @param {string} guildID
-   */
+	 * @param {Discord.Client} client
+	 * @param {string} guildID
+	 */
 
 	static async fetch(client, guildID) {
 		let rol = await lrole.find({
@@ -99,10 +99,10 @@ class roleSetup {
 	}
 
 	/**
-   * @param {Discord.Client} client
-   * @param {string} guildID
-   * @param {string} level
-   */
+	 * @param {Discord.Client} client
+	 * @param {string} guildID
+	 * @param {string} level
+	 */
 
 	static async find(client, guildID, level) {
 		let rol = await lrole.find({

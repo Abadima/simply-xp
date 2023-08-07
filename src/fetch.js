@@ -1,4 +1,4 @@
-const levels = require('../src/models/level.js');
+const levels = require("../src/models/level.js");
 
 /**
  * @param {string} userID
@@ -6,9 +6,9 @@ const levels = require('../src/models/level.js');
  */
 
 async function fetch(userID, guildID) {
-	if (!userID) throw new Error('[XP] User ID was not provided.');
+	if (!userID) throw new Error("[XP] User ID was not provided.");
 
-	if (!guildID) throw new Error('[XP] Guild ID was not provided.');
+	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
 
 	let user = await levels.findOne({
 		user: userID,
@@ -29,7 +29,7 @@ async function fetch(userID, guildID) {
 		.find({
 			guild: guildID
 		})
-		.sort([['xp', 'descending']])
+		.sort([["xp", "descending"]])
 		.exec();
 
 	if (user === null)
@@ -49,7 +49,7 @@ async function fetch(userID, guildID) {
 	let target = targetxp * targetxp * 100;
 
 	function shortener(count) {
-		const COUNT_ABBRS = ['', 'k', 'M', 'T'];
+		const COUNT_ABBRS = ["", "k", "M", "T"];
 
 		const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000));
 		let result = parseFloat((count / Math.pow(1000, i)).toFixed(2));

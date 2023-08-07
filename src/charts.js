@@ -1,18 +1,18 @@
-let leaderboard = require('./leaderboard');
+let leaderboard = require("./leaderboard");
 
 /**
  * @param {Discord.Message} message
- * @param {import('../index').chartsOptions} options
+ * @param {import("../index").chartsOptions} options
  */
 
 async function charts(message, options) {
 	try {
-		require('canvas');
+		require("canvas");
 	} catch {
-		throw '[XP] This requires canvas to be installed. \n"npm install canvas"';
+		throw "[XP] This requires canvas to be installed. \n\"npm install canvas\"";
 	}
-	const ChartJS = require('chart.js');
-	const Canvas = require('canvas');
+	const ChartJS = require("chart.js");
+	const Canvas = require("canvas");
 	let {client} = message;
 
 	let data = [];
@@ -30,30 +30,30 @@ async function charts(message, options) {
 	});
 
 	new ChartJS(ctx, {
-		type: options.type || 'bar',
+		type: options.type || "bar",
 		data: {
 			labels: uzern,
 			datasets: [
 				{
-					label: 'Leaderboards',
+					label: "Leaderboards",
 					data: data,
 					backgroundColor: [
-						'rgba(255, 99, 132, 0.5)',
-						'rgba(255, 159, 64, 0.5)',
-						'rgba(255, 205, 86, 0.5)',
-						'rgba(75, 192, 192, 0.5)',
-						'rgba(54, 162, 235, 0.5)',
-						'rgba(153, 102, 255, 0.5)',
-						'rgb(201, 203, 207, 0.5)'
+						"rgba(255, 99, 132, 0.5)",
+						"rgba(255, 159, 64, 0.5)",
+						"rgba(255, 205, 86, 0.5)",
+						"rgba(75, 192, 192, 0.5)",
+						"rgba(54, 162, 235, 0.5)",
+						"rgba(153, 102, 255, 0.5)",
+						"rgb(201, 203, 207, 0.5)"
 					],
 					borderColor: [
-						'rgb(255, 99, 132)',
-						'rgb(255, 159, 64)',
-						'rgb(255, 205, 86)',
-						'rgb(75, 192, 192)',
-						'rgb(54, 162, 235)',
-						'rgb(153, 102, 255)',
-						'rgb(201, 203, 207)'
+						"rgb(255, 99, 132)",
+						"rgb(255, 159, 64)",
+						"rgb(255, 205, 86)",
+						"rgb(75, 192, 192)",
+						"rgb(54, 162, 235)",
+						"rgb(153, 102, 255)",
+						"rgb(201, 203, 207)"
 					],
 					borderWidth: 2
 				}
@@ -64,18 +64,18 @@ async function charts(message, options) {
 			plugins: {
 				title: {
 					display: true,
-					text: 'XP Datasheet'
+					text: "XP Datasheet"
 				}
 			}
 		},
 		plugins: [
 			{
-				id: 'simply-xp',
+				id: "simply-xp",
 				beforeDraw: (chart) => {
-					const ctx = chart.canvas.getContext('2d');
+					const ctx = chart.canvas.getContext("2d");
 					ctx.save();
-					ctx.globalCompositeOperation = 'destination-over';
-					ctx.fillStyle = options.background || '#2F3136';
+					ctx.globalCompositeOperation = "destination-over";
+					ctx.fillStyle = options.background || "#2F3136";
 					ctx.fillRect(0, 0, chart.width, chart.height);
 					ctx.restore();
 				}
@@ -84,8 +84,8 @@ async function charts(message, options) {
 	}).update();
 
 	return {
-		attachment: ctx.toBuffer('image/png'),
-		name: 'chart.png'
+		attachment: ctx.toBuffer("image/png"),
+		name: "chart.png"
 	};
 }
 

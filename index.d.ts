@@ -3,6 +3,7 @@ import { Message, Client } from 'discord.js'
 type HexColorString = `#${string}` | string
 
 export type connectOptions = {
+  auto_purge?: boolean,
   notify?: boolean
 }
 

@@ -1,5 +1,5 @@
-const levels = require('../src/models/level.js');
-const lrole = require('../src/models/lvlrole.js');
+const levels = require("../src/models/level.js");
+const lrole = require("../src/models/lvlrole.js");
 
 /**
  * @param {Discord.Message} message
@@ -26,7 +26,7 @@ async function lvlRole(message, userID, guildID) {
 
 		await newuser
 			.save()
-			.catch(() => console.log('[XP] Failed to save new user to database'));
+			.catch(() => console.log("[XP] Failed to save new user to database"));
 	}
 
 	e.forEach((ee) => {
@@ -41,7 +41,7 @@ async function lvlRole(message, userID, guildID) {
 				else {
 					u.roles.add(real).catch(() => {
 						message.channel.send(
-							'[XP] ERROR: Role is higher than me. `MISSING_PERMISSIONS`'
+							"[XP] ERROR: Role is higher than me. `MISSING_PERMISSIONS`"
 						);
 					});
 				}
