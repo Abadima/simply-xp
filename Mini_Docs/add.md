@@ -4,7 +4,7 @@
 <dt><a href="#addLevel">addLevel(userId, guildId, level, username)</a> ⇒ <code>Promise.&lt;UserResult&gt;</code></dt>
 <dd><p>Add XP to a user</p>
 </dd>
-<dt><a href="#addXP">addXP(userId, guildId, xpData, username)</a> ⇒ <code>Promise.&lt;UserResult&gt;</code></dt>
+<dt><a href="#addXP">addXP(userId, guildId, xpData, username)</a> ⇒ <code>Promise.&lt;XPResult&gt;</code></dt>
 <dd><p>Add XP to a user.</p>
 </dd>
 </dl>
@@ -32,12 +32,12 @@ Add XP to a user
 
 <a name="addXP"></a>
 
-## addXP(userId, guildId, xpData, username) ⇒ <code>Promise.&lt;UserResult&gt;</code>
+## addXP(userId, guildId, xpData, username) ⇒ <code>Promise.&lt;XPResult&gt;</code>
 
 Add XP to a user.
 
 **Kind**: global function  
-**Returns**: <code>Promise.&lt;UserResult&gt;</code> - - Object of user data on success.  
+**Returns**: <code>Promise.&lt;XPResult&gt;</code> - - Object of user data on success.  
 **Throws**:
 
 - <code>XpFatal</code> - If parameters are not provided correctly.

@@ -25,22 +25,22 @@ interface NewClientOptions {
 /**
  * Convert XP to level and vice versa.
  *
- * @param {"xp" | "level"} type - Type to coreFunctions from. Use either "xp" or "level".
- * @param {number} value - Value to coreFunctions.
+ * @param {number} value.
+ * @param {"xp" | "level"} type - Type to convert from (Default: level).
  * @link `Documentation:` https://simplyxp.js.org/docs/utilities/convert
  * @returns {number} - The converted value. (XP to level or level to XP)
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
  */
-export function convert(type: "xp" | "level", value: number): number {
+export function convertFrom(value: number, type: "xp" | "level" = "level"): number {
+	if (!value) throw new XpFatal({function: "convertFrom()", message: "Value was not provided"});
 	if (type !== "xp" && type !== "level") throw new XpFatal({
 		function: "convert()", message: "Invalid type provided"
 	});
-	if (!value) throw new XpFatal({function: "coreFunctions()", message: "Value was not provided"});
 
 	if (type === "level") return Math.pow(value / 0.1, 2);
 	if (type === "xp") return Math.floor(0.1 * Math.sqrt(value));
 
-	throw new XpFatal({function: "coreFunctions()", message: "Invalid type provided"});
+	throw new XpFatal({function: "convertFrom()", message: "Invalid type provided"});
 }
 
 

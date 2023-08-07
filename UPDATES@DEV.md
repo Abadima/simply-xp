@@ -1,5 +1,21 @@
 # VERSION 2@DEV CHANGELOGS
 
+## [DEV 2](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.2)
+
+### Additions
+
+- Added `MongoDB` V4 Support
+- `setXP()` and `addXP()` now also return `hasLevelledUp` property
+
+### ⚠️ Breaking Changes
+
+- `convert(type, value)` => `convertFrom(value, type)`
+
+### Changes
+
+- Updated JSDocs, changed some types to interfaces.
+- Optimized font file, lowers package size.
+
 ## [DEV 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.1)
 
 ### Additions

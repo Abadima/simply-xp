@@ -1,5 +1,5 @@
 import {XpFatal} from "./functions/xplogs";
-import {convert} from "./functions/utilities";
+import {convertFrom} from "./functions/utilities";
 import {db, UserResult} from "./functions/database";
 import {xp} from "../xp";
 
@@ -26,7 +26,7 @@ export async function setLevel(userId: string, guildId: string, level: number, u
 		if (xp.auto_create && username) return await db.createOne({
 			collection: "simply-xps",
 			data: {
-				guild: guildId, user: userId, name: username, level, xp: convert("level", level)
+				guild: guildId, user: userId, name: username, level, xp: convertFrom(level)
 			}
 		}) as UserResult;
 		else throw new XpFatal({function: "setLevel()", message: "User does not exist"});
@@ -38,12 +38,20 @@ export async function setLevel(userId: string, guildId: string, level: number, u
 			collection: "simply-xps",
 			data: {
 				user: userId, guild: guildId,
-				level, xp: convert("level", level)
+				level, xp: convertFrom(level)
 			}
 		}) as UserResult;
 	}
 }
 
+
+/**
+ * XP Results
+ * @property {boolean} hasLevelledUp - Whether the user has levelled up or not.
+ */
+interface XPResult extends UserResult {
+	hasLevelledUp: boolean;
+}
 
 /**
  * Set user XP
@@ -53,35 +61,38 @@ export async function setLevel(userId: string, guildId: string, level: number, u
  * @param {number} xpData
  * @param {string} username - Username to use if auto_create is enabled
  * @link `Documentation:` https://simplyxp.js.org/docs/setxp
- * @returns {Promise<UserResult>} - Object of user data on success
+ * @returns {Promise<XPResult>} - Object of user data on success
  * @throws {XpFatal} - If parameters are not provided correctly
  */
 
-export async function setXP(userId: string, guildId: string, xpData: number, username?: string): Promise<UserResult> {
+export async function setXP(userId: string, guildId: string, xpData: number, username?: string): Promise<XPResult> {
 	if (!userId) throw new XpFatal({function: "setXP()", message: "User ID was not provided"});
 	if (!guildId) throw new XpFatal({function: "setXP()", message: "Guild ID was not provided"});
 	if (!xpData) throw new XpFatal({function: "setXP()", message: "XP was not provided"});
 
 	const user = await db.findOne({collection: "simply-xps", data: {user: userId, guild: guildId}});
+	let data;
 
 	if (!user) {
-		if (xp.auto_create && username) return await db.createOne({
+		if (xp.auto_create && username) data = await db.createOne({
 			collection: "simply-xps",
 			data: {
-				guild: guildId, user: userId, name: username, level: convert("xp", xpData), xp: xpData
+				guild: guildId, user: userId, name: username, level: convertFrom(xpData), xp: xpData
 			}
 		}) as UserResult;
 		else throw new XpFatal({function: "setXP()", message: "User does not exist"});
 	} else {
-		return await db.updateOne({
+		data = await db.updateOne({
 			collection: "simply-xps",
 			data: {user: userId, guild: guildId}
 		}, {
 			collection: "simply-xps",
 			data: {
 				user: userId, guild: guildId,
-				level: convert("xp", xpData), xp: xpData
+				level: convertFrom(xpData), xp: xpData
 			}
 		}) as UserResult;
 	}
+
+	return {...data, hasLevelledUp: data.level > user.level};
 }

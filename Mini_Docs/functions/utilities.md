@@ -1,7 +1,7 @@
 ## Functions
 
 <dl>
-<dt><a href="#convert">convert(type, value)</a> ⇒ <code>number</code></dt>
+<dt><a href="#convertFrom">convertFrom(type)</a> ⇒ <code>number</code></dt>
 <dd><p>Convert XP to level and vice versa.</p>
 </dd>
 <dt><a href="#updateOptions">updateOptions(clientOptions)</a> ⇒ <code>void</code></dt>
@@ -9,9 +9,9 @@
 </dd>
 </dl>
 
-<a name="convert"></a>
+<a name="convertFrom"></a>
 
-## convert(type, value) ⇒ <code>number</code>
+## convertFrom(type) ⇒ <code>number</code>
 
 Convert XP to level and vice versa.
 
@@ -21,12 +21,12 @@ Convert XP to level and vice versa.
 
 - <code>XpFatal</code> If an invalid type is provided or if the value is not provided.
 
-**Link**: `Documentation:` https://simplyxp.js.org/docs/convert
+**Link**: `Documentation:` https://simplyxp.js.org/docs/utilities/convert
 
-| Param | Type                                                          | Description                                             |
-|-------|---------------------------------------------------------------|---------------------------------------------------------|
-| type  | <code>&quot;xp&quot;</code> \| <code>&quot;level&quot;</code> | Type to coreFunctions from. Use either "xp" or "level". |
-| value | <code>number</code>                                           | Value to coreFunctions.                                 |
+| Param  | Type                                                          | Description                            |
+|--------|---------------------------------------------------------------|----------------------------------------|
+| value. | <code>number</code>                                           |                                        |
+| type   | <code>&quot;xp&quot;</code> \| <code>&quot;level&quot;</code> | Type to convert from (Default: level). |
 
 <a name="updateOptions"></a>
 
@@ -40,7 +40,7 @@ Updates the options of the XP client.
 
 - <code>XpFatal</code> If an invalid option is provided.
 
-**Link**: `Documentation:` https://simplyxp.js.org/docs/updateOptions
+**Link**: `Documentation:` https://simplyxp.js.org/docs/utilities/updateOptions
 
 | Param         | Type                          | Description                |
 |---------------|-------------------------------|----------------------------|

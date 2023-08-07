@@ -44,7 +44,7 @@ yarn add simply-xp@dev
 - Added `debug`, `auto_create`, `auto_purge` options for `connect()` function
 - Added `db` class for extended database functionality
 - Added `leaderboardCard()` function
-- Added `coreFunctions()` function
+- Added `convertFrom()` function
 - Added `migrate` class
 
 # 🎉 V2 Changes 🎉
@@ -67,4 +67,4 @@ yarn add simply-xp@dev
 - `rank()` is **deprecated**, use `rankCard()` instead.
 - `rankCard()` Requires completely new arguments.
 - `roleSetup()` functions loses `client` argument.
-- `leaderboard()` loses `client` argument.
+- `leaderboard()` loses `client` argument, and returns `user` instead of `userID`

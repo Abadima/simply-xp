@@ -2,7 +2,7 @@ import {Canvas, createCanvas, GlobalFonts, Image, loadImage, SKRSContext2D} from
 import {XpFatal, XpLog} from "./functions/xplogs";
 import {db} from "./functions/database";
 import {User} from "./leaderboard";
-import {convert} from "./functions/utilities";
+import {convertFrom} from "./functions/utilities";
 import {join} from "path";
 import {create, xp} from "../xp";
 
@@ -106,7 +106,7 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 		});
 	}
 
-	GlobalFonts.registerFromPath(options?.font || join(__dirname, "Fonts", "Baloo-Regular.ttf"), "Sans Serif");
+	GlobalFonts.registerFromPath(options?.font || join(__dirname, "Fonts", "Baloo-Regular.eot"), "Sans Serif");
 
 	if (!cachedRankImage) cachedRankImage = await loadImage(options?.background || "https://i.ibb.co/dck2Tnt/rank-card.webp");
 
@@ -128,8 +128,8 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 			TextEXP = shortener(dbUser.xp) + ` ${locales.xp}`,
 			LvlText = locales.level + ` ${shortener(dbUser.level)}`,
 			TextXpNeeded = "{current} / {needed}",
-			nextLevelXP = convert("level", dbUser.level + 1),
-			currentLevelXP = convert("level", dbUser.level),
+			nextLevelXP = convertFrom(dbUser.level + 1),
+			currentLevelXP = convertFrom(dbUser.level),
 			progress = (((100 * (dbUser.xp - currentLevelXP)) / (nextLevelXP - currentLevelXP)) * 660) / 100;
 
 
@@ -291,6 +291,8 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardOpt
 
 	if (!cachedLeaderboardArtwork && options?.artworkImage) cachedLeaderboardArtwork = await loadImage(options.artworkImage);
 	if (!cachedLeaderboardImage && options?.backgroundImage) cachedLeaderboardImage = await loadImage(options.backgroundImage);
+
+	GlobalFonts.registerFromPath(options?.font || join(__dirname, "Fonts", "Baloo-Regular.eot"), "Sans Serif");
 
 	if (!locales.level) locales.level = "LEVEL";
 	if (!locales.members) locales.members = "Members";

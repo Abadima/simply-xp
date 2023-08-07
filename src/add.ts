@@ -1,4 +1,4 @@
-import {convert} from "./functions/utilities";
+import {convertFrom} from "./functions/utilities";
 import {XpFatal} from "./functions/xplogs";
 import {db, UserResult} from "./functions/database";
 import {xp} from "../xp";
@@ -30,7 +30,7 @@ export async function addLevel(userId: string, guildId: string, level: number, u
 		if (xp.auto_create && username) return await db.createOne({
 			collection: "simply-xps",
 			data: {
-				guild: guildId, user: userId, name: username, level, xp: convert("level", level)
+				guild: guildId, user: userId, name: username, level, xp: convertFrom(level)
 			}
 		}) as UserResult;
 		else throw new XpFatal({function: "addLevel()", message: "User does not exist"});
@@ -43,12 +43,19 @@ export async function addLevel(userId: string, guildId: string, level: number, u
 			data: {
 				user: userId, guild: guildId,
 				level: user.level + level,
-				xp: convert("level", level + user.level)
+				xp: convertFrom(level + user.level)
 			}
 		}) as UserResult;
 	}
 }
 
+/**
+ * XP Results
+ * @property {boolean} hasLevelledUp - Whether the user has levelled up or not.
+ */
+interface XPResult extends UserResult {
+	hasLevelledUp: boolean;
+}
 
 /**
  * Add XP to a user.
@@ -58,10 +65,12 @@ export async function addLevel(userId: string, guildId: string, level: number, u
  * @param {number | {min: number, max: number}} xpData - The XP to add, can be a number or an object with min and max properties.
  * @param {string} username - Username to use if auto_create is enabled.
  * @link `Documentation:` https://simplyxp.js.org/docs/addxp
- * @returns {Promise<UserResult>} - Object of user data on success.
+ * @returns {Promise<XPResult>} - Object of user data on success.
  * @throws {XpFatal} - If parameters are not provided correctly.
  */
-export async function addXP(userId: string, guildId: string, xpData: number | { min: number, max: number }, username?: string): Promise<UserResult> {
+export async function addXP(userId: string, guildId: string,
+	xpData: number | { min: number, max: number }, username?: string): Promise<XPResult> {
+
 	if (typeof xpData !== "number" && (typeof xp !== "object" || !xpData.min || !xpData.max)) throw new XpFatal({
 		function: "addXP()", message: "XP is not a number or object, make sure you are using the correct syntax"
 	});
@@ -76,25 +85,33 @@ export async function addXP(userId: string, guildId: string, xpData: number | { 
 		collection: "simply-xps", data: {user: userId, guild: guildId}
 	}) as UserResult;
 
+	let data;
+
 	if (!user) {
-		if (xp.auto_create && username) return await db.createOne({
+		if (xp.auto_create && username) data = await db.createOne({
 			collection: "simply-xps",
 			data: {
-				guild: guildId, user: userId, name: username, level: convert("xp", xpData), xp: xpData
+				guild: guildId, user: userId, name: username, level: convertFrom(xpData, "xp"), xp: xpData
 			}
+		}).catch((err) => {
+			throw new XpFatal({function: "addXP()", message: err.stack});
 		}) as UserResult;
 		else throw new XpFatal({function: "addXP()", message: "User does not exist"});
 	} else {
-		return await db.updateOne({
+		data = await db.updateOne({
 			collection: "simply-xps",
 			data: {user: userId, guild: guildId}
 		}, {
 			collection: "simply-xps",
 			data: {
 				user: userId, guild: guildId,
-				level: convert("xp", user.xp + xpData),
+				level: convertFrom(user.xp + xpData, "xp"),
 				xp: user.xp + xpData
 			}
+		}).catch((err) => {
+			throw new XpFatal({function: "addXP()", message: err.stack});
 		}) as UserResult;
 	}
+
+	return {...data, hasLevelledUp: data.level > user.level};
 }

@@ -1,7 +1,6 @@
 <a name="rank"></a>
 
 ## ~~rank(message, userId, _guildId, options) ⇒ <code>Promise.&lt;{attachment: Buffer, description: string, name:
-
 string}&gt;</code>~~
 
 ***Deprecated***

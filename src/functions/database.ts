@@ -24,7 +24,16 @@ export interface UserOptions {
 	};
 }
 
-export type UserResult = {
+/**
+ * The result of a user document.
+ * @property {string} [_id] - The ID of the document.
+ * @property {string} user - The user ID.
+ * @property {string} [name] - The username.
+ * @property {string} guild - The guild ID.
+ * @property {number} level - The level.
+ * @property {number} xp - The XP.
+ */
+export interface UserResult {
 	_id?: string,
 	user: string;
 	name?: string;

@@ -24,7 +24,7 @@ export {charts} from "./src/charts";
 
 export {connect} from "./src/connect";
 
-export {convert, updateOptions} from "./src/functions/utilities";
+export {convertFrom, updateOptions} from "./src/functions/utilities";
 
 export {create} from "./src/create";
 
