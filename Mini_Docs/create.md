@@ -1,6 +1,6 @@
 <a name="create"></a>
 
-## create(guildId, userId, username) ⇒ <code>Promise.&lt;object&gt;</code>
+## create(userId, guildId, username) ⇒ <code>Promise.&lt;UserResult&gt;</code>
 
 Create a new user in the database
 
@@ -13,7 +13,7 @@ Create a new user in the database
 
 | Param    | Type                |
 |----------|---------------------|
-| guildId  | <code>string</code> | 
 | userId   | <code>string</code> | 
+| guildId  | <code>string</code> | 
 | username | <code>string</code> | 
 

@@ -9,3 +9,5 @@ src
 !lib/src
 Tests
 tsconfig.json
+UPDATES@DEV.md
+xp.ts

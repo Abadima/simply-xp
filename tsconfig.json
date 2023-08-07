@@ -6,7 +6,6 @@
     "allowUnusedLabels": false,
     "alwaysStrict": true,
     "declaration": true,
-    "declarationDir": "typings",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "module": "commonjs",
@@ -22,10 +21,11 @@
     "strict": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,
-    "target": "ES2021"
+    "target": "ESNext"
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "lib"
   ],
   "include": [
     "./src/fonts/Baloo-Regular.ttf",

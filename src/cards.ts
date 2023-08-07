@@ -2,8 +2,9 @@ import {Canvas, createCanvas, GlobalFonts, Image, loadImage, SKRSContext2D} from
 import {XpFatal, XpLog} from "./functions/xplogs";
 import {db} from "./functions/database";
 import {User} from "./leaderboard";
-import {convert} from "./functions/convert";
+import {convert} from "./functions/utilities";
 import {join} from "path";
+import {create, xp} from "../xp";
 
 type HexColor = `#${string}` | `0x${string}`;
 
@@ -14,14 +15,15 @@ let cachedLeaderboardArtwork: Image | null,
 	cachedLeaderboardImage: Image | null;
 
 /**
- * @property artworkColors - [HEX, RGB, RGBA]
- * @property borderColor - [HEX, RGB, RGBA]
- * @property backgroundColor - [HEX, RGB, RGBA]
- * @property artworkImage - [PNG, JPG, WEBP]
- * @property font - ABSOLUTE FILE PATH
- * @property light - Use light theme
+ * @property {[HexColor, HexColor]} artworkColors - Gradient colors
+ * @property {URL} artworkImage
+ * @property {[HexColor, HexColor]} borderColors - Gradient colors
+ * @property {HexColor} backgroundColor
+ * @property {URL} backgroundImage
+ * @property {string} font - ABSOLUTE FILE PATH
+ * @property {boolean} light - Use light theme
  */
-export type LeaderboardOptions = {
+export interface LeaderboardOptions {
 	artworkColors?: [HexColor, HexColor];
 	artworkImage?: URL;
 	borderColors?: [HexColor, HexColor];
@@ -32,17 +34,21 @@ export type LeaderboardOptions = {
 }
 
 /**
- * @property background - [PNG, JPG, WEBP]
- * @property font - ABSOLUTE FILE PATH
+ * @property {URL} background - Background image URL
+ * @property {HexColor} color
+ * @property {boolean} legacy - Use legacy card design
+ * @property {HexColor} lvlbar
+ * @property {HexColor} lvlbarBg
+ * @property {string} font - ABSOLUTE FILE PATH
  */
-export type RankCardOptions = {
+export interface RankCardOptions {
 	background?: URL;
 	color?: HexColor;
 	legacy?: boolean;
 	lvlbar?: HexColor;
 	lvlbarBg?: HexColor;
 	font?: string;
-};
+}
 
 export type UserOptions = {
 	id: string;
@@ -73,8 +79,8 @@ export type rankLocales = {
  * @throws {XpFatal} - If parameters are not provided correctly
  */
 export async function rankCard(guild: { id: string, name: string }, user: UserOptions, options: RankCardOptions = {}, locales: rankLocales = {}): Promise<{ attachment: Buffer; description: string; name: string; }> {
-	if (!guild) throw new XpFatal({function: "rankCard", message: "No Guild Provided"});
-	if (!user) throw new XpFatal({function: "rankCard", message: "No User Provided"});
+	if (!guild) throw new XpFatal({function: "rankCard()", message: "No Guild Provided"});
+	if (!user) throw new XpFatal({function: "rankCard()", message: "No User Provided"});
 
 	// TODO: Add support for modern mode
 	options.legacy = true;
@@ -84,19 +90,19 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 	if (!locales?.next_level) locales.next_level = "Next Level";
 	if (!locales?.xp) locales.xp = "XP";
 
-	XpLog.debug("rankCard", "LEGACY MODE ENABLED");
-	XpLog.info("rankCard", "Modern RankCard is not supported yet, coming soon!");
+	XpLog.debug("rankCard()", "LEGACY MODE ENABLED");
+	XpLog.info("rankCard()", "Modern RankCard is not supported yet, coming soon!");
 
 	if (!user?.avatarURL.endsWith(".png") && !user.avatarURL.endsWith(".jpg") && !user.avatarURL.endsWith(".webp")) {
 		throw new XpFatal({
-			function: "rankCard", message: "Invalid avatar image, avatar image must be a png, jpg, or webp"
+			function: "rankCard()", message: "Invalid avatar image, avatar image must be a png, jpg, or webp"
 		});
 	}
 
 	// check if user.id and user.username and user.displayAvatarURL() exists
 	if (!user || !user.id || !user.username) {
 		throw new XpFatal({
-			function: "rankCard", message: "Invalid User Provided, user must contain id, username, and avatarURL."
+			function: "rankCard()", message: "Invalid User Provided, user must contain id, username, and avatarURL."
 		});
 	}
 
@@ -104,8 +110,11 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 
 	if (!cachedRankImage) cachedRankImage = await loadImage(options?.background || "https://i.ibb.co/dck2Tnt/rank-card.webp");
 
-	const dbUser = await db.findOne({collection: "simply-xps", data: {guild: guild.id, user: user.id}}) as User;
-	if (!dbUser) throw new XpFatal({function: "rankCard", message: "User not found in database"});
+	let dbUser = await db.findOne({collection: "simply-xps", data: {guild: guild.id, user: user.id}}) as User;
+	if (!dbUser) {
+		if (xp.auto_create) dbUser = await create(guild.id, user.id, user.username);
+		else throw new XpFatal({function: "rankCard()", message: "User not found in database"});
+	}
 
 	const users = await db.find({collection: "simply-xps", data: {guild: guild.id}}) as User[];
 
@@ -278,7 +287,7 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
  * @throws {XpFatal} - If parameters are not provided correctly
  */
 export async function leaderboardCard(data: Array<User>, options: LeaderboardOptions = {}, guildInfo?: { name: string, imageURL: string, memberCount: number }, locales: LeaderboardLocales = {}): Promise<{ attachment: Buffer; description: string; name: string; }> {
-	if (!data || data.length < 1) throw new XpFatal({function: "leaderboardCard", message: "There must be at least 1 user in the data array"});
+	if (!data || data.length < 1) throw new XpFatal({function: "leaderboardCard()", message: "There must be at least 1 user in the data array"});
 
 	if (!cachedLeaderboardArtwork && options?.artworkImage) cachedLeaderboardArtwork = await loadImage(options.artworkImage);
 	if (!cachedLeaderboardImage && options?.backgroundImage) cachedLeaderboardImage = await loadImage(options.backgroundImage);

@@ -3,7 +3,17 @@ import {Database} from "better-sqlite3";
 import {XpFatal} from "./xplogs";
 import {xp} from "../../xp";
 
-export type UserOptions = {
+/**
+ * Options for creating a user document.
+ * @property {string} collection - The collection to create the document in.
+ * @property {object} data - The data to create the document with.
+ * @property {string} data.guild - The guild ID.
+ * @property {string} [data.user] - The user ID.
+ * @property {string} [data.name] - The username.
+ * @property {number} [data.level] - The level.
+ * @property {number} [data.xp] - The XP.
+ */
+export interface UserOptions {
 	collection: "simply-xps";
 	data: {
 		guild: string;
@@ -23,12 +33,22 @@ export type UserResult = {
 	xp: number;
 }
 
-export type LevelRoleOptions = {
+/**
+ * Options for creating a level role document.
+ * @property {string} collection - The collection to create the document in.
+ * @property {object} data - The data to create the document with.
+ * @property {string} data.guild - The guild ID.
+ * @property {number} [data.level] - The level to assign the role at.
+ * @property {string | Array<string>} [data.roles] - The role(s) to assign.
+ * @property {string} data.timestamp - The timestamp of when the document was created.
+ */
+export interface LevelRoleOptions {
 	collection: "simply-xp-levelroles";
 	data: {
 		guild: string;
 		level?: number;
 		roles?: string | Array<string>;
+		timestamp: string;
 	};
 }
 
@@ -37,6 +57,7 @@ export type LevelRoleResult = {
 	guild: string;
 	level: number;
 	roles: Array<string>;
+	timestamp: string;
 }
 
 /**

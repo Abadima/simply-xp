@@ -41,10 +41,10 @@ yarn add simply-xp@dev
 # ✅ V2 Additions
 
 - Added support for `SQLite` database
-- Added `auto_purge` + `debug` option for `connect()` function
+- Added `debug`, `auto_create`, `auto_purge` options for `connect()` function
 - Added `db` class for extended database functionality
 - Added `leaderboardCard()` function
-- Added `convert()` function
+- Added `coreFunctions()` function
 - Added `migrate` class
 
 # 🎉 V2 Changes 🎉
@@ -55,13 +55,14 @@ yarn add simply-xp@dev
 - Better Code Quality (EsLint)
 - Complete TypeScript Rewrite
 - Deleted `chart.js` dependency
-- `fetch()` now also returns `position`
-- `roleSetup` functions now accept roleID arrays! `["role1", "role2", "role3"]`
-- `reset()` function now accepts "erase" as an optional argument
+- `fetch()` now also returns `position`, and accepts `username` parameter
+- `roleSetup` functions now accept roleID arrays! `["role1", "role2", "role3"]`, and will return `timestamp` as a bonus!
+- `reset()` function now accepts `username` and `erase` as optional arguments
+- `addLevel(), addXP(), setLevel(), setXP()` now has a `username` parameter, to automatically create the user if it doesn't exist. 
 
 # ⚠️ V2 Breaking Changes ⚠️
 
-- `create()` Requires new arguments.
+- `create()` Now requires `username` argument.
 - `charts()` Requires new arguments.
 - `rank()` is **deprecated**, use `rankCard()` instead.
 - `rankCard()` Requires completely new arguments.

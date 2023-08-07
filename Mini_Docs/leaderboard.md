@@ -1,6 +1,7 @@
 <a name="leaderboard"></a>
 
 ## leaderboard(guildId, limit) ⇒ <code>Promise.&lt;Array.&lt;User&gt;&gt;</code>
+
 Get array of all users in the leaderboard
 
 **Kind**: global function  
@@ -9,10 +10,10 @@ Get array of all users in the leaderboard
 
 - <code>XpFatal</code> If guild ID is not provided or limit is less than 1
 
-**Link**: `Documentation:` https://simplyxp.js.org/docs/leaderboard  
+**Link**: `Documentation:` https://simplyxp.js.org/docs/leaderboard
 
-| Param | Type | Description |
-| --- | --- | --- |
-| guildId | <code>string</code> | Guild ID |
-| limit | <code>number</code> | Limit of users to return |
+| Param   | Type                | Description              |
+|---------|---------------------|--------------------------|
+| guildId | <code>string</code> | Guild ID                 |
+| limit   | <code>number</code> | Limit of users to return |
 

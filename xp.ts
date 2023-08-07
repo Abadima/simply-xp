@@ -7,6 +7,7 @@ import {MongoClient} from "mongodb";
 export interface XPClient {
 	dbType: "mongodb" | "sqlite";
 	database: MongoClient | Database | undefined; // TODO: Remove undefined from database property
+	auto_create: boolean;
 	auto_purge: boolean;
 	notify: boolean;
 	debug: boolean;
@@ -23,7 +24,7 @@ export {charts} from "./src/charts";
 
 export {connect} from "./src/connect";
 
-export {convert} from "./src/functions/convert";
+export {convert, updateOptions} from "./src/functions/utilities";
 
 export {create} from "./src/create";
 
@@ -42,6 +43,7 @@ export {roleSetup} from "./src/roleSetup";
 export {setLevel, setXP} from "./src/set";
 
 export const xp: XPClient = {
+	auto_create: false,
 	auto_purge: false,
 	database: undefined,
 	debug: false,

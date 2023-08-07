@@ -4,7 +4,8 @@ import {xp} from "../xp";
 
 export type ConnectionOptions = {
 	type: "mongodb" | "sqlite" | undefined;
-	auto_purge?: false | unknown;
+	auto_create?: boolean;
+	auto_purge?: boolean;
 	notify?: boolean;
 	debug?: boolean;
 }
@@ -20,9 +21,10 @@ export type ConnectionOptions = {
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
  */
 export async function connect(uri: string, options: ConnectionOptions = {type: undefined}): Promise<boolean | void> {
-	const {type, auto_purge, notify, debug} = options;
+	const {type, auto_create, auto_purge, notify, debug} = options;
 	if (!uri) throw new XpFatal({function: "connect()", message: "No URI Provided"});
 	if (notify === false) xp.notify = false;
+	if (auto_create) xp.auto_create = true;
 	if (auto_purge) xp.auto_purge = true;
 	if (debug) xp.debug = true;
 
@@ -32,29 +34,25 @@ export async function connect(uri: string, options: ConnectionOptions = {type: u
 	}
 
 	switch (type) {
-	case "mongodb":
-		try {
-			const {MongoClient} = await import("mongodb");
-			const mongoPackage = await import("mongodb/package.json");
-			if (!mongoPackage.version.startsWith("5")) return XpLog.err("connect()", "MongoDB V5 is required");
+	case "mongodb": {
+		const {MongoClient} = await import("mongodb"), goodVersion = await checkPackageVersion("mongodb");
+		if (!goodVersion) return XpLog.err("connect()", "MongoDB V4 or higher is required");
 
-			const client = await MongoClient.connect(uri).catch((error) => {
-				throw new XpFatal({function: "connect()", message: error.message});
-			});
-			xp.dbType = "mongodb";
-			xp.database = client || undefined;
-		} catch (_) {
-			XpLog.info("connect()", "Installing MongoDB [5.x] | Please wait...");
-			execSync(`${await getPackageManager()} add mongodb@5.x.x`);
-			XpLog.warn("connect()", "Installed MongoDB. Please restart!");
-			process.exit(1);
-		}
+		const client = await MongoClient.connect(uri).catch((error) => {
+			throw new XpFatal({function: "connect()", message: error.message});
+		});
+		xp.dbType = "mongodb";
+		xp.database = client || undefined;
+	}
+
 		break;
 	case "sqlite":
 		try {
-			const betterSqlite3 = await import("better-sqlite3");
-			const sqlitePackage = await import("better-sqlite3/package.json");
-			if (!sqlitePackage.version.startsWith("8")) return XpLog.err("connect()", "SQLite V8 is required");
+			const [betterSqlite3, goodVersion] = await Promise.all([
+				import("better-sqlite3"), checkPackageVersion("sqlite")
+			]);
+
+			if (!goodVersion) return XpLog.err("connect()", "better-sqlite3 V7 or higher is required");
 
 			xp.database = new betterSqlite3.default(uri);
 			xp.dbType = "sqlite";
@@ -94,11 +92,6 @@ export async function connect(uri: string, options: ConnectionOptions = {type: u
 					throw new XpFatal({function: "connect()", message: errorWithCode.message});
 				}
 			}
-
-			XpLog.info("connect()", "Installing better-sqlite3 [V8]...");
-			execSync(`${await getPackageManager()} add better-sqlite3@8.x.x`);
-			XpLog.warn("connect()", "Installed better-sqlite3. | Please reboot!");
-			process.exit(0);
 		}
 		break;
 	default:
@@ -132,4 +125,38 @@ async function getPackageManager(): Promise<"yarn" | "npm" | "pnpm"> {
 	}
 	XpLog.debug("getPackageManager()", "Using NPM");
 	return "npm";
+}
+
+/**
+ * Check database package versions
+ * @private
+ * @param {"mongodb" | "sqlite"} type
+ * @returns {Promise<boolean>}
+ * @throws {XpFatal} If the package version is not supported
+ */
+export async function checkPackageVersion(type: "mongodb" | "sqlite"): Promise<boolean> {
+	switch (type) {
+	case "mongodb":
+		try {
+			const mongoPackage = await import("mongodb/package.json");
+			return parseInt(mongoPackage.version.substring(0, 1)) >= 4;
+
+		} catch (_) {
+			XpLog.info("checkPackageVersion()", "Installing MongoDB [5.x] | Please wait...");
+			execSync(`${await getPackageManager()} add mongodb@5.x.x`);
+			XpLog.warn("checkPackageVersion()", "Installed MongoDB. Please restart!");
+			return process.exit(1);
+		}
+
+	case "sqlite":
+		try {
+			const sqlitePackage = await import("better-sqlite3/package.json");
+			return parseInt(sqlitePackage.version.substring(0, 1)) >= 7;
+		} catch (_) {
+			XpLog.info("checkPackageVersion()", "Installing better-sqlite3 [V8] | Please wait...");
+			execSync(`${await getPackageManager()} add better-sqlite3@8.x.x`);
+			XpLog.warn("checkPackageVersion()", "Installed better-sqlite3. Please restart!");
+			return process.exit(1);
+		}
+	}
 }

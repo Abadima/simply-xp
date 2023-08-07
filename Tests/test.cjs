@@ -17,15 +17,15 @@ async function test(dbType) {
 		break;
 	}
 
-	await xp.create("0987654321", "1234567890", "Abadima");
+	await xp.create("1234567890", "0987654321", "Abadima");
 
-	await xp.create("0987654321", "1234567891", "Elizabeth");
+	await xp.create("1234567891", "0987654321", "Elizabeth");
 
-	await xp.create("0987654321", "1234567892", "Jena");
+	await xp.create("1234567892", "0987654321", "Jena");
 
-	await xp.create("0987654321", "1234567893", "Rahul");
+	await xp.create("1234567893", "0987654321", "Rahul");
 
-	await xp.create("0987654321", "1234567894", "Snowball");
+	await xp.create("1234567894", "0987654321", "Snowball");
 
 
 	await xp.setLevel("1234567890", "0987654321", Infinity);
@@ -44,7 +44,7 @@ async function test(dbType) {
 		},
 		{background: "https://img.freepik.com/free-vector/gradient-wavy-purple-background_23-2149117433.jpg"}
 	).then(results => {
-		require("fs").writeFileSync("rankcard.png", results.attachment);
+		require("fs").writeFileSync("Tests/rankcard.png", results.attachment);
 	});
 
 	await xp.leaderboard("0987654321").then(async (users) => {
@@ -57,7 +57,7 @@ async function test(dbType) {
 			imageURL: "https://cdn.discordapp.com/icons/950190034852646912/5a800bf4caf28bfcaccc214446b461c4.webp",
 			memberCount: 20
 		}).then(results => {
-			require("fs").writeFileSync("leaderboard.png", results.attachment);
+			require("fs").writeFileSync("Tests/leaderboard.png", results.attachment);
 		});
 	});
 }

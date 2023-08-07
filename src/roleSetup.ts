@@ -1,7 +1,13 @@
 import {db} from "../xp";
 import {XpFatal} from "./functions/xplogs";
 
-export type RoleSetupObject = {
+/**
+ * Role setup object
+ * @property {string} guild - The guild ID
+ * @property {number} level - The level number
+ * @property {string[] | string} roles - The role(s) to add
+ */
+export interface RoleSetupObject {
 	guild?: string;
 	level: number;
 	roles: string[] | string;
@@ -37,7 +43,9 @@ export class roleSetup {
 		if (typeof options?.roles === "string") options.roles = [options.roles];
 
 		return await db.createOne({
-			collection: "simply-xp-levelroles", data: {guild: guildId, level: options.level, roles: options.roles}
+			// make a new ISO date
+			collection: "simply-xp-levelroles",
+			data: {guild: guildId, level: options.level, roles: options.roles, timestamp: new Date().toISOString()}
 		}) as unknown as boolean;
 	}
 
@@ -57,7 +65,8 @@ export class roleSetup {
 		});
 
 		return await db.findOne({
-			collection: "simply-xp-levelroles", data: {guild: guildId, level: levelNumber}
+			collection: "simply-xp-levelroles",
+			data: {guild: guildId, level: levelNumber, timestamp: new Date().toISOString()}
 		}) as RoleSetupObject;
 	}
 
@@ -77,7 +86,8 @@ export class roleSetup {
 		});
 
 		return await db.deleteOne({
-			collection: "simply-xp-levelroles", data: {guild: guildId, level: levelNumber}
+			collection: "simply-xp-levelroles",
+			data: {guild: guildId, level: levelNumber, timestamp: new Date().toISOString()}
 		});
 	}
 }

@@ -1,10 +1,19 @@
 import {XpFatal} from "./functions/xplogs";
 import {db} from "./functions/database";
 
-export type User = {
+/**
+ * User object
+ * @property {string} guild - Guild ID
+ * @property {string} user - User ID
+ * @property {string} name - Username
+ * @property {number} position - Position in leaderboard
+ * @property {number} level - User level
+ * @property {number} xp - User XP
+ */
+export interface User {
 	guild: string;
 	user: string;
-	name?: string;
+	name?: string | null;
 	position?: number;
 	level: number;
 	xp: number;
@@ -27,6 +36,5 @@ export async function leaderboard(guildId: string, limit?: number): Promise<User
 	users.forEach((user, index) => user.position = index + 1);
 
 	if (limit) return users.slice(0, limit);
-
 	return users;
 }

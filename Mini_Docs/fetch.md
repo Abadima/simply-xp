@@ -1,6 +1,6 @@
 <a name="fetch"></a>
 
-## fetch(userId, guildId) ⇒ <code>Promise.&lt;{name: (string\|null), user: string, guild: string, level: number, position: number, xp: number}&gt;</code>
+## fetch(userId, guildId, username) ⇒ <code>Promise.&lt;{name: (string\|null), user: string, guild: string, level: number, position: number, xp: number}&gt;</code>
 
 Fetch user data
 
@@ -11,8 +11,9 @@ Fetch user data
 
 **Link**: `Documentation:` https://simplyxp.js.org/docs/fetch
 
-| Param   | Type                |
-|---------|---------------------|
-| userId  | <code>string</code> | 
-| guildId | <code>string</code> | 
+| Param    | Type                | Description                               |
+|----------|---------------------|-------------------------------------------|
+| userId   | <code>string</code> |                                           |
+| guildId  | <code>string</code> |                                           |
+| username | <code>string</code> | Username to use if auto_create is enabled |
 

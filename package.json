@@ -1,9 +1,8 @@
 {
   "name": "simply-xp",
-  "version": "2.0.0-dev.0-fix.0",
+  "version": "2.0.0-dev.1",
   "description": "The easiest way to implement xp system",
   "main": "lib/xp.js",
-  "typings": "typings",
   "scripts": {
     "beta": "node Tests/clean.mjs && pnpm update && npm publish --tag beta",
     "clean": "node Tests/clean.mjs",
@@ -12,7 +11,7 @@
     "latest": "node Tests/clean.mjs && pnpm update && npm publish",
     "test": "node Tests/clean.mjs && node Tests/test.cjs"
   },
-  "author": "Rahuletto",
+  "author": "Abadima",
   "keywords": [
     "amaribot",
     "charts",
@@ -45,7 +44,7 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.4",
-    "@types/node": "^20.4.5",
+    "@types/node": "^20.4.8",
     "@typescript-eslint/eslint-plugin": "^6.2.1",
     "@typescript-eslint/parser": "^6.2.1",
     "better-sqlite3": "8.5.0",
