@@ -27,7 +27,7 @@ interface NewClientOptions {
  *
  * @param {"xp" | "level"} type - Type to coreFunctions from. Use either "xp" or "level".
  * @param {number} value - Value to coreFunctions.
- * @link `Documentation:` https://simplyxp.js.org/docs/convert
+ * @link `Documentation:` https://simplyxp.js.org/docs/utilities/convert
  * @returns {number} - The converted value. (XP to level or level to XP)
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
  */
@@ -47,7 +47,7 @@ export function convert(type: "xp" | "level", value: number): number {
 /**
  * Updates the options of the XP client.
  * @param {NewClientOptions} clientOptions - The new options to update.
- * @link `Documentation:` https://simplyxp.js.org/docs/updateOptions
+ * @link `Documentation:` https://simplyxp.js.org/docs/utilities/updateOptions
  * @returns {void} - Nothing.
  * @throws {XpFatal} If an invalid option is provided.
  */

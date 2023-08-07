@@ -67,3 +67,4 @@ yarn add simply-xp@dev
 - `rank()` is **deprecated**, use `rankCard()` instead.
 - `rankCard()` Requires completely new arguments.
 - `roleSetup()` functions loses `client` argument.
+- `leaderboard()` loses `client` argument.

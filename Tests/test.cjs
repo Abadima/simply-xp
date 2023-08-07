@@ -34,7 +34,9 @@ async function test(dbType) {
 
 	await xp.setLevel("1234567893", "0987654321", 420690000);
 
-	await xp.setLevel("1234567892", "0987654321", 100);
+	await xp.setLevel("1234567892", "0987654321", 100).then(console.log)
+
+	await xp.addXP("1234567892", "0987654321", 650).then(console.log)
 
 	await xp.rankCard(
 		{id: "0987654321", name: "SimplyTests"},
