@@ -6,7 +6,8 @@
   "typings": "index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "beta": "eslint . --fix && npm update && npm publish --tag beta"
+    "beta": "eslint . --fix && npm update && npm publish --tag beta",
+    "legacy": "eslint . --fix && npm update && npm publish --tag legacy"
   },
   "author": "Rahuletto",
   "keywords": [

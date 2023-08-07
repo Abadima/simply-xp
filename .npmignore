@@ -1,7 +1,9 @@
+.eslintrc.json
 .gitignore
+.github
+.idea
 .tgz
 .vscode
-eslintrc.json
 Examples
 node_modules
 pnpm-lock.yaml
