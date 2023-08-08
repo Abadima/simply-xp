@@ -1,10 +1,12 @@
 const xp = require("../lib/xp.js");
 
+const MongoURL = "mongodb+srv://test-bot:VoPMOHg4jBuvMYVP@test.k9xds.mongodb.net/?retryWrites=true&w=majority";
+
 async function test(dbType) {
 
 	switch (dbType) {
 	case "mongodb":
-		await xp.connect("mongodb+srv://test-bot:VoPMOHg4jBuvMYVP@test.k9xds.mongodb.net/?retryWrites=true&w=majority", {
+		await xp.connect(MongoURL, {
 			type: "mongodb",
 			debug: true
 		});
@@ -27,16 +29,19 @@ async function test(dbType) {
 
 	await xp.create("1234567894", "0987654321", "Snowball");
 
-
 	await xp.setLevel("1234567890", "0987654321", Infinity);
 
 	await xp.setLevel("1234567891", "0987654321", 50);
 
 	await xp.setLevel("1234567893", "0987654321", 420690000);
 
-	await xp.setLevel("1234567892", "0987654321", 100).then(console.log)
+	await xp.setLevel("1234567892", "0987654321", 0);
 
-	await xp.addXP("1234567892", "0987654321", 650).then(console.log)
+	await xp.addXP("1234567892", "0987654321", 650);
+
+	await xp.reset("1234567892", "0987654321").then(console.log);
+
+	await xp.fetch("1234567892", "0987654321").then(console.log);
 
 	await xp.rankCard(
 		{id: "0987654321", name: "SimplyTests"},

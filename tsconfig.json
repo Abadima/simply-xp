@@ -17,6 +17,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "outDir": "lib",
+    "removeComments": false,
     "resolveJsonModule": true,
     "strict": true,
     "strictFunctionTypes": true,

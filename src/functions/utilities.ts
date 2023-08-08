@@ -32,7 +32,7 @@ interface NewClientOptions {
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
  */
 export function convertFrom(value: number, type: "xp" | "level" = "level"): number {
-	if (!value) throw new XpFatal({function: "convertFrom()", message: "Value was not provided"});
+	if (isNaN(value)) throw new XpFatal({function: "convertFrom()", message: "Value was not provided"});
 	if (type !== "xp" && type !== "level") throw new XpFatal({
 		function: "convert()", message: "Invalid type provided"
 	});
@@ -53,6 +53,7 @@ export function convertFrom(value: number, type: "xp" | "level" = "level"): numb
  */
 export function updateOptions(clientOptions: NewClientOptions): void {
 	if (!clientOptions) throw new XpFatal({function: "updateOptions()", message: "Options were not provided"});
+
 	if (typeof clientOptions !== "object") throw new XpFatal({
 		function: "updateOptions()", message: "Options must be an object"
 	});

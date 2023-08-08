@@ -18,7 +18,7 @@ import {xp} from "../xp";
 export async function setLevel(userId: string, guildId: string, level: number, username?: string): Promise<UserResult> {
 	if (!userId) throw new XpFatal({function: "setLevel()", message: "User ID was not provided"});
 	if (!guildId) throw new XpFatal({function: "setLevel()", message: "Guild ID was not provided"});
-	if (!level) throw new XpFatal({function: "setLevel()", message: "Level was not provided"});
+	if (isNaN(level)) throw new XpFatal({function: "setLevel()", message: "Level was not provided"});
 
 	const user = await db.findOne({collection: "simply-xps", data: {user: userId, guild: guildId}});
 
@@ -33,12 +33,11 @@ export async function setLevel(userId: string, guildId: string, level: number, u
 	} else {
 		return await db.updateOne({
 			collection: "simply-xps",
-			data: {user: userId, guild: guildId,}
+			data: {user: userId, guild: guildId}
 		}, {
 			collection: "simply-xps",
 			data: {
-				user: userId, guild: guildId,
-				level, xp: convertFrom(level)
+				user: userId, guild: guildId, level, xp: convertFrom(level)
 			}
 		}) as UserResult;
 	}
@@ -68,7 +67,7 @@ interface XPResult extends UserResult {
 export async function setXP(userId: string, guildId: string, xpData: number, username?: string): Promise<XPResult> {
 	if (!userId) throw new XpFatal({function: "setXP()", message: "User ID was not provided"});
 	if (!guildId) throw new XpFatal({function: "setXP()", message: "Guild ID was not provided"});
-	if (!xpData) throw new XpFatal({function: "setXP()", message: "XP was not provided"});
+	if (isNaN(xpData)) throw new XpFatal({function: "setXP()", message: "XP was not provided"});
 
 	const user = await db.findOne({collection: "simply-xps", data: {user: userId, guild: guildId}});
 	let data;

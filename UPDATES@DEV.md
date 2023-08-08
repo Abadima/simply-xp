@@ -1,5 +1,33 @@
 # VERSION 2@DEV CHANGELOGS
 
+## [DEV 3](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.2)
+
+### Additions
+- Added `db.getCollection()` feature, useful for custom database implementations.
+- Implemented `migrate.fromDB()`, from MongoDB to SQLite. (Support for SQLite to MongoDB coming soon)
+
+### ⚠️ Breaking Changes
+
+- `migrate.discord_xp()` removes `dbUrl` parameter.
+- `migrate.database()` => `migrate.fromDB()`
+- `reset()` switches `username` and `erase` parameters around.
+
+### Changes
+
+- Overhauled `migrate.discord_xp()` function, should fix issues and remove unnecessary requirements.
+
+### Bug Fixes
+
+- Fix `reset()` not properly resetting users.
+
+## [DEV 2 FIX 0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.2)
+
+### Bug Fixes
+
+- Fix SQLite Issues (`updateOne()`, `createOne()`), "Collection Mismatch" error, and `name` not being added on
+  create/update.
+- Fix `convertFrom()`, `setLevel()`, `setXP()`, `addLevel()`, `addXP()` throwing error when "0" is passed as value
+
 ## [DEV 2](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.2)
 
 ### Additions
@@ -34,7 +62,8 @@
 - `fetch()` has a new `username` parameter, to automatically create the user if it doesn't exist.
 - `connect()` now accepts `auto_create`, All functions can create the user if it doesn't exist, avoiding errors.
 - Updated JSDocs, changed some types to interfaces.
-- `addLevel(), addXP(), setLevel(), setXP()` now has a `username` parameter, to automatically create the user if it doesn't exist.
+- `addLevel(), addXP(), setLevel(), setXP()` now has a `username` parameter, to automatically create the user if it
+  doesn't exist.
 - `rank()` will now auto create the user if it doesn't exist if `auto_create` is set to `true`.
 
 ## [DEV 0 FIX 2](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.0)

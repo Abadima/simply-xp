@@ -59,30 +59,17 @@ export async function connect(uri: string, options: ConnectionOptions = {type: u
 
 			xp.database.exec(`CREATE TABLE IF NOT EXISTS "simply-xps"
                               (
-                                  user
-                                  TEXT
-                                  UNIQUE,
-                                  guild
-                                  TEXT,
-                                  xp
-                                  INTEGER
-                                  DEFAULT
-                                  0,
-                                  level
-                                  INTEGER
-                                  DEFAULT
-                                  0
+                                  user  TEXT NOT NULL,
+                                  guild TEXT NOT NULL,
+                                  name  TEXT    DEFAULT "Unknown",
+                                  level INTEGER DEFAULT 0,
+                                  xp    INTEGER DEFAULT 0
                               )`
 			);
 			xp.database.exec(`CREATE TABLE IF NOT EXISTS "simply-xp-levelroles"
                               (
-                                  gid
-                                  TEXT
-                                  UNIQUE,
-                                  lvlrole
-                                  TEXT
-                                  NOT
-                                  NULL
+                                  gid     TEXT UNIQUE,
+                                  lvlrole TEXT NOT NULL
                               )`
 			);
 		} catch (error: unknown) {
@@ -140,7 +127,6 @@ export async function checkPackageVersion(type: "mongodb" | "sqlite"): Promise<b
 		try {
 			const mongoPackage = await import("mongodb/package.json");
 			return parseInt(mongoPackage.version.substring(0, 1)) >= 4;
-
 		} catch (_) {
 			XpLog.info("checkPackageVersion()", "Installing MongoDB [5.x] | Please wait...");
 			execSync(`${await getPackageManager()} add mongodb@5.x.x`);

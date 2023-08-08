@@ -6,6 +6,7 @@
 
 * [db](#db)
     * [new db()](#new_db_new)
+    * [.getCollection(collection)](#db.getCollection) ⇒ <code>Collection</code>
     * [.createOne(query)](#db.createOne) ⇒ <code>Promise.&lt;(UserResult\|LevelRoleResult)&gt;</code>
     * [.deleteOne(query)](#db.deleteOne) ⇒ <code>Promise.&lt;boolean&gt;</code>
     * [.findOne(query)](#db.findOne) ⇒ <code>Promise.&lt;(UserResult\|LevelRoleResult)&gt;</code>
@@ -18,6 +19,24 @@
 ### new db()
 
 Database class providing methods to interact with the database.
+
+<a name="db.getCollection"></a>
+
+### db.getCollection(collection) ⇒ <code>Collection</code>
+
+Gets a collection from the database.
+
+**Kind**: static method of [<code>db</code>](#db)  
+**Returns**: <code>Collection</code> - The collection.  
+**Throws**:
+
+- <code>XpFatal</code> Throws an error if there is no database connection, or database type is invalid.
+
+**Link**: https://simplyxp.js.org/docs/handlers/database#getCollection Documentation
+
+| Param      | Type                    | Description            |
+|------------|-------------------------|------------------------|
+| collection | <code>collection</code> | The collection to get. |
 
 <a name="db.createOne"></a>
 

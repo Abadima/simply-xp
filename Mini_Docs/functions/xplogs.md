@@ -1,12 +1,3 @@
-## Classes
-
-<dl>
-<dt><a href="#XpFatal">XpFatal</a></dt>
-<dd></dd>
-<dt><a href="#XpLog">XpLog</a></dt>
-<dd></dd>
-</dl>
-
 <a name="XpFatal"></a>
 
 ## XpFatal
@@ -32,15 +23,4 @@ Emits a simple error message
 | Param   | Type                    |
 |---------|-------------------------|
 | options | <code>errOptions</code> | 
-
-<a name="XpLog"></a>
-
-## XpLog
-
-**Kind**: global class  
-<a name="new_XpLog_new"></a>
-
-### new XpLog()
-
-Emits a log message
 

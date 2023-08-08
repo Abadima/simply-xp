@@ -28,6 +28,7 @@ Object.defineProperty(XpFatal.prototype, "name", {
 /**
  * Emits a log message
  * @class XpLog
+ * @private
  */
 export class XpLog {
 	/**
@@ -63,20 +64,24 @@ export class XpLog {
 	 * Emits an info log
 	 * @param {string} command - The command or context of the log message
 	 * @param {string} message - The log message
+	 * @returns {boolean} Returns true
 	 * @private
 	 */
-	static info(command: string, message: string) {
+	static info(command: string, message: string): boolean {
 		if (xp.notify) XpLog.log("info", command, message);
+		return true;
 	}
 
 	/**
 	 * Emits an error log
 	 * @param {string} command - The command or context of the log message
 	 * @param {string} message - The log message
+	 * @returns {boolean} Returns false
 	 * @private
 	 */
-	static err(command: string, message: string) {
+	static err(command: string, message: string): boolean {
 		XpLog.log("error", command, message);
+		return false;
 	}
 
 	/**

@@ -20,7 +20,7 @@ export async function addLevel(userId: string, guildId: string, level: number, u
 
 	if (!guildId) throw new XpFatal({function: "addLevel()", message: "Guild ID was not provided"});
 
-	if (!level) throw new XpFatal({function: "addLevel()", message: "Level was not provided"});
+	if (isNaN(level)) throw new XpFatal({function: "addLevel()", message: "Level was not provided"});
 
 	const user = await db.findOne({
 		collection: "simply-xps", data: {user: userId, guild: guildId}

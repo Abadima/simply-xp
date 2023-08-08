@@ -15,6 +15,6 @@ Reset user levels to 0 in a guild
 |----------|----------------------|--------------------|--------------------------------|
 | userId   | <code>string</code>  |                    |                                |
 | guildId  | <code>string</code>  |                    |                                |
-| username | <code>string</code>  |                    |                                |
 | erase    | <code>boolean</code> | <code>false</code> | Erase user entry from database |
+| username | <code>string</code>  |                    |                                |
 

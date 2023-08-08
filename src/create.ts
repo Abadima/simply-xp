@@ -1,4 +1,4 @@
-import {XpFatal, XpLog} from "./functions/xplogs";
+import {XpFatal} from "./functions/xplogs";
 import {UserResult} from "./functions/database";
 
 /**
@@ -16,9 +16,6 @@ export async function create(userId: string, guildId: string, username: string):
 	if (!guildId) throw new XpFatal({function: "create()", message: "Guild ID was not provided"});
 	if (!username) throw new XpFatal({function: "create()", message: "Username was not provided"});
 
-	// TODO: Remove this warning in the next DEV release
-	XpLog.warn("create()", "We just swapped userId with guildId again, this warning will be removed in the next DEV release.");
-
 	const {db} = await import("./functions/database"),
 		user = await db.findOne({collection: "simply-xps", data: {user: userId, guild: guildId}}) as UserResult;
 
@@ -27,4 +24,3 @@ export async function create(userId: string, guildId: string, username: string):
 		collection: "simply-xps", data: {name: username, user: userId, guild: guildId, level: 0, xp: 0}
 	}) as UserResult;
 }
-

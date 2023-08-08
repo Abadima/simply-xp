@@ -6,8 +6,8 @@
 
 * [migrate](#migrate)
     * [new migrate()](#new_migrate_new)
-    * [.discord_xp(dbUrl, deleteOld)](#migrate.discord_xp) ⇒ <code>Promise.&lt;boolean&gt;</code>
-    * [.database(from)](#migrate.database) ⇒ <code>Promise.&lt;boolean&gt;</code>
+    * [.discord_xp(deleteOld)](#migrate.discord_xp) ⇒ <code>Promise.&lt;boolean&gt;</code>
+    * [.fromDB(dbType, connection)](#migrate.fromDB) ⇒ <code>Promise.&lt;boolean&gt;</code>
 
 <a name="new_migrate_new"></a>
 
@@ -17,7 +17,7 @@ Migration functions
 
 <a name="migrate.discord_xp"></a>
 
-### migrate.discord\_xp(dbUrl, deleteOld) ⇒ <code>Promise.&lt;boolean&gt;</code>
+### migrate.discord\_xp(deleteOld) ⇒ <code>Promise.&lt;boolean&gt;</code>
 
 Effortlessly migrate from discord-xp to simply-xp.
 
@@ -25,18 +25,17 @@ Effortlessly migrate from discord-xp to simply-xp.
 **Returns**: <code>Promise.&lt;boolean&gt;</code> - - Returns true if migration is successful  
 **Throws**:
 
-- <code>XpFatal</code> - If parameters are not provided correctly
+- <code>XpLog.err</code> - If migration fails.
 
 **Link**: `Documentation:` https://simplyxp.js.org/docs/migrate/discord_xp
 
-| Param     | Type                 | Description                     |
-|-----------|----------------------|---------------------------------|
-| dbUrl     | <code>URL</code>     | MongoDB URL                     |
-| deleteOld | <code>boolean</code> | Delete old data after migration |
+| Param     | Type                 | Default            | Description                     |
+|-----------|----------------------|--------------------|---------------------------------|
+| deleteOld | <code>boolean</code> | <code>false</code> | Delete old data after migration |
 
-<a name="migrate.database"></a>
+<a name="migrate.fromDB"></a>
 
-### migrate.database(from) ⇒ <code>Promise.&lt;boolean&gt;</code>
+### migrate.fromDB(dbType, connection) ⇒ <code>Promise.&lt;boolean&gt;</code>
 
 Effortlessly migrate from MongoDB to SQLite. (or vice versa)
 
@@ -48,7 +47,8 @@ Effortlessly migrate from MongoDB to SQLite. (or vice versa)
 
 **Link**: `Documentation:` https://simplyxp.js.org/docs/migrate/database
 
-| Param | Type                                                                |
-|-------|---------------------------------------------------------------------|
-| from  | <code>&quot;mongodb&quot;</code> \| <code>&quot;sqlite&quot;</code> | 
+| Param      | Type                                                                |
+|------------|---------------------------------------------------------------------|
+| dbType     | <code>&quot;mongodb&quot;</code> \| <code>&quot;sqlite&quot;</code> | 
+| connection | <code>Database</code> \| <code>MongoClient</code>                   | 
 

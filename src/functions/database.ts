@@ -1,4 +1,4 @@
-import {Document, MongoClient} from "mongodb";
+import {Collection, Document, MongoClient} from "mongodb";
 import {Database} from "better-sqlite3";
 import {XpFatal} from "./xplogs";
 import {xp} from "../../xp";
@@ -74,6 +74,20 @@ export type LevelRoleResult = {
  * @class db
  */
 export class db {
+
+	/**
+	 * Gets a collection from the database.
+	 * @param {collection} collection - The collection to get.
+	 * @link https://simplyxp.js.org/docs/handlers/database#getCollection Documentation
+	 * @returns {Collection} The collection.
+	 * @throws {XpFatal} Throws an error if there is no database connection, or database type is invalid.
+	 */
+	static getCollection(collection: string): Collection {
+		if (!xp.database) throw new XpFatal({function: "getCollection()", message: "No database connection"});
+		if (xp.dbType !== "mongodb") throw new XpFatal({function: "getCollection()", message: "MongoDB has to be your database type to use this function."});
+		return (xp.database as MongoClient).db().collection(collection);
+	}
+
 	/**
 	 * Creates one document in the database.
 	 *
@@ -93,7 +107,7 @@ export class db {
 			break;
 
 		case "sqlite":
-			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("INSERT INTO \"simply-xps\" (user, guild, xp, level) VALUES (?, ?, ?, ?)").run(query.data.user, query.data.guild, query.data.xp, query.data.level);
+			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("INSERT INTO \"simply-xps\" (user, guild, name, xp, level) VALUES (?, ?, ?, ?, ?)").run(query.data.user, query.data.guild, query.data?.name, query.data.xp, query.data.level);
 			else result = (xp.database as Database).prepare("INSERT INTO \"simply-xp-levelroles\" (guild, level, role) VALUES (?, ?, ?)").run(query.data.guild, query.data.level, query.data.roles);
 			break;
 		}
@@ -196,9 +210,11 @@ export class db {
 			break;
 
 		case "sqlite":
-			if (filter.collection === "simply-xps" && update.collection === "simply-xps") (xp.database as Database).prepare("UPDATE \"simply-xps\" SET xp = ?, level = ? WHERE guild = ? AND user = ?").run(update.data.xp, update.data.level, filter.data.guild, filter.data.user);
-			if (filter.collection === "simply-xps" && update.collection === "simply-xp-levelroles") (xp.database as Database).prepare("UPDATE \"simply-xp-levelroles\" SET role = ? WHERE guild = ? AND level = ?").run(update.data.roles, filter.data.guild, filter.data.level);
-			else throw new XpFatal({function: "updateOne()", message: "Collection mismatch, expected same collection on both filter and update."});
+			if (filter.collection === "simply-xps" && update.collection === "simply-xps") (xp.database as Database).prepare("UPDATE \"simply-xps\" SET name = ?, xp = ?, level = ? WHERE guild = ? AND user = ?").run(update.data?.name, update.data.xp, update.data.level, filter.data.guild, filter.data.user);
+			else if (filter.collection === "simply-xp-levelroles" && update.collection === "simply-xp-levelroles") (xp.database as Database).prepare("UPDATE \"simply-xp-levelroles\" SET role = ? WHERE guild = ? AND level = ?").run(update.data.roles, filter.data.guild, filter.data.level);
+			else throw new XpFatal({
+				function: "updateOne()", message: "Collection mismatch, expected same collection on both filter and update."
+			});
 		}
 		return db.findOne(update);
 	}
