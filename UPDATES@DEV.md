@@ -1,6 +1,6 @@
 # VERSION 2@DEV CHANGELOGS
 
-## [DEV 3 FIX 0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.3)
+## [DEV 3 FIX 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.3)
 
 ### Bug Fixes
 

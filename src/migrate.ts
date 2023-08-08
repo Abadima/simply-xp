@@ -1,6 +1,6 @@
 import {XpFatal, XpLog} from "./functions/xplogs";
 import {db} from "./functions/database";
-import {xp} from "../xp";
+import {convertFrom, xp} from "../xp";
 import {MongoClient} from "mongodb";
 import {Database} from "better-sqlite3";
 import {checkPackageVersion} from "./connect";
@@ -30,7 +30,7 @@ export class migrate {
 				})) {
 					await db.createOne({
 						collection: "simply-xps",
-						data: {guild: user.guildID, user: user.userID, xp: user.xp, level: user.level}
+						data: {guild: user.guildID, user: user.userID, xp: user.xp, level: convertFrom(user.xp, "xp")}
 					});
 					if (deleteOld) await db.getCollection("levels").deleteOne({
 						userID: user.userID, guildID: user.guildID
