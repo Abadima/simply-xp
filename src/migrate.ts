@@ -20,7 +20,7 @@ export class migrate {
 	 * @throws {XpLog.err} - If migration fails.
 	 */
 	static async discord_xp(deleteOld: boolean = false): Promise<boolean> {
-		const results = await db.getCollection("Levels").find().toArray();
+		const results = await db.getCollection("levels").find().toArray();
 		XpLog.debug("migrate.discord_xp()", `FOUND ${results.length} DOCUMENTS`);
 
 		try {
@@ -32,7 +32,7 @@ export class migrate {
 						collection: "simply-xps",
 						data: {guild: user.guildID, user: user.userID, xp: user.xp, level: user.level}
 					});
-					if (deleteOld) await db.getCollection("Levels").deleteOne({
+					if (deleteOld) await db.getCollection("levels").deleteOne({
 						userID: user.userID, guildID: user.guildID
 					});
 				}

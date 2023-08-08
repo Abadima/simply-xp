@@ -1,6 +1,13 @@
 # VERSION 2@DEV CHANGELOGS
 
-## [DEV 3](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.2)
+## [DEV 3 FIX 0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.3)
+
+### Bug Fixes
+
+- Attempt fix `migrate.discord_xp()` not properly migrating users.
+- Fix changelog links for [DEV 3] release
+
+## [DEV 3](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.3)
 
 ### Additions
 - Added `db.getCollection()` feature, useful for custom database implementations.
