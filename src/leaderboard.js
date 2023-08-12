@@ -15,7 +15,7 @@ async function leaderboard(client, guildID, limit) {
 
 	let leaderboard = await levels.find({guild: guildID}).sort([["xp", "descending"]]);
 
-	let led = [];
+	let led = [], subtractPos = 0;
 
 	function shortener(count) {
 		const COUNT_ABBRS = ["", "k", "M", "T"];
@@ -28,10 +28,10 @@ async function leaderboard(client, guildID, limit) {
 
 	const led2 = leaderboard.map(async (key) => {
 		const user = await g.members.fetch(key.user).catch(() => null);
-		if (!user && options.auto_purge) return levels.deleteOne({user: key.user, guild: guildID});
-		if (key.xp === 0) return;
+		if (!user && options?.auto_purge) return levels.deleteOne({user: key.user, guild: guildID});
+		if (key.xp === 0 || !user) return subtractPos++;
 
-		let pos = leaderboard.indexOf(key) + 1;
+		let pos = leaderboard.indexOf(key) + 1 - subtractPos;
 		if (limit && pos > Number(limit)) return;
 
 		led.push({

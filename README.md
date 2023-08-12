@@ -33,6 +33,7 @@ yarn add simply-xp
 - Fixed Various Bugs
 - Updated `Chart.js`
 - D.JS v14 Support
+- Patched v1.3.5 Bugs
 
 
 # But Why ?

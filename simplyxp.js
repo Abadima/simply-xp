@@ -4,6 +4,8 @@ try {
 	console.warn("[XP] Discord.js is recommended for this package.");
 }
 
+module.exports.options = {auto_purge: false};
+
 module.exports.roleSetup = require("./src/roleSetup");
 
 module.exports.addLevel = require("./src/addLevel");
@@ -29,5 +31,3 @@ module.exports.setLevel = require("./src/setLevel");
 module.exports.setXP = require("./src/setXP");
 
 module.exports.reset = require("./src/reset");
-
-module.exports.options = {auto_purge: false};
