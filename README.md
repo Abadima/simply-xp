@@ -57,7 +57,7 @@ yarn add simply-xp@dev
 - Deleted `chart.js` dependency
 - `fetch()` now also returns `position`, and accepts `username` parameter
 - `roleSetup` functions now accept roleID arrays! `["role1", "role2", "role3"]`, and will return `timestamp` as a bonus!
-- `reset()` function now accepts `username` and `erase` as optional arguments
+- `reset()` function now accepts `erase` and `username` as optional arguments
 - `addLevel(), addXP(), setLevel(), setXP()` now has a `username` parameter, to automatically create the user if it doesn't exist. 
 
 # ⚠️ V2 Breaking Changes ⚠️

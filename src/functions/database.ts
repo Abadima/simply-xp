@@ -55,7 +55,7 @@ export interface LevelRoleOptions {
 	collection: "simply-xp-levelroles";
 	data: {
 		guild: string;
-		level?: number;
+		level: number;
 		roles?: string | Array<string>;
 		timestamp: string;
 	};

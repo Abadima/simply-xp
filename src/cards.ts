@@ -112,7 +112,7 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 
 	let dbUser = await db.findOne({collection: "simply-xps", data: {guild: guild.id, user: user.id}}) as User;
 	if (!dbUser) {
-		if (xp.auto_create) dbUser = await create(guild.id, user.id, user.username);
+		if (xp.auto_create) dbUser = await create(user.id, guild.id, user.username);
 		else throw new XpFatal({function: "rankCard()", message: "User not found in database"});
 	}
 

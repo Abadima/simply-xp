@@ -1,5 +1,11 @@
 # VERSION 2@DEV CHANGELOGS
 
+## [DEV 3 FIX 2](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.3)
+
+### Bug Fixes
+
+- Fix `rankCard()` creating users with incorrect parameters.
+
 ## [DEV 3 FIX 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.3)
 
 ### Bug Fixes

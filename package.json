@@ -1,6 +1,6 @@
 {
   "name": "simply-xp",
-  "version": "2.0.0-dev.3-fix.1",
+  "version": "2.0.0-dev.3-fix.2",
   "description": "The easiest way to implement xp system",
   "main": "lib/xp.js",
   "scripts": {
@@ -40,17 +40,16 @@
     "url": "git+https://github.com/Rahuletto/simply-xp.git"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.41"
+    "@napi-rs/canvas": "^0.1.43"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.4",
-    "@types/node": "^20.4.8",
+    "@types/node": "^20.5.0",
     "@typescript-eslint/eslint-plugin": "^6.3.0",
     "@typescript-eslint/parser": "^6.3.0",
     "better-sqlite3": "8.5.0",
     "discord.js": "^14.12.1",
-    "eslint": "^8.46.0",
-    "guilded.ts": "^0.20.2",
+    "eslint": "^8.47.0",
     "jsdoc-to-markdown": "^8.0.0",
     "mongodb": "^5.7.0",
     "typescript": "^5.1.6",
