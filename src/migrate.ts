@@ -1,7 +1,7 @@
 import {XpFatal, XpLog} from "./functions/xplogs";
-import {db} from "./functions/database";
+import {db, UserResult} from "./functions/database";
 import {convertFrom, xp} from "../xp";
-import {MongoClient} from "mongodb";
+import {Document, MongoClient} from "mongodb";
 import {Database} from "better-sqlite3";
 import {checkPackageVersion} from "./connect";
 
@@ -60,45 +60,51 @@ export class migrate {
 		});
 
 		if (xp.dbType === dbType) return XpLog.info("migrate.fromDB()", "Same database received, that was unnecessary!");
+		let results: UserResult[];
 
 		switch (dbType) {
 		case "mongodb":
 			try {
-				const goodVersion = await checkPackageVersion("mongodb");
-				if (!goodVersion) return XpLog.err("migrate.fromDB()", "MongoDB V4 or higher is required");
+				if (!await checkPackageVersion("mongodb")) return XpLog.err("migrate.fromDB()", "MongoDB V4 or higher is required");
 
-				(connection as MongoClient).db().collection("simply-xps").find().toArray().then(async (results) => {
-					XpLog.debug("migrate.fromDB()", `FOUND ${results.length} DOCUMENTS`);
+				results = (connection as MongoClient).db().collection("simply-xps").find().toArray() as Document as UserResult[];
+				XpLog.debug("migrate.fromDB()", `FOUND ${results.length} DOCUMENTS`);
 
-					for (const user of results) {
-						if (!await db.findOne({
-							collection: "simply-xps", data: {guild: user.guild, user: user.user}
-						})) {
-							await db.createOne({
-								collection: "simply-xps",
-								data: {guild: user.guild, user: user.user, xp: user.xp, level: user.level}
-							});
-						} else {
-							await db.updateOne({
-								collection: "simply-xps",
-								data: {guild: user.guild, user: user.user}
-							}, {
-								collection: "simply-xps",
-								data: {guild: user.guild, user: user.user, name: user.name, xp: user.xp, level: user.level}
-							});
-						}
-					}
-					return true;
-				});
 			} catch (error) {
 				XpLog.err("migrate.fromDB()", error as string);
+				return false;
 			}
-			return false;
+			break;
 
 		case "sqlite":
-			// TODO: SQLite migration
-			XpLog.warn("migrate.fromDB()", "SQLite migration is not yet supported, soon though!");
-			return false;
+			try {
+				if (!await checkPackageVersion("sqlite")) return XpLog.err("migrate.fromDB()", "better-sqlite3 V7 or higher is required");
+
+				results = (connection as Database).prepare("SELECT * FROM `simply-xps`").all() as UserResult[];
+				XpLog.debug("migrate.fromDB()", `FOUND ${results.length} ROWS`);
+
+			} catch (error) {
+				XpLog.err("migrate.fromDB()", error as string);
+				return false;
+			}
+			break;
 		}
+
+		await Promise.all(results.map(async (user) => {
+			if (!await db.findOne({collection: "simply-xps", data: {guild: user.guild, user: user.user}})) {
+				return db.createOne({
+					collection: "simply-xps", data: {guild: user.guild, user: user.user, xp: user.xp, level: user.level}
+				});
+			} else {
+				return db.updateOne({
+					collection: "simply-xps", data: {guild: user.guild, user: user.user}
+				}, {
+					collection: "simply-xps",
+					data: {guild: user.guild, user: user.user, name: user.name, xp: user.xp, level: user.level}
+				});
+			}
+		}));
+
+		return true;
 	}
 }

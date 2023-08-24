@@ -2,7 +2,7 @@
 
 ### Description
 
-An interface representing the options for a rank card.
+An interface representing the options for a leaderboard card.
 
 ### Properties
 

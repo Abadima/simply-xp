@@ -7,46 +7,44 @@ async function test(dbType) {
 	switch (dbType) {
 	case "mongodb":
 		await xp.connect(MongoURL, {
+			auto_create: true,
 			type: "mongodb",
 			debug: true
 		});
 		break;
 	case "sqlite":
 		await xp.connect("Tests/test.db", {
+			auto_create: true,
 			type: "sqlite",
 			debug: true
 		});
 		break;
 	}
 
-	await xp.create("1234567890", "0987654321", "Abadima");
+	/*	await xp.create("1234567890", "0987654321", "Abadima")
 
-	await xp.create("1234567891", "0987654321", "Elizabeth");
+		await xp.create("1234567891", "0987654321", "Elizabeth");
 
-	await xp.create("1234567892", "0987654321", "Jena");
+		await xp.create("1234567892", "0987654321", "Jena").then(console.log)
 
-	await xp.create("1234567893", "0987654321", "Rahul");
+		await xp.create("1234567893", "0987654321", "Rahul");
 
-	await xp.create("1234567894", "0987654321", "Snowball");
+		await xp.create("1234567894", "0987654321", "Snowball");*/
 
-	await xp.setLevel("1234567890", "0987654321", Infinity);
+	await xp.setLevel("1234567890", "0987654321", 25, "Abadima");
 
-	await xp.setLevel("1234567891", "0987654321", 50);
+	await xp.setLevel("1234567893", "0987654321", 20, "Rahul");
 
-	await xp.setLevel("1234567893", "0987654321", 420690000);
+	await xp.setLevel("1234567894", "0987654321", 15, "Jena");
 
-	await xp.setLevel("1234567892", "0987654321", 0);
+	await xp.addLevel("1234567892", "0987654321", 10, "Ash");
 
-	await xp.addXP("1234567892", "0987654321", 650);
-
-	await xp.reset("1234567892", "0987654321").then(console.log);
-
-	await xp.fetch("1234567892", "0987654321").then(console.log);
+	await xp.setLevel("1234567891", "0987654321", 5, "Elizabeth");
 
 	await xp.rankCard(
 		{id: "0987654321", name: "SimplyTests"},
 		{
-			avatarURL: "https://cdn.discordapp.com/avatars/326815959358898189/02ed1eef72af8eca955f35e309f8f3aa.webp",
+			avatarURL: "https://cdn.discordapp.com/avatars/326815959358898189/67f99af24216f6d98d8d61a3b127d160.webp",
 			id: "1234567890", username: "Abadima"
 		},
 		{background: "https://img.freepik.com/free-vector/gradient-wavy-purple-background_23-2149117433.jpg"}
@@ -67,6 +65,23 @@ async function test(dbType) {
 			require("fs").writeFileSync("Tests/leaderboard.png", results.attachment);
 		});
 	});
+
+	await xp.charts("0987654321", {
+		theme: "space",
+		type: "doughnut"
+	}).then(results => {
+		require("fs").writeFileSync("Tests/charts.png", results.attachment);
+	});
+
+	await xp.reset("1234567890", "0987654321", true);
+
+	await xp.reset("1234567893", "0987654321", true);
+
+	await xp.reset("1234567894", "0987654321", true);
+
+	await xp.reset("1234567892", "0987654321", true);
+
+	await xp.reset("1234567891", "0987654321", true);
 }
 
 test("mongodb");

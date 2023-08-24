@@ -103,7 +103,8 @@ export class db {
 
 		switch (xp.dbType) {
 		case "mongodb":
-			result = (xp.database as MongoClient).db().collection(query.collection).insertOne(query.data).catch(error => handleError(error, "createOne()")) as Document;
+			(xp.database as MongoClient).db().collection(query.collection).insertOne(query.data).catch(error => handleError(error, "createOne()"));
+			result = db.findOne(query);
 			break;
 
 		case "sqlite":

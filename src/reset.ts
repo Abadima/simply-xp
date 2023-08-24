@@ -13,7 +13,7 @@ import {db} from "./functions/database";
  * @returns {Promise<boolean>}
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
  */
-export async function reset(userId: string, guildId: string, erase: boolean = false, username?: string ): Promise<boolean> {
+export async function reset(userId: string, guildId: string, erase: boolean = false, username?: string): Promise<boolean> {
 	if (!userId || !guildId) {
 		throw new XpFatal({function: "reset()", message: "Invalid parameters provided"});
 	}

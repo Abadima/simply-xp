@@ -1,6 +1,6 @@
 <a name="reset"></a>
 
-## reset(userId, guildId, username, erase) ⇒ <code>Promise.&lt;boolean&gt;</code>
+## reset(userId, guildId, erase, username) ⇒ <code>Promise.&lt;boolean&gt;</code>
 
 Reset user levels to 0 in a guild
 
@@ -11,10 +11,10 @@ Reset user levels to 0 in a guild
 
 **Link**: `Documentation:` https://simplyxp.js.org/docs/reset
 
-| Param    | Type                 | Default            | Description                    |
-|----------|----------------------|--------------------|--------------------------------|
-| userId   | <code>string</code>  |                    |                                |
-| guildId  | <code>string</code>  |                    |                                |
-| erase    | <code>boolean</code> | <code>false</code> | Erase user entry from database |
-| username | <code>string</code>  |                    |                                |
+| Param    | Type                 | Default            | Description                               |
+|----------|----------------------|--------------------|-------------------------------------------|
+| userId   | <code>string</code>  |                    |                                           |
+| guildId  | <code>string</code>  |                    |                                           |
+| erase    | <code>boolean</code> | <code>false</code> | Erase user entry from the database        |
+| username | <code>string</code>  |                    | Username to use if auto_create is enabled |
 

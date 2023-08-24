@@ -6,7 +6,7 @@ import {MongoClient} from "mongodb";
 
 export interface XPClient {
 	dbType: "mongodb" | "sqlite";
-	database: MongoClient | Database | undefined; // TODO: Remove undefined from database property
+	database: MongoClient | Database | undefined;
 	auto_create: boolean;
 	auto_purge: boolean;
 	notify: boolean;

@@ -29,9 +29,7 @@ export async function addLevel(userId: string, guildId: string, level: number, u
 	if (!user) {
 		if (xp.auto_create && username) return await db.createOne({
 			collection: "simply-xps",
-			data: {
-				guild: guildId, user: userId, name: username, level, xp: convertFrom(level)
-			}
+			data: {guild: guildId, user: userId, name: username, level, xp: convertFrom(level)}
 		}) as UserResult;
 		else throw new XpFatal({function: "addLevel()", message: "User does not exist"});
 	} else {
@@ -113,5 +111,5 @@ export async function addXP(userId: string, guildId: string,
 		}) as UserResult;
 	}
 
-	return {...data, hasLevelledUp: data.level > user.level};
+	return {...data, hasLevelledUp: user ? data.level > user.level : true};
 }

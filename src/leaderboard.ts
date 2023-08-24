@@ -14,7 +14,7 @@ export interface User {
 	guild: string;
 	user: string;
 	name?: string | null;
-	position?: number;
+	position: number;
 	level: number;
 	xp: number;
 }

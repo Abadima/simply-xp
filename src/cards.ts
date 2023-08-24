@@ -78,7 +78,14 @@ export type rankLocales = {
  * @returns {Promise<{attachment: Buffer, description: string, name: string}>}
  * @throws {XpFatal} - If parameters are not provided correctly
  */
-export async function rankCard(guild: { id: string, name: string }, user: UserOptions, options: RankCardOptions = {}, locales: rankLocales = {}): Promise<{ attachment: Buffer; description: string; name: string; }> {
+export async function rankCard(guild: {
+	id: string,
+	name: string
+}, user: UserOptions, options: RankCardOptions = {}, locales: rankLocales = {}): Promise<{
+	attachment: Buffer;
+	description: string;
+	name: string;
+}> {
 	if (!guild) throw new XpFatal({function: "rankCard()", message: "No Guild Provided"});
 	if (!user) throw new XpFatal({function: "rankCard()", message: "No User Provided"});
 
@@ -91,7 +98,7 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 	if (!locales?.xp) locales.xp = "XP";
 
 	XpLog.debug("rankCard()", "LEGACY MODE ENABLED");
-	XpLog.info("rankCard()", "Modern RankCard is not supported yet, coming soon!");
+	XpLog.info("rankCard()", "Modern RankCard is coming in dev.5");
 
 	if (!user?.avatarURL.endsWith(".png") && !user.avatarURL.endsWith(".jpg") && !user.avatarURL.endsWith(".webp")) {
 		throw new XpFatal({
@@ -99,26 +106,36 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 		});
 	}
 
-	// check if user.id and user.username and user.displayAvatarURL() exists
+
 	if (!user || !user.id || !user.username) {
 		throw new XpFatal({
 			function: "rankCard()", message: "Invalid User Provided, user must contain id, username, and avatarURL."
 		});
 	}
 
-	GlobalFonts.registerFromPath(options?.font || join(__dirname, "Fonts", "Baloo-Regular.eot"), "Sans Serif");
+	GlobalFonts.registerFromPath(options?.font || join(__dirname, "Fonts", "BalooBhaijaan-Regular.otf"), "Sans Serif");
 
-	if (!cachedRankImage) cachedRankImage = await loadImage(options?.background || "https://i.ibb.co/dck2Tnt/rank-card.webp");
+	if (!cachedRankImage) cachedRankImage = await loadImage(options?.background || "https://i.ibb.co/dck2Tnt/rank-card.webp").catch(() => {
+		throw new XpFatal({
+			function: "rankCard()", message: "Unable to load background image, is it valid?"
+		});
+	});
+
+	const avatarURL = await loadImage(user.avatarURL).catch(() => {
+		throw new XpFatal({
+			function: "rankCard()", message: "Unable to load user's AvatarURL, is it reachable?"
+		});
+	});
 
 	let dbUser = await db.findOne({collection: "simply-xps", data: {guild: guild.id, user: user.id}}) as User;
 	if (!dbUser) {
-		if (xp.auto_create) dbUser = await create(user.id, guild.id, user.username);
+		if (xp.auto_create) dbUser = await create(user.id, guild.id, user.username) as User;
 		else throw new XpFatal({function: "rankCard()", message: "User not found in database"});
 	}
 
 	const users = await db.find({collection: "simply-xps", data: {guild: guild.id}}) as User[];
 
-	const position: number = users.sort((a, b) => b.xp - a.xp).findIndex((u) => u.user === user.id) + 1;
+	dbUser.position = users.sort((a, b) => b.xp - a.xp).findIndex((u) => u.user === user.id) + 1;
 
 	if (options?.legacy) {
 		const Username = user.username.replace(/[\u007f-\uffff]/g, ""),
@@ -162,7 +179,7 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 		context.lineWidth = 15;
 		context.stroke();
 		context.clip();
-		context.drawImage(await loadImage(user.avatarURL), 70, 30, 180, 180);
+		context.drawImage(avatarURL, 70, 30, 180, 180);
 		context.restore();
 
 		context.save();
@@ -212,7 +229,7 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 		context.shadowOffsetX = 1;
 		context.shadowOffsetY = 1;
 		context.font = "55px \"Sans Serif\"";
-		context.fillText("#" + position, canvas.width - 55, 80);
+		context.fillText("#" + dbUser.position, canvas.width - 55, 80);
 		context.restore();
 
 		context.save();
@@ -263,7 +280,7 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
 		context.fillText(textXPEdited, 730, 180);
 
 	} else {
-		// TODO: Add support for modern mode\
+		// TODO: Add support for modern mode
 
 		canvas = createCanvas(1080, 360);
 	}
@@ -286,13 +303,29 @@ export async function rankCard(guild: { id: string, name: string }, user: UserOp
  * @returns {Promise<{attachment: Buffer, description: string, name: string}>}
  * @throws {XpFatal} - If parameters are not provided correctly
  */
-export async function leaderboardCard(data: Array<User>, options: LeaderboardOptions = {}, guildInfo?: { name: string, imageURL: string, memberCount: number }, locales: LeaderboardLocales = {}): Promise<{ attachment: Buffer; description: string; name: string; }> {
-	if (!data || data.length < 1) throw new XpFatal({function: "leaderboardCard()", message: "There must be at least 1 user in the data array"});
+export async function leaderboardCard(data: Array<User>, options: LeaderboardOptions = {}, guildInfo?: {
+	name: string,
+	imageURL: string,
+	memberCount: number
+}, locales: LeaderboardLocales = {}): Promise<{ attachment: Buffer; description: string; name: string; }> {
+	if (!data || data.length < 1) throw new XpFatal({
+		function: "leaderboardCard()",
+		message: "There must be at least 1 user in the data array"
+	});
 
-	if (!cachedLeaderboardArtwork && options?.artworkImage) cachedLeaderboardArtwork = await loadImage(options.artworkImage);
-	if (!cachedLeaderboardImage && options?.backgroundImage) cachedLeaderboardImage = await loadImage(options.backgroundImage);
+	if (!cachedLeaderboardArtwork && options?.artworkImage) cachedLeaderboardArtwork = await loadImage(options.artworkImage).catch(() => {
+		throw new XpFatal({
+			function: "leaderboardCard()", message: "Unable to load artwork image, is it valid?"
+		});
+	});
 
-	GlobalFonts.registerFromPath(options?.font || join(__dirname, "Fonts", "Baloo-Regular.eot"), "Sans Serif");
+	if (!cachedLeaderboardImage && options?.backgroundImage) cachedLeaderboardImage = await loadImage(options.backgroundImage).catch(() => {
+		throw new XpFatal({
+			function: "leaderboardCard()", message: "Unable to load background image, is it valid?"
+		});
+	});
+
+	GlobalFonts.registerFromPath(options?.font || join(__dirname, "Fonts", "BalooBhaijaan-Regular.otf"), "Sans Serif");
 
 	if (!locales.level) locales.level = "LEVEL";
 	if (!locales.members) locales.members = "Members";
@@ -440,13 +473,20 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardOpt
 	};
 }
 
-function RoundedBox(ctx: {
+/**
+ * @constructor
+ * @private
+ */
+export function RoundedBox(ctx: {
 	beginPath: () => void;
 	moveTo: (arg0: number, arg1: number) => void;
 	lineTo: (arg0: number, arg1: number) => void;
 	quadraticCurveTo: (arg0: number, arg1: number, arg2: number, arg3: number) => void;
 	closePath: () => void;
-}, x: number, y: number, width: number, height: number, radius: number, roundCorners: { top?: boolean, bottom?: boolean } = {top: true, bottom: true}) {
+}, x: number, y: number, width: number, height: number, radius: number, roundCorners: {
+	top?: boolean,
+	bottom?: boolean
+} = {top: true, bottom: true}) {
 	ctx.beginPath();
 	ctx.moveTo(x + (roundCorners.top ? radius : 0), y);
 	ctx.lineTo(x + width - (roundCorners.top ? radius : 0), y);

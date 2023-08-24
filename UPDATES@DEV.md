@@ -1,5 +1,23 @@
 # VERSION 2@DEV CHANGELOGS
 
+## [DEV 4](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.4)
+
+### Additions
+
+- `charts()` is now added, starting with `bar`, `doughnut` and `pie` types, and many themes to choose from.
+- `migrate.fromDB()` now supports migrating from SQLite to MongoDB.
+
+### Bug Fixes
+
+- Fix `db.createOne()` not returning created user (MongoDB), this should fix multiple functions not working properly.
+- Fix `db.addXP()` throwing unnecessary error when checking if new user is considered levelled up.
+- `rankCard()` and `leaderboardCard()` now throws better error when image(s) provided can't be loaded.
+
+### Improvements
+
+- Optimized font file, lowers package size (~57.31%)
+- Updated JSDocs to improve accuracy.
+
 ## [DEV 3 FIX 2](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.3)
 
 ### Bug Fixes
@@ -55,7 +73,7 @@
 ### Changes
 
 - Updated JSDocs, changed some types to interfaces.
-- Optimized font file, lowers package size.
+- Optimized font file, lowers package size (~32.12%)
 
 ## [DEV 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.1)
 
