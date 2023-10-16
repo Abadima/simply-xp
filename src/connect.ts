@@ -16,7 +16,7 @@ export type ConnectionOptions = {
  * @async
  * @param {string} uri
  * @param {ConnectionOptions} options
- * @link `Documentation:` https://simplyxp.js.org/docs/connect
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/connect
  * @returns {Promise<boolean>}
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
  */
@@ -35,8 +35,8 @@ export async function connect(uri: string, options: ConnectionOptions = {type: u
 
 	switch (type) {
 	case "mongodb": {
-		const {MongoClient} = await import("mongodb"), goodVersion = await checkPackageVersion("mongodb");
-		if (!goodVersion) return XpLog.err("connect()", "MongoDB V4 or higher is required");
+		const {MongoClient} = await import("mongodb"), goodVersion = await checkPackageVersion("mongodb", 4, 6);
+		if (!goodVersion) return XpLog.err("connect()", "MongoDB Version 4 to 6 is required");
 
 		const client = await MongoClient.connect(uri).catch((error) => {
 			throw new XpFatal({function: "connect()", message: error.message});
@@ -49,10 +49,10 @@ export async function connect(uri: string, options: ConnectionOptions = {type: u
 	case "sqlite":
 		try {
 			const [betterSqlite3, goodVersion] = await Promise.all([
-				import("better-sqlite3"), checkPackageVersion("sqlite")
+				import("better-sqlite3"), checkPackageVersion("better-sqlite3", 7, 9)
 			]);
 
-			if (!goodVersion) return XpLog.err("connect()", "better-sqlite3 V7 or higher is required");
+			if (!goodVersion) return XpLog.err("connect()", "better-sqlite3 Version 7 to 9 is required");
 
 			xp.database = new betterSqlite3.default(uri);
 			xp.dbType = "sqlite";
@@ -61,7 +61,7 @@ export async function connect(uri: string, options: ConnectionOptions = {type: u
                               (
                                   user  TEXT NOT NULL,
                                   guild TEXT NOT NULL,
-                                  name  TEXT    DEFAULT "Unknown",
+                                  name  TEXT    DEFAULT user,
                                   level INTEGER DEFAULT 0,
                                   xp    INTEGER DEFAULT 0
                               )`
@@ -103,7 +103,7 @@ async function getPackageManager(): Promise<"yarn" | "npm" | "pnpm"> {
 
 	if (foundLockfiles.length === 1) {
 		if (foundLockfiles[0] === "yarn.lock") {
-			XpLog.debug("getPackageManager()", "Using Yarn");
+			XpLog.debug("getPackageManager()", "Using YARN");
 			return "yarn";
 		} else if (foundLockfiles[0] === "pnpm-lock.yaml" || foundLockfiles[0] === "pnpm-lock.json") {
 			XpLog.debug("getPackageManager()", "Using PNPM");
@@ -117,32 +117,20 @@ async function getPackageManager(): Promise<"yarn" | "npm" | "pnpm"> {
 /**
  * Check database package versions
  * @private
- * @param {"mongodb" | "sqlite"} type
+ * @param {string} type - NPM Package Name (lowercase)
+ * @param {number} min - Minimum Major Version Number
+ * @param {number} max - Maximum Major Version Number (Optional)
  * @returns {Promise<boolean>}
  * @throws {XpFatal} If the package version is not supported
  */
-export async function checkPackageVersion(type: "mongodb" | "sqlite"): Promise<boolean> {
-	switch (type) {
-	case "mongodb":
-		try {
-			const mongoPackage = await import("mongodb/package.json");
-			return parseInt(mongoPackage.version.substring(0, 1)) >= 4;
-		} catch (_) {
-			XpLog.info("checkPackageVersion()", "Installing MongoDB [5.x] | Please wait...");
-			execSync(`${await getPackageManager()} add mongodb@5.x.x`);
-			XpLog.warn("checkPackageVersion()", "Installed MongoDB. Please restart!");
-			return process.exit(1);
-		}
-
-	case "sqlite":
-		try {
-			const sqlitePackage = await import("better-sqlite3/package.json");
-			return parseInt(sqlitePackage.version.substring(0, 1)) >= 7;
-		} catch (_) {
-			XpLog.info("checkPackageVersion()", "Installing better-sqlite3 [V8] | Please wait...");
-			execSync(`${await getPackageManager()} add better-sqlite3@8.x.x`);
-			XpLog.warn("checkPackageVersion()", "Installed better-sqlite3. Please restart!");
-			return process.exit(1);
-		}
+export async function checkPackageVersion(type: string, min: number, max?: number): Promise<boolean> {
+	try {
+		const chosenPackage = await import(`${type}/package.json`);
+		return parseInt(chosenPackage.version.substring(0, 1)) >= min && (max ? parseInt(chosenPackage.version.substring(0, 1)) <= max : true);
+	} catch (_) {
+		XpLog.info("checkPackageVersion()", `Installing ${type} [V${max || min}] | Please wait...`);
+		execSync(`${await getPackageManager()} add ${type}@${max || min}.x.x`);
+		XpLog.warn("checkPackageVersion()", `Installed ${type}. Please restart!`);
+		return process.exit(1);
 	}
 }

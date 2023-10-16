@@ -78,7 +78,7 @@ export class db {
 	/**
 	 * Gets a collection from the database.
 	 * @param {collection} collection - The collection to get.
-	 * @link https://simplyxp.js.org/docs/handlers/database#getCollection Documentation
+	 * @link https://simplyxp.js.org/docs/next/handlers/database#getCollection Documentation
 	 * @returns {Collection} The collection.
 	 * @throws {XpFatal} Throws an error if there is no database connection, or database type is invalid.
 	 */
@@ -93,7 +93,7 @@ export class db {
 	 *
 	 * @async
 	 * @param {UserOptions | LevelRoleOptions} query - The document to create.
-	 * @link https://simplyxp.js.org/docs/handlers/database#createOne Documentation
+	 * @link https://simplyxp.js.org/docs/next/handlers/database#createOne Documentation
 	 * @returns {Promise<UserResult | LevelRoleResult>} The created document.
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
@@ -116,11 +116,34 @@ export class db {
 	}
 
 	/**
+	 * Deletes multiple documents from the database.
+	 * @async
+	 * @param {UserOptions | LevelRoleOptions} query - The documents to delete.
+	 * @link https://simplyxp.js.org/docs/next/handlers/database#deleteMany Documentation
+	 * @returns {Promise<boolean>} `true` if the documents were successfully deleted, otherwise `false`.
+	 * @throws {XpFatal} Throws an error if there is no database connection.
+	 */
+	static async deleteMany(query: UserOptions | LevelRoleOptions): Promise<boolean> {
+		if (!xp.database) throw new XpFatal({function: "deleteMany()", message: "No database connection"});
+		let result: Document;
+
+		switch (xp.dbType) {
+		case "mongodb":
+			result = (xp.database as MongoClient).db().collection(query.collection).deleteMany(query.data).catch(error => handleError(error, "deleteMany()")) as Document;
+			break;
+		case "sqlite":
+			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("DELETE FROM \"simply-xps\" WHERE guild = ?").run(query.data.guild);
+			else result = (xp.database as Database).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE guild = ?").run(query.data.guild);
+		}
+		return !!result;
+	}
+
+	/**
 	 * Deletes one document from the database.
 	 *
 	 * @async
 	 * @param {UserOptions | LevelRoleOptions} query - The document to delete.
-	 * @link https://simplyxp.js.org/docs/handlers/database#deleteOne Documentation
+	 * @link https://simplyxp.js.org/docs/next/handlers/database#deleteOne Documentation
 	 * @returns {Promise<boolean>} `true` if the document was successfully deleted, otherwise `false`.
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
@@ -144,7 +167,7 @@ export class db {
 	 *
 	 * @async
 	 * @param {UserOptions | LevelRoleOptions} query - The query to search for the document.
-	 * @link https://simplyxp.js.org/docs/handlers/database#findOne Documentation
+	 * @link https://simplyxp.js.org/docs/next/handlers/database#findOne Documentation
 	 * @returns {Promise<UserResult | LevelRoleResult>} The found document.
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
@@ -170,7 +193,7 @@ export class db {
 	 *
 	 * @async
 	 * @param {UserOptions | LevelRoleOptions} query - The query to search for multiple documents.
-	 * @link https://simplyxp.js.org/docs/handlers/database#find Documentation
+	 * @link https://simplyxp.js.org/docs/next/handlers/database#find Documentation
 	 * @returns {Promise<UserResult[] | LevelRoleResult[]>} An array of found documents.
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
@@ -198,7 +221,7 @@ export class db {
 	 * @param {UserOptions | LevelRoleOptions} filter - The document to update.
 	 * @param {UserOptions | LevelRoleOptions} update - The document update data.
 	 * @param {object} [options] - MongoDB options for updating the document.
-	 * @link https://simplyxp.js.org/docs/handlers/database#updateOne Documentation
+	 * @link https://simplyxp.js.org/docs/next/handlers/database#updateOne Documentation
 	 * @returns {Promise<UserResult | LevelRoleResult>} The updated document.
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
@@ -211,7 +234,7 @@ export class db {
 			break;
 
 		case "sqlite":
-			if (filter.collection === "simply-xps" && update.collection === "simply-xps") (xp.database as Database).prepare("UPDATE \"simply-xps\" SET name = ?, xp = ?, level = ? WHERE guild = ? AND user = ?").run(update.data?.name, update.data.xp, update.data.level, filter.data.guild, filter.data.user);
+			if (filter.collection === "simply-xps" && update.collection === "simply-xps") (xp.database as Database).prepare("UPDATE \"simply-xps\" SET xp = ?, level = ?"+ (update.data?.name ? ", name = ?" : "") +" WHERE guild = ? AND user = ?").run(update.data?.name ? [update.data.xp, update.data.level, update.data.name, filter.data.guild, filter.data.user] : [update.data.xp, update.data.level, filter.data.guild, filter.data.user]);
 			else if (filter.collection === "simply-xp-levelroles" && update.collection === "simply-xp-levelroles") (xp.database as Database).prepare("UPDATE \"simply-xp-levelroles\" SET role = ? WHERE guild = ? AND level = ?").run(update.data.roles, filter.data.guild, filter.data.level);
 			else throw new XpFatal({
 				function: "updateOne()", message: "Collection mismatch, expected same collection on both filter and update."

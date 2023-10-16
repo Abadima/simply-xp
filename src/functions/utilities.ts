@@ -27,7 +27,7 @@ interface NewClientOptions {
  *
  * @param {number} value.
  * @param {"xp" | "level"} type - Type to convert from (Default: level).
- * @link `Documentation:` https://simplyxp.js.org/docs/utilities/convert
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/utilities/convert
  * @returns {number} - The converted value. (XP to level or level to XP)
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
  */
@@ -47,7 +47,7 @@ export function convertFrom(value: number, type: "xp" | "level" = "level"): numb
 /**
  * Updates the options of the XP client.
  * @param {NewClientOptions} clientOptions - The new options to update.
- * @link `Documentation:` https://simplyxp.js.org/docs/utilities/updateOptions
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/utilities/updateOptions
  * @returns {void} - Nothing.
  * @throws {XpFatal} If an invalid option is provided.
  */
@@ -71,32 +71,32 @@ export function updateOptions(clientOptions: NewClientOptions): void {
 
 		if (database) {
 			xp.database = database;
+			const dbInfo = xp.dbType === "mongodb" ?
+				{name: "MongoDB", type: "mongodb", min: 4, max: 6} :
+				{name: "Better-SQLite3", type: "better-sqlite3", min: 7, max: 9};
 
-			if (xp.dbType === "mongodb") {
-				checkPackageVersion("mongodb").then((result) => {
-					if (!result) throw new XpFatal({
-						function: "updateOptions()", message: "MongoDB V4 or higher is required"
-					});
+			checkPackageVersion(dbInfo.type, dbInfo.min, dbInfo.max).then((result) => {
+				if (!result) throw new XpFatal({
+					function: "updateOptions()", message: `${dbInfo.name} V${dbInfo.min} up to V${dbInfo.max} is required.`
+				});
 
+				switch (xp.dbType) {
+				case "mongodb":
 					(xp.database as MongoClient).db().command({ping: 1}).catch(() => {
 						xp.database = undefined;
 						throw new XpFatal({function: "updateOptions()", message: "Invalid MongoDB connection"});
 					});
-				});
+					break;
 
-			} else if (xp.dbType === "sqlite") {
-				checkPackageVersion("sqlite").then((result) => {
-					if (!result) throw new XpFatal({
-						function: "updateOptions()", message: "SQLite V7 or higher is required"
-					});
-
+				case "sqlite":
 					try {
 						(xp.database as Database).prepare("SELECT 1").get();
 					} catch (error) {
 						throw new XpFatal({function: "updateOptions()", message: "Invalid SQLite connection"});
 					}
-				});
-			}
+					break;
+				}
+			});
 		}
 	}
 }

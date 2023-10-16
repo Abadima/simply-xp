@@ -2,7 +2,7 @@ import {createCanvas, GlobalFonts} from "@napi-rs/canvas";
 import {join} from "path";
 import {leaderboard} from "./leaderboard";
 import {RoundedBox} from "./cards";
-import {XpFatal} from "./functions/xplogs";
+import {XpFatal, XpLog} from "./functions/xplogs";
 
 /**
  * Chart options
@@ -23,7 +23,7 @@ export interface ChartOptions {
  * @async
  * @param {string} guildId
  * @param {ChartOptions?} options
- * @link `Documentation:` https://simplyxp.js.org/docs/charts
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/charts
  * @returns {Promise<{attachment: Buffer, description: string, name: string}>} Chart attachment
  * @throws {XpFatal} If invalid parameters are provided, or if there are not enough users to create a chart
  */
@@ -32,8 +32,14 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 }> {
 	if (!guildId) throw new XpFatal({function: "charts()", message: "No Guild ID Provided"});
 	if (!options) throw new XpFatal({function: "charts()", message: "No Options Provided"});
-	if (!options.theme) options.theme = "blue";
-	if (!options.type) options.type = "bar";
+	if (!options.theme || !["blue", "dark", "discord", "green", "orange", "red", "space", "yellow"].includes(options.theme)) {
+		XpLog.warn("charts()", "Invalid theme provided, defaulting to discord");
+		options.theme = "discord";
+	}
+	if (!options.type || !["bar", "doughnut", "pie"].includes(options.type)) {
+		XpLog.warn("charts()", "Invalid type provided, defaulting to bar chart");
+		options.type = "bar";
+	}
 	let colors = {
 		background: "#FFFFFF",
 		barColor: "#FFFFFF",
@@ -48,14 +54,14 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 	if (users.length < 2) throw new XpFatal({function: "charts()", message: "Not enough users to create a chart"});
 	users.sort((a, b) => b.position - a.position);
 
-	GlobalFonts.registerFromPath(options?.font || join(__dirname, "Fonts", "BalooBhaijaan-Regular.otf"), "Sans Serif");
+	GlobalFonts.registerFromPath(options?.font || join(__dirname, "Fonts", "BalooBhaijaan-Regular.woff2"), "Sans Serif");
 
 	switch (options.theme) {
 	case "blue":
 		colors = {
 			background: "#1e1e3c",
 			barColor: "#747fff",
-			pieColors: ["#747fff", "#55b9f3", "#4dc7ec", "#3ad5e5", "#32e3dd", "#2cf2d4", "#26ffd2", "#30edb4", "#3cda96", "#48c878"],
+			pieColors: ["#747fff", "#2832C2", "#59788E", "#00d2e7", "#281E5D", "#a9f5ff", "#000e3f", "#30edc2", "#186c84", "#0098ff"],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -64,7 +70,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#1e1e1e",
 			barColor: "#747474",
-			pieColors: ["#747474", "#8f8f8f", "#a8a8a8", "#c1c1c1", "#dadada", "#f4f4f4", "#ffffff", "#ffffff", "#ffffff", "#ffffff"],
+			pieColors: ["#1B1D1F", "#454C53", "#72787F", "#999999", "#9EA4AA", "#CCCCCC", "#C9CDD2", "#DEDEDE", "#E8EBED", "#FFFFFF"],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -73,7 +79,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#36393f",
 			barColor: "#5865F2",
-			pieColors: ["#5865F2", "#57F287", "#FEE75C", "#ED4245", "#F47FFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"],
+			pieColors: ["#5865F2", "#57F287", "#FEE75C", "#EB459E", "#ED4245", "#FFFFFF", "#000000", "#FAA61A", "#C04DF9", "#00AAFF"],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -82,7 +88,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#1e321e",
 			barColor: "#74ff7f",
-			pieColors: ["#74ff7f", "#55f3a0", "#4decb2", "#3dd5c3", "#32cdd5", "#2cc6e6", "#26bfee", "#30a8e6", "#3c91dd", "#487ad4"],
+			pieColors: ["#00FF00", "#008000", "#7FFF00", "#32CD32", "#228B22", "#006400", "#9ACD32", "#00FA9A", "#ADFF2F", "#7CFC00"],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -91,7 +97,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#321e1e",
 			barColor: "#ff9f74",
-			pieColors: ["#ff9f74", "#f3b055", "#ecbe4d", "#d5c63d", "#cdd532", "#c6e62c", "#bfe626", "#a8e630", "#91dd3c", "#7ad448"],
+			pieColors: ["#FF8C00", "#FF5E0E", "#FF4500", "#FF6347", "#E26310", "#F5761A", "#FD673A", "#FFA500", "#FF7F50", "#FFD700"],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -100,7 +106,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#321e1e",
 			barColor: "#ff7474",
-			pieColors: ["#ff7474", "#f35555", "#ec4d4d", "#d53d3d", "#cd3232", "#c62c2c", "#bf2626", "#a83030", "#913c3c", "#7a4848"],
+			pieColors: ["#FF0000", "#FF2400", "#FF4500", "#FF6347", "#FF7F50", "#FF8C00", "#FFA07A", "#FFA500", "#FFC0CB", "#FFD700"],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -118,7 +124,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#32321e",
 			barColor: "#ffff74",
-			pieColors: ["#ffff74", "#f3f355", "#ecf24d", "#d5eb3d", "#cde532", "#c6e02c", "#bfe626", "#a8df30", "#91d93c", "#7ad448"],
+			pieColors: ["#FFFD37", "#FFEF00", "#FDFF00", "#DAA520", "#F4C430", "#E4D00A", "#D2B55B", "#FFFFE0", "#FFFACD", "#F5DEB3"],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -191,13 +197,15 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		}
 	}
 
+	let chartAreaWidth = canvas.width - 20 * 2;
+	let chartAreaHeight = canvas.height - 20 * 2;
 
 	switch (options.type) {
 	case "bar": {
 		const maxValueLabelWidth = context.measureText(maxLevel.toString()).width;
 
-		const chartAreaWidth = canvas.width - maxValueLabelWidth - 20 * 3 - 20 * 2;
-		const chartAreaHeight = canvas.height - 100 - 20 * 2;
+		chartAreaWidth = canvas.width - maxValueLabelWidth - 20 * 3 - 20 * 2;
+		chartAreaHeight = canvas.height - 100 - 20 * 2;
 
 		const barWidth = chartAreaWidth / users.length - 20;
 
@@ -259,17 +267,12 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		break;
 
 	case "doughnut": {
-		const chartAreaWidth = canvas.width - 20 * 2;
-		const chartAreaHeight = canvas.height - 20 * 2;
 		const totalLevelSum = users.reduce((sum, user) => sum + user.level, 0);
-
-		const centerX = canvas.width / 2;
-		const centerY = canvas.height / 2;
-
 		const outerRadius = Math.min(chartAreaWidth, chartAreaHeight) / 3; // Adjust the divisor for a smaller outer radius
 		const innerRadius = outerRadius * 0.6; // Adjust the multiplier for the size of the hole
 
 		let startAngle = -Math.PI / 2;
+		const centerX = canvas.width / 2, centerY = canvas.height / 2;
 
 		await Promise.all(
 			users.map(async (user, index) => {
@@ -288,44 +291,15 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 				startAngle = endAngle;
 			})
 		);
-
-		// Render legend
-		const legendX = 20; // Legend position from left
-		const legendY = canvas.height - 20 - users.length * 20; // Legend position from bottom
-		const legendSpacing = 20; // Vertical spacing between legend items
-
-		context.fillStyle = "rgba(0,0,0,0.25)";
-		context.fillRect(legendX - 5, legendY - 5, 200, users.length * legendSpacing + 5);
-
-		context.font = "12px Sans Serif";
-		users.forEach((user, index) => {
-			const legendText = user?.name || user.user;
-			const legendColor = colors.pieColors[index % colors.pieColors.length];
-			const legendColorBoxX = legendX;
-			const legendItemY = legendY + index * legendSpacing;
-
-			// Place colored squares to the right and usernames to the left
-			context.fillStyle = legendColor || "#FFFFFF";
-			context.fillRect(legendColorBoxX, legendItemY, 15, 15);
-
-			context.fillStyle = colors.textColor;
-			context.fillText(legendText, legendColorBoxX + 20, legendItemY + 11.5);
-		});
-
 	}
 		break;
 
 	case "pie": {
-		const chartAreaWidth = canvas.width - 20 * 2;
-		const chartAreaHeight = canvas.height - 20 * 2;
 		const totalLevelSum = users.reduce((sum, user) => sum + user.level, 0);
-
-		const centerX = canvas.width / 2;
-		const centerY = canvas.height / 2;
-
 		const radius = Math.min(chartAreaWidth, chartAreaHeight) / 3; // Adjust the divisor for a smaller radius
 
 		let startAngle = -Math.PI / 2;
+		const centerX = canvas.width / 2, centerY = canvas.height / 2;
 
 		await Promise.all(
 			users.map(async (user, index) => {
@@ -342,8 +316,14 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 				startAngle = endAngle;
 			})
 		);
+	}
+		break;
 
-		// Render legend
+	default:
+		throw new XpFatal({function: "charts()", message: "Invalid chart type provided"});
+	}
+
+	if (["doughnut", "pie"].includes(options.type)) {	// Render legend
 		const legendX = 20; // Legend position from left
 		const legendY = canvas.height - 20 - users.length * 20; // Legend position from bottom
 		const legendSpacing = 20; // Vertical spacing between legend items
@@ -352,7 +332,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		context.fillRect(legendX - 5, legendY - 5, 200, users.length * legendSpacing + 5);
 
 		context.font = "12px Sans Serif";
-		users.forEach((user, index) => {
+		await Promise.all(users.map(async (user, index) => {
 			const legendText = user?.name || user.user;
 			const legendColor = colors.pieColors[index % colors.pieColors.length];
 			const legendColorBoxX = legendX;
@@ -364,13 +344,8 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 
 			context.fillStyle = colors.textColor;
 			context.fillText(legendText, legendColorBoxX + 20, legendItemY + 11.5);
-		});
+		}));
 
-	}
-		break;
-
-	default:
-		throw new XpFatal({function: "charts()", message: "Invalid chart type provided"});
 	}
 
 	return {

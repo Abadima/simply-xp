@@ -10,7 +10,7 @@ import {rankCard, RankCardOptions} from "../cards";
  * @param {string} userId
  * @param {string} _guildId
  * @param {RankCardOptions?} options
- * @link `Documentation:` https://simplyxp.js.org/docs/deprecated/rank
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/deprecated/rank
  * @returns {Promise<{attachment: Buffer, description: string, name: string}>}
  * @throws {XpFatal} - If parameters are not provided correctly
  */

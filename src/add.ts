@@ -10,7 +10,7 @@ import {xp} from "../xp";
  * @param {string} guildId
  * @param {number} level
  * @param {string} username - Username to use if auto_create is enabled
- * @link `Documentation:` https://simplyxp.js.org/docs/addlevel
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/addlevel
  * @returns {Promise<UserResult>} - Object of user data on success
  * @throws {XpFatal} - If parameters are not provided correctly
  */
@@ -62,7 +62,7 @@ interface XPResult extends UserResult {
  * @param {string} guildId - The ID of the guild.
  * @param {number | {min: number, max: number}} xpData - The XP to add, can be a number or an object with min and max properties.
  * @param {string} username - Username to use if auto_create is enabled.
- * @link `Documentation:` https://simplyxp.js.org/docs/addxp
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/addxp
  * @returns {Promise<XPResult>} - Object of user data on success.
  * @throws {XpFatal} - If parameters are not provided correctly.
  */

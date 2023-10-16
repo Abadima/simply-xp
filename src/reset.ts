@@ -9,7 +9,7 @@ import {db} from "./functions/database";
  * @param {string} guildId
  * @param {boolean?} erase - Erase user entry from the database
  * @param {string?} username - Username to use if auto_create is enabled
- * @link `Documentation:` https://simplyxp.js.org/docs/reset
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/reset
  * @returns {Promise<boolean>}
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
  */

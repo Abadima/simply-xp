@@ -7,7 +7,7 @@ import {UserResult} from "./functions/database";
  * @param {string} userId
  * @param {string} guildId
  * @param {string} username
- * @link `Documentation:` https://simplyxp.js.org/docs/create
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/create
  * @returns {Promise<UserResult>}
  * @throws {XpFatal} If invalid parameters are provided
  */

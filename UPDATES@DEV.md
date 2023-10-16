@@ -1,5 +1,35 @@
 # VERSION 2@DEV CHANGELOGS
 
+## [DEV 5](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.5)
+
+
+
+### Additions
+
+- Added `better-sqlite3` V9 Support
+- Added `compareCard()` function, to compare two users.
+- `db.deleteMany()` is now added, to make deleting multiple users easier.
+- `rankCard()` now supports **Modern Design**, you can still override by passing `legacy: true` in options.
+
+### Changes
+
+- `connect()` will now install `mongodb v6` by default, versions down to `v4` are still supported.
+
+### Bug Fixes
+
+- Fix `charts()` handling invalid `type` & `theme` parameters.
+- Missing `await` in `migrate.fromDB()` function.
+- SQLite deleting username on `updateOne()`.
+
+### Improvements
+
+- Remove duplicate code in `charts()`.
+- Updated colours in `charts()` themes, to make them more accurate and easier to differentiate.
+- `leaderboard()` removes loop, and replaces with an `Asyncronous` method to improve performance.
+- Tweaked `checkPackageVersion()`, which also updates `migrate` class, and `updateOptions()` function.
+- Optimized font file (again), significantly lowers package size.
+- Update `JSDocs` to feature our updated documentation urls.
+
 ## [DEV 4](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.4)
 
 ### Additions
@@ -34,6 +64,7 @@
 ## [DEV 3](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.3)
 
 ### Additions
+
 - Added `db.getCollection()` feature, useful for custom database implementations.
 - Implemented `migrate.fromDB()`, from MongoDB to SQLite. (Support for SQLite to MongoDB coming soon)
 

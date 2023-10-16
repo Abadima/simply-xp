@@ -15,7 +15,7 @@ export class migrate {
 	 * Effortlessly migrate from discord-xp to simply-xp.
 	 * @async
 	 * @param {boolean} deleteOld - Delete old data after migration
-	 * @link `Documentation:` https://simplyxp.js.org/docs/migrate/discord_xp
+	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/migrate#migratediscord_xp
 	 * @returns {Promise<boolean>} - Returns true if migration is successful
 	 * @throws {XpLog.err} - If migration fails.
 	 */
@@ -49,7 +49,7 @@ export class migrate {
 	 * @async
 	 * @param {"mongodb"|"sqlite"} dbType
 	 * @param {Database | MongoClient} connection
-	 * @link `Documentation:` https://simplyxp.js.org/docs/migrate/database
+	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/migrate#migratefromdb
 	 * @returns {Promise<boolean>} - Returns true if migration is successful
 	 * @throws {XpFatal} - If parameters are not provided correctly
 	 */
@@ -65,10 +65,9 @@ export class migrate {
 		switch (dbType) {
 		case "mongodb":
 			try {
-				if (!await checkPackageVersion("mongodb")) return XpLog.err("migrate.fromDB()", "MongoDB V4 or higher is required");
+				if (!await checkPackageVersion("mongodb", 4, 6)) return XpLog.err("migrate.fromDB()", "MongoDB V4 up to V6 is required");
 
-				results = (connection as MongoClient).db().collection("simply-xps").find().toArray() as Document as UserResult[];
-				XpLog.debug("migrate.fromDB()", `FOUND ${results.length} DOCUMENTS`);
+				results = await (connection as MongoClient).db().collection("simply-xps").find().toArray() as Document as UserResult[];
 
 			} catch (error) {
 				XpLog.err("migrate.fromDB()", error as string);
@@ -78,10 +77,8 @@ export class migrate {
 
 		case "sqlite":
 			try {
-				if (!await checkPackageVersion("sqlite")) return XpLog.err("migrate.fromDB()", "better-sqlite3 V7 or higher is required");
-
+				if (!await checkPackageVersion("better-sqlite3", 7, 8)) return XpLog.err("migrate.fromDB()", "better-sqlite3 V7 up to V8 is required");
 				results = (connection as Database).prepare("SELECT * FROM `simply-xps`").all() as UserResult[];
-				XpLog.debug("migrate.fromDB()", `FOUND ${results.length} ROWS`);
 
 			} catch (error) {
 				XpLog.err("migrate.fromDB()", error as string);
@@ -89,6 +86,8 @@ export class migrate {
 			}
 			break;
 		}
+
+		XpLog.debug("migrate.fromDB()", `FOUND ${results.length} RESULTS`);
 
 		await Promise.all(results.map(async (user) => {
 			if (!await db.findOne({collection: "simply-xps", data: {guild: user.guild, user: user.user}})) {

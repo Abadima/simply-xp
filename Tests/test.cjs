@@ -31,26 +31,46 @@ async function test(dbType) {
 
 		await xp.create("1234567894", "0987654321", "Snowball");*/
 
-	await xp.setLevel("1234567890", "0987654321", 25, "Abadima");
+	await xp.setLevel("326815959358898189", "0987654321", 69, "Abadima");
 
-	await xp.setLevel("1234567893", "0987654321", 20, "Rahul");
+	await xp.addXP("326815959358898189", "0987654321", 13899, "Abadima");
 
-	await xp.setLevel("1234567894", "0987654321", 15, "Jena");
+	await xp.setLevel("1234567893", "0987654321", 69, "Rahul");
 
-	await xp.addLevel("1234567892", "0987654321", 10, "Ash");
+	await xp.setLevel("1234567894", "0987654321", 20, "Sammy");
+
+	await xp.setLevel("1234567895", "0987654321", 15, "Jena");
+
+	await xp.addLevel("1234567892", "0987654321", 10, "Jeremy");
 
 	await xp.setLevel("1234567891", "0987654321", 5, "Elizabeth");
+
+	// await xp.leaderboard("0987654321").then(console.log);
 
 	await xp.rankCard(
 		{id: "0987654321", name: "SimplyTests"},
 		{
-			avatarURL: "https://cdn.discordapp.com/avatars/326815959358898189/67f99af24216f6d98d8d61a3b127d160.webp",
-			id: "1234567890", username: "Abadima"
+			avatarURL: "https://avatarfiles.alphacoders.com/280/280594.jpg",
+			id: "326815959358898189", username: "Abadima"
 		},
-		{background: "https://img.freepik.com/free-vector/gradient-wavy-purple-background_23-2149117433.jpg"}
-	).then(results => {
-		require("fs").writeFileSync("Tests/rankcard.png", results.attachment);
+		{light: false}).then(results => {
+		require("fs").writeFileSync("Tests/rankCard.png", results.attachment);
 	});
+
+	await xp.compareCard(
+		{id: "0987654321", name: "SimplyTests"},
+		{
+			avatarURL: "https://avatarfiles.alphacoders.com/280/280594.jpg",
+			id: "326815959358898189", username: "Abadima"
+		},
+		{
+			avatarURL: "https://rahuletto.thedev.id/assets/logo.webp",
+			id: "1234567893", username: "Rahuletto"
+		},
+		{light: false}).then(results => {
+			require("fs").writeFileSync("Tests/compareCard.png", results.attachment);
+		}
+	);
 
 	await xp.leaderboard("0987654321").then(async (users) => {
 		await xp.leaderboardCard(users, {
@@ -67,21 +87,16 @@ async function test(dbType) {
 	});
 
 	await xp.charts("0987654321", {
-		theme: "space",
-		type: "doughnut"
+		theme: "discord", type: "doughnut"
 	}).then(results => {
 		require("fs").writeFileSync("Tests/charts.png", results.attachment);
 	});
 
-	await xp.reset("1234567890", "0987654321", true);
-
-	await xp.reset("1234567893", "0987654321", true);
-
-	await xp.reset("1234567894", "0987654321", true);
-
-	await xp.reset("1234567892", "0987654321", true);
-
-	await xp.reset("1234567891", "0987654321", true);
+	await xp.db.deleteMany({
+		collection: "simply-xps", data: {
+			guild: "0987654321"
+		}
+	});
 }
 
-test("mongodb");
+test("sqlite");

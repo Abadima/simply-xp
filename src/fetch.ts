@@ -8,12 +8,12 @@ import {UserResult} from "./functions/database";
  * @async
  * @param {string} userId
  * @param {string} guildId
- * @param {string} username - Username to use if auto_create is enabled
- * @link `Documentation:` https://simplyxp.js.org/docs/fetch
+ * @param {string?} username - Username to use if auto_create is enabled
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/fetch
  * @returns {Promise<{name: string | null, user: string, guild: string, level: number, position: number, xp: number}>}
  * @throws {XpFatal} If invalid parameters are provided, or if the user data is not found.
  */
-export async function fetch(userId: string, guildId: string, username: string): Promise<User> {
+export async function fetch(userId: string, guildId: string, username?: string): Promise<User> {
 	if (!userId) throw new XpFatal({function: "create()", message: "User ID was not provided"});
 	if (!guildId) throw new XpFatal({function: "create()", message: "Guild ID was not provided"});
 

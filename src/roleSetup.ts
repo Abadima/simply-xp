@@ -8,7 +8,6 @@ import {XpFatal} from "./functions/xplogs";
  * @property {string[] | string} roles - The role(s) to add
  */
 export interface RoleSetupObject {
-	guild?: string;
 	level: number;
 	roles: string[] | string;
 }
@@ -23,7 +22,7 @@ export class roleSetup {
 	 * @async
 	 * @param {string} guildId - The guild ID
 	 * @param {RoleSetupObject} options - Level/role options
-	 * @link `Documentation:` https://simplyxp.js.org/docs/roleSetup/add
+	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/roleSetup#roleSetupadd
 	 * @returns {Promise<boolean>} - True if successful
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
 	 */
@@ -54,7 +53,7 @@ export class roleSetup {
 	 * @async
 	 * @param {string} guildId - The guild ID
 	 * @param {number} levelNumber - The level number
-	 * @link `Documentation:` https://simplyxp.js.org/docs/roleSetup/find
+	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/roleSetup#roleSetupfind
 	 * @returns {Promise<RoleSetupObject>} - The level role object
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
 	 */
@@ -75,7 +74,7 @@ export class roleSetup {
 	 * @async
 	 * @param {string} guildId - The guild ID
 	 * @param {number} levelNumber - The level number
-	 * @link `Documentation:` https://simplyxp.js.org/docs/roleSetup/remove
+	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/roleSetup#roleSetupremove
 	 * @returns {Promise<boolean>} - True if successful
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
 	 */

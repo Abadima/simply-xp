@@ -2,7 +2,6 @@
 .github
 .gitignore
 .idea
-Mini_Docs
 node_modules
 pnpm-lock.yaml
 src

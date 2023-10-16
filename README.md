@@ -12,7 +12,7 @@
 [![Version](https://img.shields.io/npm/v/simply-xp.svg?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
 [![CodeFactor](https://www.codefactor.io/repository/github/abadima/simply-xp/badge?style=for-the-badge)](https://www.codefactor.io/repository/github/abadima/simply-xp)
 
-[![Documentation](https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge)](https://simplyxp.js.org)
+[![Documentation](https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge)](https://simplyxp.js.org/docs/next/intro/)
 [![Support](https://img.shields.io/badge/Discord-Support-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/hjhnjYJNHX)
 </div>
 
@@ -45,6 +45,7 @@ yarn add simply-xp@dev
 - Added `db` class for extended database functionality
 - Added `leaderboardCard()` function
 - Added `convertFrom()` function
+- Added `compareCard` function
 - Added `migrate` class
 
 # 🎉 V2 Changes 🎉
@@ -63,8 +64,7 @@ yarn add simply-xp@dev
 # ⚠️ V2 Breaking Changes ⚠️
 
 - `create()` Now requires `username` argument.
-- `charts()` Requires new arguments.
-- `rank()` is **deprecated**, use `rankCard()` instead.
-- `rankCard()` Requires completely new arguments.
+- `charts()` Requires new arguments, and is revamped.
+- `rank()` is **deprecated**, use `rankCard()` instead. (REQUIRES NEW ARGUMENTS)
 - `roleSetup()` functions loses `client` argument.
 - `leaderboard()` loses `client` argument, and returns `user` instead of `userID`

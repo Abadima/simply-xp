@@ -1,6 +1,6 @@
 {
   "name": "simply-xp",
-  "version": "2.0.0-dev.4",
+  "version": "2.0.0-dev.5",
   "description": "The easiest way to implement xp system",
   "main": "lib/xp.js",
   "scripts": {
@@ -14,7 +14,10 @@
   "author": "Abadima",
   "keywords": [
     "amaribot",
+    "canvacord",
     "charts",
+    "compare",
+    "compete",
     "discord",
     "discord.js",
     "discord-xp",
@@ -22,14 +25,15 @@
     "fun",
     "guilded",
     "leaderboard",
-    "level role",
-    "level up",
+    "level",
+    "leveling",
     "mee6",
     "mongodb",
     "package",
     "simply",
     "simply-djs",
     "simplydjs",
+    "slack",
     "sqlite",
     "system",
     "xp"
@@ -37,33 +41,32 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Rahuletto/simply-xp.git"
+    "url": "git+https://github.com/Abadima/simply-xp.git"
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.44"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.4",
-    "@types/node": "^20.5.4",
-    "@typescript-eslint/eslint-plugin": "^6.4.1",
-    "@typescript-eslint/parser": "^6.4.1",
-    "better-sqlite3": "8.5.1",
+    "@types/better-sqlite3": "^7.6.5",
+    "@types/node": "^20.8.6",
+    "@typescript-eslint/eslint-plugin": "^6.7.5",
+    "@typescript-eslint/parser": "^6.7.5",
+    "better-sqlite3": "^9.0.0",
     "discord.js": "^14.13.0",
-    "eslint": "^8.47.0",
+    "eslint": "^8.51.0",
     "jsdoc-to-markdown": "^8.0.0",
-    "mongodb": "^5.8.1",
-    "typescript": "^5.1.6",
+    "mongodb": "^6.1.0",
+    "typescript": "^5.2.2",
     "uglify-js": "^3.17.4"
   },
   "engines": {
     "node": ">=15.5.0"
   },
   "bugs": {
-    "url": "https://github.com/Rahuletto/simply-xp/issues"
+    "url": "https://github.com/Abadima/simply-xp/issues"
   },
   "homepage": "https://simplyxp.js.org",
   "directories": {
-    "doc": "Mini_Docs",
     "lib": "lib"
   }
 }

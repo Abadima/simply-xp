@@ -22,6 +22,8 @@ export {db} from "./src/functions/database";
 
 export {charts} from "./src/charts";
 
+export {compareCard, leaderboardCard, rankCard} from "./src/cards";
+
 export {connect} from "./src/connect";
 
 export {convertFrom, updateOptions} from "./src/functions/utilities";
@@ -33,8 +35,6 @@ export {fetch} from "./src/fetch";
 export {leaderboard} from "./src/leaderboard";
 
 export {migrate} from "./src/migrate";
-
-export {rankCard, leaderboardCard} from "./src/cards";
 
 export {reset} from "./src/reset";
 

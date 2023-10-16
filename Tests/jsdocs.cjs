@@ -1,4 +1,3 @@
-const jsdoc2md = require('jsdoc-to-markdown');
 const { readdirSync } = require('fs');
 const { resolve } = require('path');
 const {execSync} = require("child_process");
