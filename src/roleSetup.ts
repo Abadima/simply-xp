@@ -1,4 +1,5 @@
 import {db} from "../xp";
+import { LevelRoleResult } from "./functions/database";
 import {XpFatal} from "./functions/xplogs";
 
 /**
@@ -9,7 +10,7 @@ import {XpFatal} from "./functions/xplogs";
  */
 export interface RoleSetupObject {
 	level: number;
-	roles: string[] | string;
+	role: string[] | string;
 }
 
 /**
@@ -35,17 +36,16 @@ export class roleSetup {
 			message: "Level must be a number"
 		});
 
-		if (!options?.roles) throw new XpFatal({
+		if (!options?.role) throw new XpFatal({
 			function: "roleSetup.add()", message: "Role was not provided"
 		});
 
-		if (typeof options?.roles === "string") options.roles = [options.roles];
+		if (typeof options?.role === "string") options.role = [options.role];
 
 		return await db.createOne({
-			// make a new ISO date
 			collection: "simply-xp-levelroles",
-			data: {guild: guildId, level: options.level, roles: options.roles, timestamp: new Date().toISOString()}
-		}) as unknown as boolean;
+			data: {guild: guildId, lvlrole: {lvl: options.level, role: options.role}}
+		}).then(() => true).catch(() => false);
 	}
 
 	/**
@@ -54,19 +54,25 @@ export class roleSetup {
 	 * @param {string} guildId - The guild ID
 	 * @param {number} levelNumber - The level number
 	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/roleSetup#roleSetupfind
-	 * @returns {Promise<RoleSetupObject>} - The level role object
+	 * @returns {Promise<LevelRoleResult>} - The level role object
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
 	 */
-	static async find(guildId: string, levelNumber: number): Promise<RoleSetupObject> {
+	static async find(guildId: string, levelNumber: number): Promise<LevelRoleResult> {
 		if (!guildId) throw new XpFatal({function: "roleSetup.find()", message: "Guild ID was not provided"});
 		if (isNaN(levelNumber)) throw new XpFatal({
 			function: "roleSetup.find()", message: "Level Number was not provided"
 		});
 
-		return await db.findOne({
+		const results = await db.findOne({
 			collection: "simply-xp-levelroles",
-			data: {guild: guildId, level: levelNumber, timestamp: new Date().toISOString()}
-		}) as RoleSetupObject;
+			data: {guild: guildId, lvlrole: {lvl: levelNumber}}
+		}) as LevelRoleResult;
+
+		if (!results) return results;
+		else {
+			results.lvlrole = typeof(results.lvlrole) === "string" ? JSON.parse(results.lvlrole) : results.lvlrole;
+			return results;
+		}
 	}
 
 	/**
@@ -86,7 +92,7 @@ export class roleSetup {
 
 		return await db.deleteOne({
 			collection: "simply-xp-levelroles",
-			data: {guild: guildId, level: levelNumber, timestamp: new Date().toISOString()}
+			data: {guild: guildId, lvlrole: {lvl: levelNumber}}
 		});
 	}
 }

@@ -68,8 +68,9 @@ export async function connect(uri: string, options: ConnectionOptions = {type: u
 			);
 			xp.database.exec(`CREATE TABLE IF NOT EXISTS "simply-xp-levelroles"
                               (
-                                  gid     TEXT UNIQUE,
-                                  lvlrole TEXT NOT NULL
+                                  gid     TEXT NOT NULL,
+                                  lvlrole TEXT NOT NULL,
+								  timestamp TEXT NOT NULL
                               )`
 			);
 		} catch (error: unknown) {

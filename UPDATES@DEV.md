@@ -1,8 +1,18 @@
 # VERSION 2@DEV CHANGELOGS
 
+## [DEV 5 FIX 0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.5-fix.0)
+
+### ⚠️ Breaking Changes
+
+- `roleSetup()` now takes `role` instead of `roles` again, to make migration from V1 less painful
+
+### Bug Fixes
+
+- Complete overhaul of `simply-xp-levelroles` in SQLite, making it actually functional
+- Fix `simply-xps-levelroles` not having `timestamp` property in SQLite & MongoDB
+- Fix `roleSetup.add()` not actually returning `true/false`
+
 ## [DEV 5](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.5)
-
-
 
 ### Additions
 

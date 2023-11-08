@@ -47,25 +47,25 @@ export interface UserResult {
  * @property {string} collection - The collection to create the document in.
  * @property {object} data - The data to create the document with.
  * @property {string} data.guild - The guild ID.
- * @property {number} [data.level] - The level to assign the role at.
- * @property {string | Array<string>} [data.roles] - The role(s) to assign.
- * @property {string} data.timestamp - The timestamp of when the document was created.
+ * @property {object} data.lvlrole - The level role data.
+ * @property {number} data.lvlrole.lvl - The level.
+ * @property {string | Array<string>} [data.lvlrole.role] - The role ID(s).
  */
 export interface LevelRoleOptions {
 	collection: "simply-xp-levelroles";
 	data: {
 		guild: string;
-		level: number;
-		roles?: string | Array<string>;
-		timestamp: string;
+		lvlrole: {
+			lvl: number,
+			role?: string | Array<string>;
+		};
 	};
 }
 
 export type LevelRoleResult = {
 	_id?: string,
 	guild: string;
-	level: number;
-	roles: Array<string>;
+	lvlrole: string;
 	timestamp: string;
 }
 
@@ -99,20 +99,18 @@ export class db {
 	 */
 	static async createOne(query: UserOptions | LevelRoleOptions): Promise<UserResult | LevelRoleResult> {
 		if (!xp.database) throw new XpFatal({function: "createOne()", message: "No database connection"});
-		let result: Document;
 
 		switch (xp.dbType) {
 		case "mongodb":
 			(xp.database as MongoClient).db().collection(query.collection).insertOne(query.data).catch(error => handleError(error, "createOne()"));
-			result = db.findOne(query);
 			break;
 
 		case "sqlite":
-			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("INSERT INTO \"simply-xps\" (user, guild, name, xp, level) VALUES (?, ?, ?, ?, ?)").run(query.data.user, query.data.guild, query.data?.name, query.data.xp, query.data.level);
-			else result = (xp.database as Database).prepare("INSERT INTO \"simply-xp-levelroles\" (guild, level, role) VALUES (?, ?, ?)").run(query.data.guild, query.data.level, query.data.roles);
+			if (query.collection === "simply-xps") (xp.database as Database).prepare("INSERT INTO \"simply-xps\" (user, guild, name, xp, level) VALUES (?, ?, ?, ?, ?)").run(query.data.user, query.data.guild, query.data?.name, query.data.xp, query.data.level);
+			else (xp.database as Database).prepare("INSERT INTO \"simply-xp-levelroles\" (gid, lvlrole, timestamp) VALUES (?, ?, ?)").run(query.data.guild, JSON.stringify(query.data.lvlrole), new Date().toISOString());
 			break;
 		}
-		return result as UserResult | LevelRoleResult;
+		return await db.findOne(query) as UserResult | LevelRoleResult;
 	}
 
 	/**
@@ -133,7 +131,7 @@ export class db {
 			break;
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("DELETE FROM \"simply-xps\" WHERE guild = ?").run(query.data.guild);
-			else result = (xp.database as Database).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE guild = ?").run(query.data.guild);
+			else result = (xp.database as Database).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE gid = ?").run(query.data.guild);
 		}
 		return !!result;
 	}
@@ -157,7 +155,11 @@ export class db {
 			break;
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("DELETE FROM \"simply-xps\" WHERE guild = ? AND user = ?").run(query.data.guild, query.data.user);
-			else result = (xp.database as Database).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE guild = ? AND level = ?").run(query.data.guild, query.data.level);
+			else {
+				result = await this.find(query);
+				result = result.filter((row: LevelRoleResult) => JSON.parse(row.lvlrole).lvl === query.data.lvlrole.lvl)[0] as Document;
+				result = (xp.database as Database).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE gid = ? AND lvlrole = ?").run(query.data.guild, result.lvlrole) as Document;
+			}
 		}
 		return !!result;
 	}
@@ -177,12 +179,16 @@ export class db {
 
 		switch (xp.dbType) {
 		case "mongodb":
-			result = (xp.database as MongoClient).db().collection(query.collection).findOne(query.data).catch(error => handleError(error, "findOne()")) as Document;
+			if (query.collection === "simply-xps") result = await (xp.database as MongoClient).db().collection(query.collection).findOne(query.data).catch(error => handleError(error, "findOne()")) as Document;
+			else result = await (xp.database as MongoClient).db().collection(query.collection).findOne({guild: query.data.guild, "lvlrole.lvl": query.data.lvlrole.lvl}).catch(error => handleError(error, "findOne()")) as Document;
 			break;
 
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?").get(query.data.guild, query.data.user) as Document;
-			else result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE guild = ? AND level = ?").get(query.data.guild, query.data.level) as Document;
+			else {
+				result = await this.find(query);
+				result = result.filter((row: LevelRoleResult) => JSON.parse(row.lvlrole).lvl === query.data.lvlrole.lvl)[0];
+			}
 			break;
 		}
 		return result as UserResult | LevelRoleResult;
@@ -208,7 +214,7 @@ export class db {
 
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ?").all(query.data.guild) as Document;
-			else result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE guild = ?").all(query.data.guild) as Document;
+			else result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE gid = ?").all(query.data.guild) as Document;
 			break;
 		}
 		return result as UserResult[] | LevelRoleResult[];
@@ -235,7 +241,7 @@ export class db {
 
 		case "sqlite":
 			if (filter.collection === "simply-xps" && update.collection === "simply-xps") (xp.database as Database).prepare("UPDATE \"simply-xps\" SET xp = ?, level = ?"+ (update.data?.name ? ", name = ?" : "") +" WHERE guild = ? AND user = ?").run(update.data?.name ? [update.data.xp, update.data.level, update.data.name, filter.data.guild, filter.data.user] : [update.data.xp, update.data.level, filter.data.guild, filter.data.user]);
-			else if (filter.collection === "simply-xp-levelroles" && update.collection === "simply-xp-levelroles") (xp.database as Database).prepare("UPDATE \"simply-xp-levelroles\" SET role = ? WHERE guild = ? AND level = ?").run(update.data.roles, filter.data.guild, filter.data.level);
+			else if (filter.collection === "simply-xp-levelroles" && update.collection === "simply-xp-levelroles") (xp.database as Database).prepare("UPDATE \"simply-xp-levelroles\" SET lvlrole = ? WHERE gid = ?").run(JSON.stringify(update.data.lvlrole), filter.data.guild);
 			else throw new XpFatal({
 				function: "updateOne()", message: "Collection mismatch, expected same collection on both filter and update."
 			});

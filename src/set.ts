@@ -69,7 +69,7 @@ export async function setXP(userId: string, guildId: string, xpData: number, use
 	if (!guildId) throw new XpFatal({function: "setXP()", message: "Guild ID was not provided"});
 	if (isNaN(xpData)) throw new XpFatal({function: "setXP()", message: "XP was not provided"});
 
-	const user = await db.findOne({collection: "simply-xps", data: {user: userId, guild: guildId}});
+	const user = await db.findOne({collection: "simply-xps", data: {user: userId, guild: guildId}}) as UserResult;
 	let data;
 
 	if (!user) {
