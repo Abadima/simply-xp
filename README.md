@@ -38,33 +38,51 @@ yarn add simply-xp@dev
 
 <br>
 
-# ✅ V2 Additions
+## ✅ V2 Additions
 
-- Added support for `SQLite` database
-- Added `debug`, `auto_create`, `auto_purge` options for `connect()` function
-- Added `db` class for extended database functionality
-- Added `leaderboardCard()` function
-- Added `convertFrom()` function
-- Added `compareCard` function
-- Added `migrate` class
+- Add `auto_create`, `auto_clean`, `debug`, and `xp_rate` options to `connect()`.
+- Add `compareCard()`
+- Add `convertFrom()`
+- Add `db` class for extended database functionality
+- Add `https()`
+- Add `leaderboardCard()`
+- Add `migrate` class
+- Add `SQLite` Support
+- Add `roleSetup.getRoles()`
+- Add `registerPlugins()`
+- Add `removeLevel()` and `removeXP()`.
+- Add `roleSetup.getRoles()`
+- Add `updateOptions()`
+- Add `xp_rate` Support For Unique Level Rates!
 
-# 🎉 V2 Changes 🎉
+## 🎉 V2 Changes
 
-- Better Documentation
-- Better Log Handling (`XpDebug`, `XpError`, `XpInfo`, `XpWarn`)
-- Better Performance
+- All functions returning either `UserResult` or `LevelRoleResult` now includes `lastUpdated` property.
+- Better Performance & Reduced RAM overhead.
 - Better Code Quality (EsLint)
+- Complete & Revamped Documentation
 - Complete TypeScript Rewrite
+- New Fonts
+- Reduced Package Size!
+- Renewed Logging System (`XpLog`)
 - Deleted `chart.js` dependency
+- `addLevel(), addXP(), setLevel(), setXP()` now has a `username` parameter, to automatically create the user if it doesn't exist.
 - `fetch()` now also returns `position`, and accepts `username` parameter
-- `roleSetup` functions now accept roleID arrays! `["role1", "role2", "role3"]`, and will return `timestamp` as a bonus!
+- `leaderboard()` now supports Global Leaderboards, by simply not passing a `guildID` argument.
+- `roleSetup` functions now accept RoleID arrays! `["role1", "role2", "role3"]`.
 - `reset()` function now accepts `erase` and `username` as optional arguments
-- `addLevel(), addXP(), setLevel(), setXP()` now has a `username` parameter, to automatically create the user if it doesn't exist. 
 
-# ⚠️ V2 Breaking Changes ⚠️
+## ⚠️ V2 Breaking Changes
 
+- All functions lose `client` and `message` arguments where applicable.
 - `create()` Now requires `username` argument.
 - `charts()` Requires new arguments, and is revamped.
-- `rank()` is **deprecated**, use `rankCard()` instead. (REQUIRES NEW ARGUMENTS)
-- `roleSetup()` functions loses `client` argument.
-- `leaderboard()` loses `client` argument, and returns `user` instead of `userID`
+- `rank()` is **removed**, use `rankCard()` instead. (REQUIRES NEW ARGUMENTS)
+- `leaderboard()` replaces `userID` with `user` in `UserResult`.
+- `client.on()` => `XpEvents.on()` (READ DOCS)
+- `roleSetup` functions loses `client` argument.
+- `roleSetup.fetch()` => `roleSetup.list()`
+
+## ❌ V2 Removals
+
+- `lvlRole()` is removed, use `roleSetup.getRoles()` instead. (READ DOCS)

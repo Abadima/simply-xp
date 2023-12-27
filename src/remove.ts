@@ -1,6 +1,7 @@
 import { XpEvents, XpFatal } from "./functions/xplogs";
-import { db, UserResult } from "./functions/database";
-import { convertFrom, roleSetup, xp } from "../xp";
+import { UserResult } from "./functions/database";
+import { convertFrom, db, roleSetup, xp } from "../xp";
+import { XPResult } from "./add";
 
 /**
  * Add XP to a user
@@ -14,12 +15,12 @@ import { convertFrom, roleSetup, xp } from "../xp";
  * @throws {XpFatal} - If parameters are not provided correctly
  */
 
-export async function addLevel(userId: string, guildId: string, level: number, username?: string): Promise<UserResult> {
-	if (!userId) throw new XpFatal({ function: "addLevel()", message: "User ID was not provided" });
+export async function removeLevel(userId: string, guildId: string, level: number, username?: string): Promise<UserResult> {
+	if (!userId) throw new XpFatal({ function: "removeLevel()", message: "User ID was not provided" });
 
-	if (!guildId) throw new XpFatal({ function: "addLevel()", message: "Guild ID was not provided" });
+	if (!guildId) throw new XpFatal({ function: "removeLevel()", message: "Guild ID was not provided" });
 
-	if (isNaN(level)) throw new XpFatal({ function: "addLevel()", message: "Level was not provided" });
+	if (isNaN(level)) throw new XpFatal({ function: "removeLevel()", message: "Level was not provided" });
 
 	const user = await db.findOne({
 		collection: "simply-xps", data: { user: userId, guild: guildId }
@@ -28,9 +29,9 @@ export async function addLevel(userId: string, guildId: string, level: number, u
 	if (!user) {
 		if (xp.auto_create && username) return await db.createOne({
 			collection: "simply-xps",
-			data: { guild: guildId, user: userId, name: username, level, xp: convertFrom(level), xp_rate: xp.xp_rate }
+			data: { guild: guildId, user: userId, name: username, level: 0, xp: 0, xp_rate: xp.xp_rate }
 		}) as UserResult;
-		else throw new XpFatal({ function: "addLevel()", message: "User does not exist" });
+		else throw new XpFatal({ function: "removeLevel()", message: "User does not exist" });
 	} else {
 		return await db.updateOne({
 			collection: "simply-xps",
@@ -40,20 +41,12 @@ export async function addLevel(userId: string, guildId: string, level: number, u
 			data: {
 				name: username || user?.name || userId,
 				user: userId, guild: guildId,
-				level: user.level + level,
-				xp: convertFrom(level + user.level),
+				level: user.level - level,
+				xp: convertFrom(user.level - level),
 				xp_rate: xp.xp_rate
 			}
 		}) as UserResult;
 	}
-}
-
-/**
- * XP Results
- * @property {boolean} levelDifference - Whether the user has levelled up or not.
- */
-export interface XPResult extends UserResult {
-	levelDifference: number;
 }
 
 /**
@@ -67,7 +60,7 @@ export interface XPResult extends UserResult {
  * @returns {Promise<XPResult>} - Object of user data on success.
  * @throws {XpFatal} - If parameters are not provided correctly.
  */
-export async function addXP(userId: string, guildId: string,
+export async function removeXP(userId: string, guildId: string,
 	xpData: number | { min: number, max: number }, username?: string): Promise<XPResult> {
 
 	if (typeof xpData !== "number" && (typeof xp !== "object" || !xpData.min || !xpData.max)) throw new XpFatal({
@@ -76,31 +69,28 @@ export async function addXP(userId: string, guildId: string,
 
 	if (typeof xpData === "object") xpData = Math.floor(Math.random() * (xpData.max - xpData.min) + xpData.min);
 
-	if (!userId) throw new XpFatal({ function: "addXP()", message: "User ID was not provided" });
+	if (!userId) throw new XpFatal({ function: "removeXP()", message: "User ID was not provided" });
 
-	if (!guildId) throw new XpFatal({ function: "addXP()", message: "Guild ID was not provided" });
+	if (!guildId) throw new XpFatal({ function: "removeXP()", message: "Guild ID was not provided" });
 
 	const user = await db.findOne({
 		collection: "simply-xps", data: { user: userId, guild: guildId }
 	}) as UserResult;
 
-	let data: UserResult;
+	let data;
 
 	if (!user) {
 		if (xp.auto_create && username) data = await db.createOne({
 			collection: "simply-xps",
 			data: {
-				guild: guildId,
-				user: userId,
-				name: username,
-				level: convertFrom(xpData, "xp"),
-				xp: xpData,
-				xp_rate: xp.xp_rate
+				guild: guildId, user: userId,
+				name: username, level: 0,
+				xp: 0, xp_rate: xp.xp_rate
 			}
 		}).catch((err) => {
-			throw new XpFatal({ function: "addXP()", message: err.stack });
+			throw new XpFatal({ function: "removeXP()", message: err.stack });
 		}) as UserResult;
-		else throw new XpFatal({ function: "addXP()", message: "User does not exist" });
+		else throw new XpFatal({ function: "removeXP()", message: "User does not exist" });
 	} else {
 		data = await db.updateOne({
 			collection: "simply-xps",
@@ -109,12 +99,12 @@ export async function addXP(userId: string, guildId: string,
 			collection: "simply-xps",
 			data: {
 				user: userId, guild: guildId, name: username || user?.name || userId,
-				level: convertFrom(user.xp + xpData, "xp"),
-				xp: user.xp + xpData,
+				level: convertFrom(user.xp - xpData, "xp"),
+				xp: user.xp - xpData,
 				xp_rate: xp.xp_rate
 			}
 		}).catch((err) => {
-			throw new XpFatal({ function: "addXP()", message: err.stack });
+			throw new XpFatal({ function: "removeXP()", message: err.stack });
 		}) as UserResult;
 	}
 

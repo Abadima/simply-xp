@@ -1,4 +1,60 @@
-# VERSION 2@DEV CHANGELOGS
+# VERSION 2 CHANGELOGS
+
+## [🎉 BETA 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.1)
+
+### Additions
+
+- Added `clean()` to help reduce reduce RAM usage, and lower database usage.
+- Added `db.findAll()` for fetching all documents in a collection, without any filters.
+- Added `https()` Function, to make HTTP requests.
+- Added `lastUpdated` property to `UserResult`, this might be useful for some people.
+- Added `leaderboard()` option to not include guildId, allowing for global leaderboards.
+- Added `registerPlugins()` function, now you can make and use plugins to make `simply-xp` even more powerful.
+- Added `removeLevel()` and `removeXP()` functions, to remove XP and Levels from a user.
+- Added `roleSetup.list()` for listing all roles in a guild.
+- Added `roleSetup.getRoles()` for getting user's level roles in a guild, has options.
+- Added `voice_time` and `voice_xp` for SQLite, allowing for a future `@simply-xp/voice` package.
+- Added `xp_rate` option for `connect()` and `updateOptions()` functions, to set XP rate globally.
+- Added `xp_rate` as a database value, to update XP rates for all users upon xp_rate change.
+- Added `XpEvents` class, to handle events instead of `console.log` (READ DOCS).
+- More `leaderboardCard()` customization options (Suggested by notquarkhadron on Discord)
+- Moved fonts to CDNs, to reduce package size.
+
+### ⚠️ Breaking Changes
+
+- `ConnectionOptions` and `NewClientOptions` replaces `auto_purge` with `auto_clean`.
+- `addXP()`, `removeXP()`, `setXP()` replaces `hasLevelledUp` with `levelDifference`, returning the difference in
+  levels,
+  now always returns `number`.
+
+### Bug Fixes
+
+- Fix `charts()` displaying bar funny when a user has infinity XP.
+- Fix `convertFrom()` returning `NaN` when negative number is provided, now will return 0 by default.
+- (Hopefully) Fix `undefined` error when using `add` and `set` functions sometimes.
+- Fix `LevelRoleResult` returning `lvlrole` as string, now returns `object` as intended.
+- Fix `rankCard()` visual bug when user just levelled up.
+- Fix broken `JSDocs` documentation links.
+
+### Improvements
+
+- Both `rankCard()` and `compareCard()` have visual & efficiency improvements.
+- `hasLevelledUp` now returns new level number if user levelled up, instead of `true`.
+- `leaderboardCard()` no longer requires `members` when including Guild details, and adjusted default colours.
+- `leaderboardCard()` replaces `font` with `primaryFont` and `secondaryFont`, separating title from rest of the card.
+- Added method to clear canvas cache, enable by setting `auto_clean` to `true` in `connect()`, or `updateOptions()`.
+- If `username` is specified in `addXP()`, `addLevel()`, `setLevel()`, it will update the user's username.
+- Replaced `Baloo` font to re-add support for symbols, unfortunately this means increased package size.
+- `charts()` and `leaderboardCard()` have attempted RAM usage improvements.
+- Downgraded `@napi-rs/canvas`, as a temporary fix for RAM
+  leaks. [Issue #716](https://github.com/Brooooooklyn/canvas/issues/716)
+- `charts()` minor code improvements.
+- Made changes to `XpLog()` system.
+- Add support for `MongoDB` V3.
+
+### ❌ Removals
+
+- `rank()` is removed, use `rankCard()` instead.
 
 ## [DEV 5 FIX 0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.5-fix.0)
 

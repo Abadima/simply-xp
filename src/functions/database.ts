@@ -1,7 +1,7 @@
-import {Collection, Document, MongoClient} from "mongodb";
-import {Database} from "better-sqlite3";
-import {XpFatal} from "./xplogs";
-import {xp} from "../../xp";
+import { Collection, Document, MongoClient } from "mongodb";
+import { Database } from "better-sqlite3";
+import { XpFatal } from "./xplogs";
+import { xp } from "../../xp";
 
 /**
  * Options for creating a user document.
@@ -12,6 +12,7 @@ import {xp} from "../../xp";
  * @property {string} [data.name] - The username.
  * @property {number} [data.level] - The level.
  * @property {number} [data.xp] - The XP.
+ * @property {number} [data.xp_rate] - The XP rate.
  */
 export interface UserOptions {
 	collection: "simply-xps";
@@ -21,6 +22,7 @@ export interface UserOptions {
 		name?: string;
 		level?: number;
 		xp?: number;
+		xp_rate?: number;
 	};
 }
 
@@ -30,16 +32,20 @@ export interface UserOptions {
  * @property {string} user - The user ID.
  * @property {string} [name] - The username.
  * @property {string} guild - The guild ID.
+ * @property {string} lastUpdated - ISO String of the last time the user was updated.
  * @property {number} level - The level.
  * @property {number} xp - The XP.
+ * @property {number} [xp_rate] - The XP rate.
  */
 export interface UserResult {
 	_id?: string,
 	user: string;
 	name?: string;
 	guild: string;
+	lastUpdated: string;
 	level: number;
 	xp: number;
+	xp_rate?: number;
 }
 
 /**
@@ -56,17 +62,29 @@ export interface LevelRoleOptions {
 	data: {
 		guild: string;
 		lvlrole: {
-			lvl: number,
-			role?: string | Array<string>;
+			lvl: number | null,
+			role?: string | Array<string> | null;
 		};
 	};
 }
 
+/**
+ * The result of a level role document.
+ * @property {string} [_id] - The ID of the document.
+ * @property {string} guild - The guild ID.
+ * @property {object} lvlrole - The level role data.
+ * @property {number} lvlrole.lvl - The level.
+ * @property {string | Array<string>} [lvlrole.role] - The role ID(s).
+ * @property {string} lastUpdated - ISO String of the last time the level role was updated.
+ */
 export type LevelRoleResult = {
 	_id?: string,
 	guild: string;
-	lvlrole: string;
-	timestamp: string;
+	lvlrole: {
+		lvl: number,
+		role?: string | Array<string>;
+	};
+	lastUpdated: string;
 }
 
 /**
@@ -83,8 +101,11 @@ export class db {
 	 * @throws {XpFatal} Throws an error if there is no database connection, or database type is invalid.
 	 */
 	static getCollection(collection: string): Collection {
-		if (!xp.database) throw new XpFatal({function: "getCollection()", message: "No database connection"});
-		if (xp.dbType !== "mongodb") throw new XpFatal({function: "getCollection()", message: "MongoDB has to be your database type to use this function."});
+		if (!xp.database) throw new XpFatal({ function: "getCollection()", message: "No database connection" });
+		if (xp.dbType !== "mongodb") throw new XpFatal({
+			function: "getCollection()",
+			message: "MongoDB has to be your database type to use this function."
+		});
 		return (xp.database as MongoClient).db().collection(collection);
 	}
 
@@ -98,16 +119,18 @@ export class db {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async createOne(query: UserOptions | LevelRoleOptions): Promise<UserResult | LevelRoleResult> {
-		if (!xp.database) throw new XpFatal({function: "createOne()", message: "No database connection"});
+		if (!xp.database) throw new XpFatal({ function: "createOne()", message: "No database connection" });
 
 		switch (xp.dbType) {
 		case "mongodb":
-			(xp.database as MongoClient).db().collection(query.collection).insertOne(query.data).catch(error => handleError(error, "createOne()"));
+			(xp.database as MongoClient).db().collection(query.collection).insertOne({
+				...query.data, lastUpdated: new Date().toISOString()
+			}).catch(error => handleError(error, "createOne()"));
 			break;
 
 		case "sqlite":
-			if (query.collection === "simply-xps") (xp.database as Database).prepare("INSERT INTO \"simply-xps\" (user, guild, name, xp, level) VALUES (?, ?, ?, ?, ?)").run(query.data.user, query.data.guild, query.data?.name, query.data.xp, query.data.level);
-			else (xp.database as Database).prepare("INSERT INTO \"simply-xp-levelroles\" (gid, lvlrole, timestamp) VALUES (?, ?, ?)").run(query.data.guild, JSON.stringify(query.data.lvlrole), new Date().toISOString());
+			if (query.collection === "simply-xps") (xp.database as Database).prepare("INSERT INTO \"simply-xps\" (user, guild, level, name, lastUpdated, xp, xp_rate) VALUES (?, ?, ?, ?, ?, ?, ?)").run(query.data.user, query.data.guild, query.data.level, query.data?.name, new Date().toISOString(), query.data.xp, query.data.xp_rate);
+			else (xp.database as Database).prepare("INSERT INTO \"simply-xp-levelroles\" (gid, lvlrole, lastUpdated) VALUES (?, ?, ?)").run(query.data.guild, JSON.stringify(query.data.lvlrole), new Date().toISOString());
 			break;
 		}
 		return await db.findOne(query) as UserResult | LevelRoleResult;
@@ -122,7 +145,7 @@ export class db {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async deleteMany(query: UserOptions | LevelRoleOptions): Promise<boolean> {
-		if (!xp.database) throw new XpFatal({function: "deleteMany()", message: "No database connection"});
+		if (!xp.database) throw new XpFatal({ function: "deleteMany()", message: "No database connection" });
 		let result: Document;
 
 		switch (xp.dbType) {
@@ -146,7 +169,7 @@ export class db {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async deleteOne(query: UserOptions | LevelRoleOptions): Promise<boolean> {
-		if (!xp.database) throw new XpFatal({function: "deleteOne()", message: "No database connection"});
+		if (!xp.database) throw new XpFatal({ function: "deleteOne()", message: "No database connection" });
 		let result: Document;
 
 		switch (xp.dbType) {
@@ -157,8 +180,8 @@ export class db {
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("DELETE FROM \"simply-xps\" WHERE guild = ? AND user = ?").run(query.data.guild, query.data.user);
 			else {
 				result = await this.find(query);
-				result = result.filter((row: LevelRoleResult) => JSON.parse(row.lvlrole).lvl === query.data.lvlrole.lvl)[0] as Document;
-				result = (xp.database as Database).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE gid = ? AND lvlrole = ?").run(query.data.guild, result.lvlrole) as Document;
+				result = result.filter((row: LevelRoleResult) => row.lvlrole.lvl === query.data.lvlrole.lvl)[0] as Document;
+				result = (xp.database as Database).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE gid = ? AND lvlrole = ?").run(query.data.guild, JSON.stringify(result.lvlrole)) as Document;
 			}
 		}
 		return !!result;
@@ -174,20 +197,23 @@ export class db {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async findOne(query: UserOptions | LevelRoleOptions): Promise<UserResult | LevelRoleResult> {
-		if (!xp.database) throw new XpFatal({function: "findOne()", message: "No database connection"});
+		if (!xp.database) throw new XpFatal({ function: "findOne()", message: "No database connection" });
 		let result: Document;
 
 		switch (xp.dbType) {
 		case "mongodb":
 			if (query.collection === "simply-xps") result = await (xp.database as MongoClient).db().collection(query.collection).findOne(query.data).catch(error => handleError(error, "findOne()")) as Document;
-			else result = await (xp.database as MongoClient).db().collection(query.collection).findOne({guild: query.data.guild, "lvlrole.lvl": query.data.lvlrole.lvl}).catch(error => handleError(error, "findOne()")) as Document;
+			else result = await (xp.database as MongoClient).db().collection(query.collection).findOne({
+				guild: query.data.guild,
+				"lvlrole.lvl": query.data.lvlrole.lvl
+			}).catch(error => handleError(error, "findOne()")) as Document;
 			break;
 
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?").get(query.data.guild, query.data.user) as Document;
 			else {
 				result = await this.find(query);
-				result = result.filter((row: LevelRoleResult) => JSON.parse(row.lvlrole).lvl === query.data.lvlrole.lvl)[0];
+				result = result.filter((row: LevelRoleResult) => row.lvlrole.lvl === query.data.lvlrole.lvl)[0];
 			}
 			break;
 		}
@@ -204,7 +230,7 @@ export class db {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async find(query: UserOptions | LevelRoleOptions): Promise<UserResult[] | LevelRoleResult[]> {
-		if (!xp.database) throw new XpFatal({function: "find()", message: "No database connection"});
+		if (!xp.database) throw new XpFatal({ function: "find()", message: "No database connection" });
 		let result: Document;
 
 		switch (xp.dbType) {
@@ -214,7 +240,47 @@ export class db {
 
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ?").all(query.data.guild) as Document;
-			else result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE gid = ?").all(query.data.guild) as Document;
+			else {
+				result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE gid = ?").all(query.data.guild) as Document;
+				if (result.length) result = await Promise.all(result.map(async (row: {
+					gid: string; lvlrole: string; lastUpdated: string;
+				}) => {
+					row.lvlrole = JSON.parse(row.lvlrole);
+					return row;
+				}));
+			}
+			break;
+		}
+		return result as UserResult[] | LevelRoleResult[];
+	}
+
+	/**
+	 * Finds all documents in a collection.
+	 * @param {"simply-xps" | "simply-xp-levelroles"} collection - The collection to search for all documents.
+	 * @link https://simplyxp.js.org/docs/next/handlers/database#findAll Documentation
+	 * @returns {Promise<UserResult[] | LevelRoleResult[]>} An array of found documents.
+	 * @throws {XpFatal} Throws an error if there is no database connection.
+	 */
+	static async findAll(collection: "simply-xps" | "simply-xp-levelroles"): Promise<UserResult[] | LevelRoleResult[]> {
+		if (!xp.database) throw new XpFatal({ function: "findAll()", message: "No database connection" });
+		let result: Document;
+
+		switch (xp.dbType) {
+		case "mongodb":
+			result = (xp.database as MongoClient).db().collection(collection).find().toArray().catch(error => handleError(error, "findAll()")) as Document;
+			break;
+
+		case "sqlite":
+			if (collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\"").all() as Document;
+			else {
+				result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\"").all() as Document;
+				if (result.length) result = await Promise.all(result.map(async (row: {
+					gid: string; lvlrole: string; lastUpdated: string;
+				}) => {
+					row.lvlrole = JSON.parse(row.lvlrole);
+					return row;
+				}));
+			}
 			break;
 		}
 		return result as UserResult[] | LevelRoleResult[];
@@ -232,18 +298,23 @@ export class db {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async updateOne(filter: UserOptions | LevelRoleOptions, update: UserOptions | LevelRoleOptions, options?: object): Promise<UserResult | LevelRoleResult> {
-		if (!xp.database) throw new XpFatal({function: "updateOne()", message: "No database connection"});
+		if (!xp.database) throw new XpFatal({ function: "updateOne()", message: "No database connection" });
 
 		switch (xp.dbType) {
 		case "mongodb":
-			await (xp.database as MongoClient).db().collection(update.collection).updateOne(filter.data, {$set: update.data}, options).catch(error => handleError(error, "updateOne()"));
+			await (xp.database as MongoClient).db().collection(update.collection).updateOne(filter.data, {
+				$set: {
+					...update.data, lastUpdated: new Date().toISOString()
+				}
+			}, options).catch(error => handleError(error, "updateOne()"));
 			break;
 
 		case "sqlite":
-			if (filter.collection === "simply-xps" && update.collection === "simply-xps") (xp.database as Database).prepare("UPDATE \"simply-xps\" SET xp = ?, level = ?"+ (update.data?.name ? ", name = ?" : "") +" WHERE guild = ? AND user = ?").run(update.data?.name ? [update.data.xp, update.data.level, update.data.name, filter.data.guild, filter.data.user] : [update.data.xp, update.data.level, filter.data.guild, filter.data.user]);
+			if (filter.collection === "simply-xps" && update.collection === "simply-xps") (xp.database as Database).prepare(`UPDATE "simply-xps" SET xp_rate = ?, xp = ?, lastUpdated = ?, level = ? ${(update.data?.name ? ", name = ?" : "")} WHERE guild = ? AND user = ?`).run(update.data?.name ? [update.data.xp_rate, update.data.xp, new Date().toISOString(), update.data.level, update.data.name, filter.data.guild, filter.data.user] : [update.data.xp_rate, update.data.xp, new Date().toISOString(), update.data.level, filter.data.guild, filter.data.user]);
 			else if (filter.collection === "simply-xp-levelroles" && update.collection === "simply-xp-levelroles") (xp.database as Database).prepare("UPDATE \"simply-xp-levelroles\" SET lvlrole = ? WHERE gid = ?").run(JSON.stringify(update.data.lvlrole), filter.data.guild);
 			else throw new XpFatal({
-				function: "updateOne()", message: "Collection mismatch, expected same collection on both filter and update."
+				function: "updateOne()",
+				message: "Collection mismatch, expected same collection on both filter and update."
 			});
 		}
 		return db.findOne(update);
@@ -259,5 +330,5 @@ export class db {
  * @private
  */
 function handleError(error: Error, functionName: string): void {
-	throw new XpFatal({function: `db.${functionName}`, message: error});
+	throw new XpFatal({ function: `db.${functionName}`, message: error });
 }

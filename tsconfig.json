@@ -29,7 +29,7 @@
     "lib"
   ],
   "include": [
-    "./src/fonts/BalooBhaijaan-Regular.woff2",
+    "./src/fonts/Baloo-Regular.woff2",
     "./src/**/*",
     "xp.ts"
   ],

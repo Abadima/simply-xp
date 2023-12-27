@@ -1,6 +1,5 @@
-import {XpFatal, XpLog} from "./functions/xplogs";
-import {xp} from "../xp";
-import {db} from "./functions/database";
+import { XpFatal, XpLog } from "./functions/xplogs";
+import { db, xp } from "../xp";
 
 /**
  * Reset user levels to 0 in a guild
@@ -15,15 +14,15 @@ import {db} from "./functions/database";
  */
 export async function reset(userId: string, guildId: string, erase: boolean = false, username?: string): Promise<boolean> {
 	if (!userId || !guildId) {
-		throw new XpFatal({function: "reset()", message: "Invalid parameters provided"});
+		throw new XpFatal({ function: "reset()", message: "Invalid parameters provided" });
 	}
 
-	const userData = {guild: guildId, user: userId};
+	const userData = { guild: guildId, user: userId, xp_rate: xp.xp_rate };
 
-	if (!await db.findOne({collection: "simply-xps", data: userData})) {
+	if (!await db.findOne({ collection: "simply-xps", data: userData })) {
 		if (xp.auto_create && !erase && username) {
-			await db.createOne({collection: "simply-xps", data: userData}).catch((error) => {
-				throw new XpFatal({function: "reset()", message: error.stack});
+			await db.createOne({ collection: "simply-xps", data: userData }).catch((error) => {
+				throw new XpFatal({ function: "reset()", message: error.stack });
 			});
 			return true;
 		} else {
@@ -32,17 +31,17 @@ export async function reset(userId: string, guildId: string, erase: boolean = fa
 	}
 
 	if (erase) {
-		await db.deleteOne({collection: "simply-xps", data: userData}).catch((error) => {
-			throw new XpFatal({function: "reset()", message: error});
+		await db.deleteOne({ collection: "simply-xps", data: userData }).catch((error) => {
+			throw new XpFatal({ function: "reset()", message: error });
 		});
 		return true;
 	}
 
 	await db.updateOne(
-		{collection: "simply-xps", data: {user: userId, guild: guildId}},
-		{collection: "simply-xps", data: {...userData, level: 0, xp: 0}}
+		{ collection: "simply-xps", data: { user: userId, guild: guildId } },
+		{ collection: "simply-xps", data: { ...userData, level: 0, xp: 0 } }
 	).catch((error) => {
-		throw new XpFatal({function: "reset()", message: error});
+		throw new XpFatal({ function: "reset()", message: error });
 	});
 
 	return true;

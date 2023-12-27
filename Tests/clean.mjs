@@ -4,7 +4,7 @@ import {readdir, readFileSync, writeFileSync} from "fs";
 import {exec} from "child_process";
 import {minify} from "uglify-js";
 
-const directories = ["lib/src/", "lib/src/deprecated/", "lib/src/functions/"];
+const directories = ["lib/src/", "lib/src/functions/"];
 
 directories.forEach(directory => {
 	readdir(directory, (err, files) => {

@@ -1,9 +1,9 @@
-import {XpFatal, XpLog} from "./functions/xplogs";
-import {db, UserResult} from "./functions/database";
-import {convertFrom, xp} from "../xp";
-import {Document, MongoClient} from "mongodb";
-import {Database} from "better-sqlite3";
-import {checkPackageVersion} from "./connect";
+import { XpFatal, XpLog } from "./functions/xplogs";
+import { UserResult } from "./functions/database";
+import { convertFrom, db, xp } from "../xp";
+import { Document, MongoClient } from "mongodb";
+import { Database } from "better-sqlite3";
+import { checkPackageVersion } from "./connect";
 
 /**
  * Migration functions
@@ -26,11 +26,11 @@ export class migrate {
 		try {
 			for (const user of results) {
 				if (!await db.findOne({
-					collection: "simply-xps", data: {guild: user.guildID, user: user.userID}
+					collection: "simply-xps", data: { guild: user.guildID, user: user.userID }
 				})) {
 					await db.createOne({
 						collection: "simply-xps",
-						data: {guild: user.guildID, user: user.userID, xp: user.xp, level: convertFrom(user.xp, "xp")}
+						data: { guild: user.guildID, user: user.userID, xp: user.xp, level: convertFrom(user.xp, "xp") }
 					});
 					if (deleteOld) await db.getCollection("levels").deleteOne({
 						userID: user.userID, guildID: user.guildID
@@ -54,7 +54,7 @@ export class migrate {
 	 * @throws {XpFatal} - If parameters are not provided correctly
 	 */
 	static async fromDB(dbType: "mongodb" | "sqlite", connection: Database | MongoClient): Promise<boolean> {
-		if (!dbType) throw new XpFatal({function: "migrate.database()", message: "No database type provided"});
+		if (!dbType) throw new XpFatal({ function: "migrate.database()", message: "No database type provided" });
 		if (!connection) throw new XpFatal({
 			function: "migrate.database()", message: "No database connection provided"
 		});
@@ -90,16 +90,17 @@ export class migrate {
 		XpLog.debug("migrate.fromDB()", `FOUND ${results.length} RESULTS`);
 
 		await Promise.all(results.map(async (user) => {
-			if (!await db.findOne({collection: "simply-xps", data: {guild: user.guild, user: user.user}})) {
+			if (!await db.findOne({ collection: "simply-xps", data: { guild: user.guild, user: user.user } })) {
 				return db.createOne({
-					collection: "simply-xps", data: {guild: user.guild, user: user.user, xp: user.xp, level: user.level}
+					collection: "simply-xps",
+					data: { guild: user.guild, user: user.user, xp: user.xp, level: user.level }
 				});
 			} else {
 				return db.updateOne({
-					collection: "simply-xps", data: {guild: user.guild, user: user.user}
+					collection: "simply-xps", data: { guild: user.guild, user: user.user }
 				}, {
 					collection: "simply-xps",
-					data: {guild: user.guild, user: user.user, name: user.name, xp: user.xp, level: user.level}
+					data: { guild: user.guild, user: user.user, name: user.name, xp: user.xp, level: user.level }
 				});
 			}
 		}));
