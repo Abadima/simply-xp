@@ -51,7 +51,7 @@ export class roleSetup {
 			function: "roleSetup.add()", message: "Role was not provided"
 		});
 
-		if (typeof options?.role === "string") options.role = [options.role];
+		if (typeof options?.role === "string") options.role = [ options.role ];
 
 		return await db.createOne({
 			collection: "simply-xp-levelroles",
@@ -83,7 +83,7 @@ export class roleSetup {
 
 		allRoles.forEach(({ lvlrole: { lvl, role } }) => {
 			if (role && ((lvl < user.level && options?.includePreviousRoles) || (lvl > user.level && options?.includeNextRoles) || (lvl === user.level))) {
-				roles.push(...(Array.isArray(role) ? role : [role]));
+				roles.push(...(Array.isArray(role) ? role : [ role ]));
 			}
 		});
 

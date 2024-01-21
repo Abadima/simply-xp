@@ -93,6 +93,6 @@ export const xp: XPClient = {
 	debug: false,
 	notify: true,
 	registeredFonts: [],
-	version: "2.0.0-beta.0",
+	version: "2.0.0-beta.0-fix.0",
 	xp_rate: 0.1
 };

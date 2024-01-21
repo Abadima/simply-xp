@@ -15,7 +15,7 @@ import { UserResult } from "./functions/database";
 export async function fetch(userId: string, guildId: string, username?: string): Promise<User> {
 	if (!userId) throw new XpFatal({ function: "create()", message: "User ID was not provided" });
 	if (!guildId) throw new XpFatal({ function: "create()", message: "Guild ID was not provided" });
-	clean({db: true});
+	clean({ db: true });
 
 	const users: User[] = await (await import("./functions/database")).db.find({
 		collection: "simply-xps", data: { guild: guildId }

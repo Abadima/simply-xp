@@ -51,7 +51,7 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 		break;
 	case "sqlite":
 		try {
-			const [betterSqlite3, goodVersion] = await Promise.all([
+			const [ betterSqlite3, goodVersion ] = await Promise.all([
 				import("better-sqlite3"), checkPackageVersion("better-sqlite3", 7, 9)
 			]);
 
@@ -95,7 +95,7 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 
 	if (!xp.database) return false;
 	XpLog.info("connect()", "Connected to database!");
-	if (auto_clean) clean({db: true});
+	if (auto_clean) clean({ db: true });
 
 	// Update all users with the new XP rate
 	await db.findAll("simply-xps").then((users) => {
@@ -126,7 +126,7 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 async function getPackageManager(): Promise<"yarn" | "npm" | "pnpm"> {
 	const { existsSync } = await import("fs");
 
-	const lockfiles = ["yarn.lock", "pnpm-lock.yaml", "pnpm-lock.json", "package-lock.json"];
+	const lockfiles = [ "yarn.lock", "pnpm-lock.yaml", "pnpm-lock.json", "package-lock.json" ];
 	const foundLockfiles = lockfiles.filter((lockfile) => existsSync(lockfile));
 
 	if (foundLockfiles.length === 1) {

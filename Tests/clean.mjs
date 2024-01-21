@@ -15,15 +15,13 @@ directories.forEach(directory => {
 				const filePath = directory + file;
 				const result = minify(readFileSync(filePath, "utf8"), {
 					compress: {
-						passes: 2,
-						reduce_funcs: true,
-						reduce_vars: true,
+						collapse_vars: true,
+						if_return: true,
 						hoist_funs: true,
 						hoist_vars: true,
-						if_return: true,
 						join_vars: true,
-						collapse_vars: true,
 						negate_iife: true,
+						passes: 2,
 						pure_funcs: [
 							"classCallCheck",
 							"_classCallCheck",
@@ -31,10 +29,12 @@ directories.forEach(directory => {
 							"Object.freeze",
 							"invariant",
 							"warning"
-						]
+						],
+						reduce_funcs: true,
+						reduce_vars: true
 					},
 					output: {comments: /^!|@returns/},
-					keep_fargs: true
+					keep_fargs: false
 				});
 
 				if (result.error) return console.error(`Error compressing ${file}: ${result.error}`);

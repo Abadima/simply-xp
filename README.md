@@ -25,15 +25,15 @@
 ## 🖥️ <b>[DEV] Installation</b>
 
 ```shell
-npm install simply-xp@dev
+npm install simply-xp@beta
 ```
 
 ```shell
-pnpm install simply-xp@dev
+pnpm install simply-xp@beta
 ```
 
 ```shell
-yarn add simply-xp@dev
+yarn add simply-xp@beta
 ```
 
 <br>

@@ -1,6 +1,28 @@
 # VERSION 2 CHANGELOGS
 
-## [🎉 BETA 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.1)
+## [BETA 0 FIX 0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.0-fix.0)
+
+### Additions
+
+- Add `fallbackFont` option to `charts()`, `compareCard()`, `leaderboardCard()` and `rankCard()`, to use a fallback font, as part of
+  our bug fix.
+
+### Improvements
+
+- `rank()` gets minor code improvements.
+
+### Bug Fixes
+
+- Fix typings for `updateOptions()`
+- Fix `compareCard()` and `rankCard()` unnecessary username filter, and inconsistencies.
+- Swapped fonts from CDN to local, preventing future crashes.
+
+### Improvements
+
+- Remove URL ending checks (`comapreCard()` and `rankCard()`), to allow for better image/gif support, while still
+  elegantly handling errors.
+
+## [🎉 BETA 0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.0)
 
 ### Additions
 

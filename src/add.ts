@@ -67,8 +67,9 @@ export interface XPResult extends UserResult {
  * @returns {Promise<XPResult>} - Object of user data on success.
  * @throws {XpFatal} - If parameters are not provided correctly.
  */
-export async function addXP(userId: string, guildId: string,
-	xpData: number | { min: number, max: number }, username?: string): Promise<XPResult> {
+export async function addXP(userId: string, guildId: string, xpData: number | {
+	min: number, max: number
+}, username?: string): Promise<XPResult> {
 
 	if (typeof xpData !== "number" && (typeof xp !== "object" || !xpData.min || !xpData.max)) throw new XpFatal({
 		function: "addXP()", message: "XP is not a number or object, make sure you are using the correct syntax"

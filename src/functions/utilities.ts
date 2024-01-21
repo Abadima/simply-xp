@@ -27,7 +27,7 @@ type CleanOptions = { db?: boolean };
 interface NewClientOptions {
 	auto_create: boolean;
 	auto_clean: boolean;
-	dbOptions: { type: "mongodb" | "sqlite"; database: MongoClient | Database; };
+	dbOptions: { type: "mongodb", database: MongoClient } | { type: "sqlite", database: Database };
 	debug: boolean;
 	notify: boolean;
 	xp_rate?: "slow" | "normal" | "fast" | number;

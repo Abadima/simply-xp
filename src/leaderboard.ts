@@ -16,7 +16,7 @@ export async function leaderboard(guildId?: string, limit?: number): Promise<Use
 	});
 
 	let users: Array<User>;
-	const userIds = new Set<string>();
+	const userIds: Set<string> = new Set<string>();
 
 	if (guildId) users = (await db.find({
 		collection: "simply-xps", data: { guild: guildId }

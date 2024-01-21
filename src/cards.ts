@@ -1,6 +1,7 @@
 import { createCanvas, Image, loadImage, SKRSContext2D } from "@napi-rs/canvas";
 import { clean, create, convertFrom, db, registerFont, User, xp } from "../xp";
 import { XpFatal, XpLog } from "./functions/xplogs";
+import { join } from "path";
 
 export type CompareCardLocales = {
 	level?: string;
@@ -22,6 +23,7 @@ export interface CompareCardOptions {
 	color?: HexColor;
 	centerBar?: HexColor;
 	centerBarBg?: HexColor;
+	fallbackFont?: string;
 	font?: string;
 	light?: boolean;
 }
@@ -44,14 +46,15 @@ export type LeaderboardCardLocales = {
  * @property {string} secondaryFont - ABSOLUTE FILE PATH
  */
 export interface LeaderboardCardOptions {
-	artworkColors?: [HexColor, HexColor];
+	artworkColors?: [ HexColor, HexColor ];
 	artworkImage?: URL;
-	borderColors?: [HexColor, HexColor];
+	borderColors?: [ HexColor, HexColor ];
 	backgroundColor?: HexColor;
 	backgroundImage?: URL;
-	primaryFont?: string;
+	fallbackFont?: string;
 	light?: boolean;
-	rowColors?: [HexColor, HexColor];
+	primaryFont?: string;
+	rowColors?: [ HexColor, HexColor ];
 	rowOpacity?: number;
 	secondaryFont?: string;
 }
@@ -77,6 +80,7 @@ export interface RankCardOptions {
 	light?: boolean;
 	lvlbar?: HexColor;
 	lvlbarBg?: HexColor;
+	fallbackFont?: string;
 	font?: string;
 }
 
@@ -118,33 +122,27 @@ export async function compareCard(guild: {
 		});
 	}
 
-	if (!user2?.avatarURL.endsWith(".png") && !user2.avatarURL.endsWith(".jpg") && !user2.avatarURL.endsWith(".webp")) {
-		throw new XpFatal({
-			function: "compareCard()", message: "[USER 2] Avatar image, avatar image must be a png, jpg, or webp"
-		});
-	}
-
-	await registerFont(options?.font || "https://fonts.cdnfonts.com/s/14539/Baloo-Regular.woff", "Baloo");
-	await registerFont("https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2", "MochiyPopOne");
+	await registerFont(options?.font || join(__dirname, "fonts", "Baloo2-ExtraBold.woff2"), "Baloo");
+	if (options?.fallbackFont) await registerFont(options.fallbackFont, "FallbackFont");
 
 	if (!locales?.level) locales.level = "Level";
 	if (!locales?.versus) locales.versus = "vs";
 
 	const compareImage = await loadImage(options?.background || "https://i.ibb.co/WnfXZjc/clouds.jpg").catch(() => {
 		throw new XpFatal({
-			function: "compareCard()", message: "Unable to load background image, is it valid?"
+			function: "compareCard()", message: "Unable to load background image, is it valid and reachable?"
 		});
 	});
 
 	const avatarURL1 = await loadImage(user1.avatarURL).catch(() => {
 		throw new XpFatal({
-			function: "compareCard()", message: "[USER 1] Unable to load user's AvatarURL, is it reachable?"
+			function: "compareCard()", message: "[USER 1] Unable to load user's AvatarURL, is it valid and reachable?"
 		});
 	});
 
 	const avatarURL2 = await loadImage(user2.avatarURL).catch(() => {
 		throw new XpFatal({
-			function: "compareCard()", message: "[USER 2] Unable to load user's AvatarURL, is it reachable?"
+			function: "compareCard()", message: "[USER 2] Unable to load user's AvatarURL, is it valid and reachable?"
 		});
 	});
 
@@ -168,16 +166,14 @@ export async function compareCard(guild: {
 
 	context.fillStyle = (options?.light ? "#ffffff" : "#000000");
 	context.fill();
-	context.globalAlpha = 0.5;
+	context.globalAlpha = 0.6;
 
 	context.drawImage(compareImage, -5, 0, 1090, 400);
 	context.restore();
 
 	context.globalAlpha = 1;
 
-	const Username1 = user1.username.replace(/[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FBF\u0041-\u005A\u0061-\u007A\u0030-\u0039]/g, ""),
-		Username2 = user2.username.replace(/[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FBF\u0041-\u005A\u0061-\u007A\u0030-\u0039]/g, ""),
-		cardBoxColor = options?.color || options?.light ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)",
+	const cardBoxColor = options?.color || options?.light ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)",
 		CenterBarBackground = options?.centerBarBg || options?.light ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.4)",
 		LvlText1 = locales.level + ` ${shortener(dbUser1.level, true)}`,
 		LvlText2 = locales.level + ` ${shortener(dbUser2.level, true)}`;
@@ -190,8 +186,8 @@ export async function compareCard(guild: {
 	context.shadowBlur = 6;
 	context.shadowOffsetX = 1;
 	context.shadowOffsetY = 1;
-	context.font = "40px Baloo, MochiyPopOne";
-	context.fillText(`${Username1} ${locales.versus} ${Username2}`, 540, 60);
+	context.font = "40px Baloo, FallbackFont";
+	context.fillText(`${user1.username} ${locales.versus} ${user2.username}`, 540, 60);
 	context.restore();
 
 	// Add User 1 Avatar
@@ -233,7 +229,7 @@ export async function compareCard(guild: {
 	context.globalAlpha = 1;
 	context.fillStyle = "#ffffff";
 	context.textAlign = "center";
-	context.font = "25px Baloo, MochiyPopOne";
+	context.font = "25px Baloo, FallbackFont";
 	if (options?.light) {
 		context.shadowColor = "#000000";
 		context.shadowBlur = 5;
@@ -254,7 +250,7 @@ export async function compareCard(guild: {
 	context.fill();
 	context.fillStyle = "#ffffff";
 	context.textAlign = "center";
-	context.font = "22px Baloo, MochiyPopOne";
+	context.font = "22px Baloo, FallbackFont";
 	context.fillText(`${dbUser1.xp > dbUser2.xp ? "+" : "-"}${Math.abs(dbUser1.level - dbUser2.level)}`, 540, 350);
 	if (xp.auto_clean) clean();
 
@@ -297,31 +293,31 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardCar
 		});
 	});
 
-	await registerFont(options?.primaryFont || "https://fonts.cdnfonts.com/s/14539/Baloo-Regular.woff", "Baloo");
+	await registerFont(options?.primaryFont || join(__dirname, "fonts", "Baloo2-ExtraBold.woff2"), "Baloo");
 	if (options?.secondaryFont) await registerFont(options.secondaryFont, "SecondaryFont");
-	await registerFont("https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2", "MochiyPopOne");
+	if (options?.fallbackFont) await registerFont(options.fallbackFont, "FallbackFont");
 
 	if (!locales.level) locales.level = "LEVEL";
 	if (!locales.members) locales.members = "Members";
 
 	data = data.slice(0, 8);
-	const font = options?.secondaryFont ? "SecondaryFont, MochiyPopOne" : "Baloo, MochiyPopOne";
+	const font = options?.secondaryFont ? "SecondaryFont, FallbackFont" : "Baloo, FallbackFont";
 
 	// make a colour object containing colours for both dark and light mode
 	if (options?.light) {
 		colors = {
-			artworkColors: options?.artworkColors || ["#997fe1", "#616bff"],
+			artworkColors: options?.artworkColors || [ "#997fe1", "#616bff" ],
 			backgroundColor: "#FFFFFF",
-			borderColors: options?.borderColors || ["#e0d440", "#fffa6b"],
+			borderColors: options?.borderColors || [ "#e0d440", "#fffa6b" ],
 			evenColor: "#f0f0f0" || options?.rowColors?.[0],
 			oddColor: "#dcdcdc" || options?.rowColors?.[1],
 			primaryTextColor: "#000000",
 			secondaryTextColor: "rgba(0,0,0,0.5)"
 		};
 	} else colors = {
-		artworkColors: options?.artworkColors || ["#6B46D4", "#2e3cff"],
+		artworkColors: options?.artworkColors || [ "#6B46D4", "#2e3cff" ],
 		backgroundColor: "#141414",
-		borderColors: options?.borderColors || ["#e0d440", "#fffa6b"],
+		borderColors: options?.borderColors || [ "#e0d440", "#fffa6b" ],
 		evenColor: "#1e1e1e" || options?.rowColors?.[0],
 		oddColor: "#282828" || options?.rowColors?.[1],
 		primaryTextColor: "#ffffff",
@@ -332,7 +328,7 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardCar
 	const context = canvas.getContext("2d");
 
 	// make entire canvas rounded
-	RoundedBox(context, 0, 0, canvas.width, canvas.height, 20, {clip: true});
+	RoundedBox(context, 0, 0, canvas.width, canvas.height, 20, { clip: true });
 
 
 	const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
@@ -378,7 +374,7 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardCar
 		context.stroke();
 
 		context.fillStyle = colors.primaryTextColor;
-		context.font = "60px Baloo, MochiyPopOne";
+		context.font = "60px Baloo, FallbackFont";
 
 		if (!guildInfo?.memberCount) {
 			context.fillText(guildInfo.name, 270, 130);
@@ -386,7 +382,7 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardCar
 			context.fillText(guildInfo.name, 270, 110);
 
 			context.fillStyle = colors.secondaryTextColor;
-			context.font = "40px Baloo, MochiyPopOne";
+			context.font = "40px Baloo, FallbackFont";
 			context.fillText(`${guildInfo.memberCount} ${locales.members}`, 270, 160);
 		}
 	}
@@ -475,31 +471,24 @@ export async function rankCard(guild: {
 
 	XpLog.debug("rankCard()", `${options?.legacy ? "LEGACY" : "MODERN"} ENABLED`);
 
-	if (!user?.avatarURL.endsWith(".png") && !user.avatarURL.endsWith(".jpg") && !user.avatarURL.endsWith(".webp")) {
-		throw new XpFatal({
-			function: "rankCard()", message: "Invalid avatar image, avatar image must be a png, jpg, or webp"
-		});
-	}
-
-
 	if (!user || !user.id || !user.username) {
 		throw new XpFatal({
 			function: "rankCard()", message: "Invalid User Provided, user must contain id, username, and avatarURL."
 		});
 	}
 
-	await registerFont(options?.font || "https://fonts.cdnfonts.com/s/14539/Baloo-Regular.woff", "Baloo");
-	await registerFont("https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2", "MochiyPopOne");
+	await registerFont(options?.font || join(__dirname, "fonts", "Baloo2-ExtraBold.woff2"), "Baloo");
+	if (options?.fallbackFont) await registerFont(options.fallbackFont, "FallbackFont");
 
 	const rankImage = await loadImage(options?.background || (options?.legacy ? "https://i.ibb.co/dck2Tnt/rank-card.webp" : "https://i.ibb.co/WnfXZjc/clouds.jpg")).catch(() => {
 		throw new XpFatal({
-			function: "rankCard()", message: "Unable to load background image, is it valid?"
+			function: "rankCard()", message: "Unable to load background image, is it valid and reachable?"
 		});
 	});
 
 	const avatarURL = await loadImage(user.avatarURL).catch(() => {
 		throw new XpFatal({
-			function: "rankCard()", message: "Unable to load user's AvatarURL, is it reachable?"
+			function: "rankCard()", message: "Unable to load user's AvatarURL, is it valid and reachable??"
 		});
 	});
 
@@ -511,8 +500,7 @@ export async function rankCard(guild: {
 
 	const users = await db.find({ collection: "simply-xps", data: { guild: guild.id } }) as User[];
 
-	dbUser.position = users.sort((a, b) => b.xp - a.xp).findIndex((u) => u.user === user.id) + 1;
-
+	dbUser.position = 1 + users.sort((a, b) => b.xp - a.xp).findIndex((u) => u.user === user.id) || 1;
 
 	const canvas = createCanvas(1080, 400);
 	const context = canvas.getContext("2d");
@@ -529,8 +517,7 @@ export async function rankCard(guild: {
 	context.restore();
 
 
-	const Username = user.username.replace(/[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FBF\u0041-\u005A\u0061-\u007A\u0030-\u0039]/g, ""),
-		rankBoxColor = options?.color || (options?.legacy ? "#9900ff" : (options?.light ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)")),
+	const rankBoxColor = options?.color || (options?.legacy ? "#9900ff" : (options?.light ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)")),
 		LevelBarFill = options?.lvlbar || "#ffffff",
 		LevelBarBackground = options?.lvlbarBg || options?.legacy ? "#FFFFFF" : (options?.light ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)"),
 		TextEXP = shortener(dbUser.xp) + ` ${locales.xp}`,
@@ -552,8 +539,8 @@ export async function rankCard(guild: {
 		context.shadowBlur = 5;
 		context.shadowOffsetX = 1;
 		context.shadowOffsetY = 1;
-		context.font = "40px Baloo, MochiyPopOne";
-		context.fillText(Username, 540, 80);
+		context.font = "40px Baloo, FallbackFont";
+		context.fillText(user.username, 540, 80);
 		context.restore();
 
 		// Add Avatar
@@ -604,7 +591,7 @@ export async function rankCard(guild: {
 			context.shadowOffsetY = 1;
 		}
 		context.textAlign = "center";
-		context.font = "25px Baloo, MochiyPopOne";
+		context.font = "25px Baloo, FallbackFont";
 		context.fillText(LvlText, 160, 350);
 		context.restore();
 
@@ -615,16 +602,16 @@ export async function rankCard(guild: {
 		});
 
 		// now fill the progress bar
-		RoundedBox(context, 270, 335, 530, 15, 5, { clip: true });
-		context.fillStyle = LevelBarFill;
-		context.fillRect(270, 335, progress, 15);
+		RoundedBox(context, 270, 335, progress, 15, 5, {
+			clip: true, fill: { color: LevelBarFill }
+		});
 		context.restore();
 
 		// Right in the middle, add the XP Text
 		context.save();
 		context.textAlign = "center";
 		context.fillStyle = (options?.light ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.6)");
-		context.font = "22px Baloo, MochiyPopOne";
+		context.font = "22px Baloo, FallbackFont";
 		context.fillText(TextXpNeeded.replace(/{needed}/g, shortener(nextLevelXP)).replace(/{current}/g, shortener(dbUser.xp)), 540, 320);
 
 		// Add Level Text (Next Level)
@@ -637,7 +624,7 @@ export async function rankCard(guild: {
 			context.shadowOffsetX = 1;
 			context.shadowOffsetY = 1;
 		}
-		context.font = "25px Baloo, MochiyPopOne";
+		context.font = "25px Baloo, FallbackFont";
 		context.fillText(`${locales.level} ` + shortener(dbUser.level + 1), 920, 350);
 		context.restore();
 
@@ -686,8 +673,8 @@ export async function rankCard(guild: {
 		context.shadowBlur = 15;
 		context.shadowOffsetX = 1;
 		context.shadowOffsetY = 1;
-		context.font = "39px Baloo, MochiyPopOne";
-		context.fillText(Username, 395, 80);
+		context.font = "39px Baloo, FallbackFont";
+		context.fillText(user.username, 395, 80);
 		context.restore();
 
 		// Add Position Number
@@ -698,7 +685,7 @@ export async function rankCard(guild: {
 		context.shadowBlur = 15;
 		context.shadowOffsetX = 1;
 		context.shadowOffsetY = 1;
-		context.font = "55px Baloo, MochiyPopOne";
+		context.font = "55px Baloo, FallbackFont";
 		context.fillText("#" + dbUser.position, canvas.width - 55, 80);
 		context.restore();
 
@@ -728,7 +715,7 @@ export async function rankCard(guild: {
 		context.textAlign = "left";
 		context.fillStyle = "#ffffff";
 		context.globalAlpha = 0.8;
-		context.font = "30px Baloo, MochiyPopOne";
+		context.font = "30px Baloo, FallbackFont";
 		context.fillText(`${locales.next_level}: ` + shortener(nextLevelXP) + ` ${locales.xp}`, 390, 230);
 		context.restore();
 
@@ -736,7 +723,7 @@ export async function rankCard(guild: {
 		context.textAlign = "center";
 		context.fillStyle = "#474747";
 		context.globalAlpha = 1;
-		context.font = "30px Baloo, MochiyPopOne";
+		context.font = "30px Baloo, FallbackFont";
 		context.fillText(textXPEdited, 730, 180);
 	}
 
@@ -750,7 +737,6 @@ export async function rankCard(guild: {
 }
 
 /**
- * @constructor
  * @private
  */
 export function RoundedBox(
@@ -866,7 +852,7 @@ function dynamicFont(context: SKRSContext2D, text: string, x: number, y: number,
 	let fontSize = maxSize;
 
 	while (fontSize > 0) {
-		context.font = `${fontSize}px "Baloo"`;
+		context.font = `${fontSize}px Baloo, FallbackFont`;
 		if (context.measureText(text).width < maxWidth) {
 			break;
 		}

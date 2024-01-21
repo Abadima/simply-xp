@@ -1,6 +1,7 @@
-import { createCanvas } from "@napi-rs/canvas";
-import { RoundedBox } from "./cards";
 import { clean, leaderboard, registerFont, xp } from "../xp";
+import { createCanvas } from "@napi-rs/canvas";
+import { join } from "path";
+import { RoundedBox } from "./cards";
 import { XpFatal, XpLog } from "./functions/xplogs";
 
 /**
@@ -10,6 +11,7 @@ import { XpFatal, XpLog } from "./functions/xplogs";
  * @property {number} limit - Limit of users to return (2-10)
  */
 export interface ChartOptions {
+	fallbackFont?: string;
 	font?: string;
 	limit?: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 	theme?: "blue" | "dark" | "discord" | "green" | "orange" | "red" | "space" | "yellow";
@@ -31,11 +33,11 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 }> {
 	if (!guildId) throw new XpFatal({ function: "charts()", message: "No Guild ID Provided" });
 	if (!options) throw new XpFatal({ function: "charts()", message: "No Options Provided" });
-	if (!options.theme || !["blue", "dark", "discord", "green", "orange", "red", "space", "yellow"].includes(options.theme)) {
+	if (!options.theme || ![ "blue", "dark", "discord", "green", "orange", "red", "space", "yellow" ].includes(options.theme)) {
 		XpLog.warn("charts()", "Invalid theme provided, defaulting to discord");
 		options.theme = "discord";
 	}
-	if (!options.type || !["bar", "doughnut", "pie"].includes(options.type)) {
+	if (!options.type || ![ "bar", "doughnut", "pie" ].includes(options.type)) {
 		XpLog.warn("charts()", "Invalid type provided, defaulting to bar chart");
 		options.type = "bar";
 	}
@@ -53,15 +55,15 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 	if (users.length < 2) throw new XpFatal({ function: "charts()", message: "Not enough users to create a chart" });
 	users.sort((a, b) => b.position - a.position);
 
-	await registerFont(options?.font || "https://fonts.cdnfonts.com/s/14539/Baloo-Regular.woff", "Baloo");
-	await registerFont("https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2", "MochiyPopOne");
+	await registerFont(options?.font || join(__dirname, "fonts", "Baloo2-ExtraBold.woff2"), "Baloo");
+	if (options.fallbackFont) await registerFont(options.fallbackFont, "FallbackFont");
 
 	switch (options.theme) {
 	case "blue":
 		colors = {
 			background: "#1e1e3c",
 			barColor: "#747fff",
-			pieColors: ["#747fff", "#2832C2", "#59788E", "#00d2e7", "#281E5D", "#a9f5ff", "#000e3f", "#30edc2", "#186c84", "#0098ff"],
+			pieColors: [ "#747fff", "#2832C2", "#59788E", "#00d2e7", "#281E5D", "#a9f5ff", "#000e3f", "#30edc2", "#186c84", "#0098ff" ],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -70,7 +72,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#1e1e1e",
 			barColor: "#747474",
-			pieColors: ["#1B1D1F", "#454C53", "#72787F", "#999999", "#9EA4AA", "#CCCCCC", "#C9CDD2", "#DEDEDE", "#E8EBED", "#FFFFFF"],
+			pieColors: [ "#1B1D1F", "#454C53", "#72787F", "#999999", "#9EA4AA", "#CCCCCC", "#C9CDD2", "#DEDEDE", "#E8EBED", "#FFFFFF" ],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -79,7 +81,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#36393f",
 			barColor: "#5865F2",
-			pieColors: ["#5865F2", "#57F287", "#FEE75C", "#EB459E", "#ED4245", "#FFFFFF", "#000000", "#FAA61A", "#C04DF9", "#00AAFF"],
+			pieColors: [ "#5865F2", "#57F287", "#FEE75C", "#EB459E", "#ED4245", "#FFFFFF", "#000000", "#FAA61A", "#C04DF9", "#00AAFF" ],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -88,7 +90,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#1e321e",
 			barColor: "#74ff7f",
-			pieColors: ["#00FF00", "#008000", "#7FFF00", "#32CD32", "#228B22", "#006400", "#9ACD32", "#00FA9A", "#ADFF2F", "#7CFC00"],
+			pieColors: [ "#00FF00", "#008000", "#7FFF00", "#32CD32", "#228B22", "#006400", "#9ACD32", "#00FA9A", "#ADFF2F", "#7CFC00" ],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -97,7 +99,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#321e1e",
 			barColor: "#ff9f74",
-			pieColors: ["#FF8C00", "#FF5E0E", "#FF4500", "#FF6347", "#E26310", "#F5761A", "#FD673A", "#FFA500", "#FF7F50", "#FFD700"],
+			pieColors: [ "#FF8C00", "#FF5E0E", "#FF4500", "#FF6347", "#E26310", "#F5761A", "#FD673A", "#FFA500", "#FF7F50", "#FFD700" ],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -106,7 +108,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#321e1e",
 			barColor: "#ff7474",
-			pieColors: ["#FF0000", "#FF2400", "#FF4500", "#FF6347", "#FF7F50", "#FF8C00", "#FFA07A", "#FFA500", "#FFC0CB", "#FFD700"],
+			pieColors: [ "#FF0000", "#FF2400", "#FF4500", "#FF6347", "#FF7F50", "#FF8C00", "#FFA07A", "#FFA500", "#FFC0CB", "#FFD700" ],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -115,7 +117,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#001F3F",
 			barColor: "#192E5B",
-			pieColors: ["#192E5B", "#1F3F7F", "#264FA3", "#2C5FC7", "#337FEA", "#3D8FFF", "#4D9FFF", "#5DAFFF", "#6DBFFF", "#7DCFFF"],
+			pieColors: [ "#192E5B", "#1F3F7F", "#264FA3", "#2C5FC7", "#337FEA", "#3D8FFF", "#4D9FFF", "#5DAFFF", "#6DBFFF", "#7DCFFF" ],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -124,7 +126,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		colors = {
 			background: "#32321e",
 			barColor: "#ffff74",
-			pieColors: ["#FFFD37", "#FFEF00", "#FDFF00", "#DAA520", "#F4C430", "#E4D00A", "#D2B55B", "#FFFFE0", "#FFFACD", "#F5DEB3"],
+			pieColors: [ "#FFFD37", "#FFEF00", "#FDFF00", "#DAA520", "#F4C430", "#E4D00A", "#D2B55B", "#FFFFE0", "#FFFACD", "#F5DEB3" ],
 			textColor: "#FFFFFF"
 		};
 		break;
@@ -167,7 +169,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		context.fill();
 
 		// Add distant planets with realistic colors
-		const planetColors = ["#6B6B6B", "#AA8F00", "#473E83", "#456579"];
+		const planetColors = [ "#6B6B6B", "#AA8F00", "#473E83", "#456579" ];
 		for (let i = 0; i < planetColors.length; i++) {
 			const planetX = Math.random() * canvas.width;
 			const planetY = Math.random() * canvas.height;
@@ -225,7 +227,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 				const textX = barX + barWidth / 2; // Center x-coordinate for both username and level text
 
 				context.fillStyle = colors.textColor;
-				context.font = "22px Baloo, MochiyPopOne";
+				context.font = "22px Baloo, FallbackFont";
 				const levelText = user.level.toString();
 				const levelTextWidth = context.measureText(levelText).width;
 				const levelTextY = barY - 10;
@@ -235,7 +237,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 				const usernameText = user?.name || user.user;
 				let usernameTextWidth = context.measureText(usernameText).width;
 
-				context.font = `${Math.min(Math.floor(16 * (barWidth / usernameTextWidth)), 18)}px Baloo, MochiyPopOne`;
+				context.font = `${Math.min(Math.floor(16 * (barWidth / usernameTextWidth)), 18)}px Baloo, FallbackFont`;
 				usernameTextWidth = context.measureText(usernameText).width;
 
 				const usernameTextY = chartStartY + 30;
@@ -311,7 +313,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		throw new XpFatal({ function: "charts()", message: "Invalid chart type provided" });
 	}
 
-	if (["doughnut", "pie"].includes(options.type)) {	// Render legend
+	if ([ "doughnut", "pie" ].includes(options.type)) {	// Render legend
 		const legendX = 20; // Legend position from left
 		const legendY = canvas.height - 20 - users.length * 20; // Legend position from bottom
 		const legendSpacing = 20; // Vertical spacing between legend items
@@ -319,7 +321,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 		context.fillStyle = "rgba(0,0,0,0.25)";
 		context.fillRect(legendX - 5, legendY - 5, 200, users.length * legendSpacing + 5);
 
-		context.font = "12px Baloo, MochiyPopOne";
+		context.font = "12px Baloo, FallbackFont";
 		await Promise.all(users.map(async (user, index) => {
 			const legendColor = colors.pieColors[index % colors.pieColors.length];
 			const legendItemY = legendY + index * legendSpacing;
