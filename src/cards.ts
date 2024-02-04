@@ -498,7 +498,7 @@ export async function rankCard(guild: {
 		else throw new XpFatal({ function: "rankCard()", message: "User not found in database" });
 	}
 
-	const users = await db.find({ collection: "simply-xps", data: { guild: guild.id } }) as User[];
+	const users = await db.find("simply-xps", guild.id) as User[];
 
 	dbUser.position = 1 + users.sort((a, b) => b.xp - a.xp).findIndex((u) => u.user === user.id) || 1;
 

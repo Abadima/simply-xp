@@ -17,15 +17,15 @@ export async function fetch(userId: string, guildId: string, username?: string):
 	if (!guildId) throw new XpFatal({ function: "create()", message: "Guild ID was not provided" });
 	clean({ db: true });
 
-	const users: User[] = await (await import("./functions/database")).db.find({
-		collection: "simply-xps", data: { guild: guildId }
-	}) as User[];
+	const users: User[] = await (await import("./functions/database")).db.find("simply-xps", guildId) as User[];
 
 	let user: User | UserResult | undefined = users.find((u) => u.user === userId);
 
 	if (!user) {
-		if (xp.auto_create && username) user = await (await import("./create")).create(guildId, userId, username);
-		else throw new XpFatal({ function: "fetch()", message: "User data not found" });
+		if (xp.auto_create && username) {
+			user = await (await import("./create")).create(guildId, userId, username);
+			users.push(user as User);
+		} else throw new XpFatal({ function: "fetch()", message: "User data not found" });
 	}
 
 	const position = users.sort((a, b) => b.xp - a.xp).findIndex((u) => u.user === userId) + 1;

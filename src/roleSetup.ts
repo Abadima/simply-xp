@@ -122,10 +122,7 @@ export class roleSetup {
 	static async list(guildId: string): Promise<LevelRoleResult[]> {
 		if (!guildId) throw new XpFatal({ function: "roleSetup.list()", message: "Guild ID was not provided" });
 
-		return await db.find({
-			collection: "simply-xp-levelroles",
-			data: { guild: guildId, lvlrole: { lvl: null, role: null } }
-		}) as LevelRoleResult[];
+		return await db.find("simply-xp-levelroles", guildId) as LevelRoleResult[];
 	}
 
 	/**

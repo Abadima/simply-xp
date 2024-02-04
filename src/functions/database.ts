@@ -179,7 +179,7 @@ export class db {
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("DELETE FROM \"simply-xps\" WHERE guild = ? AND user = ?").run(query.data.guild, query.data.user);
 			else {
-				result = await this.find(query);
+				result = await this.find(query.collection, query.data.guild);
 				result = result.filter((row: LevelRoleResult) => row.lvlrole.lvl === query.data.lvlrole.lvl)[0] as Document;
 				result = (xp.database as Database).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE gid = ? AND lvlrole = ?").run(query.data.guild, JSON.stringify(result.lvlrole)) as Document;
 			}
@@ -212,7 +212,7 @@ export class db {
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?").get(query.data.guild, query.data.user) as Document;
 			else {
-				result = await this.find(query);
+				result = await this.find(query.collection, query.data.guild);
 				result = result.filter((row: LevelRoleResult) => row.lvlrole.lvl === query.data.lvlrole.lvl)[0];
 			}
 			break;
@@ -224,24 +224,25 @@ export class db {
 	 * Finds multiple documents in the database.
 	 *
 	 * @async
-	 * @param {UserOptions | LevelRoleOptions} query - The query to search for multiple documents.
+	 * @param {"simply-xps" | "simply-xp-levelroles"} collection - The collection to search for multiple documents.
+	 * @param {string} guild - The guild ID to search for.
 	 * @link https://simplyxp.js.org/docs/next/handlers/database#find Documentation
 	 * @returns {Promise<UserResult[] | LevelRoleResult[]>} An array of found documents.
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
-	static async find(query: UserOptions | LevelRoleOptions): Promise<UserResult[] | LevelRoleResult[]> {
+	static async find(collection: "simply-xps" | "simply-xp-levelroles", guild: string): Promise<UserResult[] | LevelRoleResult[]> {
 		if (!xp.database) throw new XpFatal({ function: "find()", message: "No database connection" });
 		let result: Document;
 
 		switch (xp.dbType) {
 		case "mongodb":
-			result = (xp.database as MongoClient).db().collection(query.collection).find(query.data).toArray().catch(error => handleError(error, "find()")) as Document;
+			result = (xp.database as MongoClient).db().collection(collection).find({guild}).toArray().catch(error => handleError(error, "find()")) as Document;
 			break;
 
 		case "sqlite":
-			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ?").all(query.data.guild) as Document;
+			if (collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ?").all(guild) as Document;
 			else {
-				result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE gid = ?").all(query.data.guild) as Document;
+				result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE gid = ?").all(guild) as Document;
 				if (result.length) result = await Promise.all(result.map(async (row: {
 					gid: string; lvlrole: string; lastUpdated: string;
 				}) => {

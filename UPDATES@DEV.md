@@ -1,15 +1,22 @@
 # VERSION 2 CHANGELOGS
 
+## [BETA 0 FIX 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.0-fix.1)
+
+### ⚠️ Breaking Changes
+
+- `db.find()` now takes new parameters, `(collection, guildId)` for better syntax.
+
+### Bug Fixes
+
+- Fix `fetch()` rare error when user doesn't exist, and `auto_create` is true.
+- Fix `roleSetup.list()` not returning roles when using MongoDB (Thanks itz_hyp3r on Discord for the report)
+
 ## [BETA 0 FIX 0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.0-fix.0)
 
 ### Additions
 
 - Add `fallbackFont` option to `charts()`, `compareCard()`, `leaderboardCard()` and `rankCard()`, to use a fallback font, as part of
   our bug fix.
-
-### Improvements
-
-- `rank()` gets minor code improvements.
 
 ### Bug Fixes
 
@@ -19,6 +26,7 @@
 
 ### Improvements
 
+- `rank()` gets minor code improvements.
 - Remove URL ending checks (`comapreCard()` and `rankCard()`), to allow for better image/gif support, while still
   elegantly handling errors.
 
@@ -87,7 +95,7 @@
 ### Bug Fixes
 
 - Complete overhaul of `simply-xp-levelroles` in SQLite, making it actually functional
-- Fix `simply-xps-levelroles` not having `timestamp` property in SQLite & MongoDB
+- Fix `simply-xp-levelroles` not having `timestamp` property in SQLite & MongoDB
 - Fix `roleSetup.add()` not actually returning `true/false`
 
 ## [DEV 5](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-dev.5)

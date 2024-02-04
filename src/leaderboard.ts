@@ -18,9 +18,7 @@ export async function leaderboard(guildId?: string, limit?: number): Promise<Use
 	let users: Array<User>;
 	const userIds: Set<string> = new Set<string>();
 
-	if (guildId) users = (await db.find({
-		collection: "simply-xps", data: { guild: guildId }
-	}) as Array<User>).sort((a, b) => b.xp - a.xp);
+	if (guildId) users = (await db.find("simply-xps", guildId) as Array<User>).sort((a, b) => b.xp - a.xp);
 	else users = (await db.findAll("simply-xps") as Array<User>).sort((a, b) => b.xp - a.xp).filter((user) => {
 		if (userIds.has(user.user)) return false;
 		userIds.add(user.user);

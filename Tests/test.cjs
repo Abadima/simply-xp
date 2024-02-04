@@ -65,6 +65,8 @@ async function test(dbType) {
 
 	await xp.roleSetup.add("0987654321", { level: 1, role: "01" });
 
+	await xp.roleSetup.list("0987654321").then(console.log);
+
 	await xp.roleSetup.remove("0987654321", 1);
 
 	await xp.rankCard(
@@ -98,20 +100,18 @@ async function test(dbType) {
 		}
 	);
 
-	await xp.leaderboard().then(async (users) => {
-		await xp.leaderboardCard(users, {
-			// artworkImage: "https://th.bing.com/th/id/R.8cd8594560bd9cf4b042833a4acefaa5?rik=A6B1qYN%2b5GQAcA&riu=http%3a%2f%2fwallpaperswide.com%2fdownload%2fdesert_sky-wallpaper-2560x720.jpg&ehk=rE5VYZy8njd5ZeNT2p4sP7C5psjSf%2bxLZmV%2bvlQCffs%3d&risl=&pid=ImgRaw&r=0",
-			//backgroundImage: new URL("https://static.vecteezy.com/system/resources/previews/000/962/809/original/abstract-gradient-background-with-colorful-and-modern-style-vector.jpg"),
-			fallbackFont: "https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2",
-			light: false,
-			rowOpacity: 1
-		}, {
-			name: "Development Hub",
-			imageURL: "https://cdn.discordapp.com/icons/950190034852646912/5a800bf4caf28bfcaccc214446b461c4.webp",
-			//memberCount: 20
-		}, {}).then(results => {
-			require("fs").writeFileSync("Tests/leaderboard.png", results.attachment);
-		});
+	await xp.leaderboardCard(await xp.leaderboard(), {
+		// artworkImage: "https://th.bing.com/th/id/R.8cd8594560bd9cf4b042833a4acefaa5?rik=A6B1qYN%2b5GQAcA&riu=http%3a%2f%2fwallpaperswide.com%2fdownload%2fdesert_sky-wallpaper-2560x720.jpg&ehk=rE5VYZy8njd5ZeNT2p4sP7C5psjSf%2bxLZmV%2bvlQCffs%3d&risl=&pid=ImgRaw&r=0",
+		//backgroundImage: new URL("https://static.vecteezy.com/system/resources/previews/000/962/809/original/abstract-gradient-background-with-colorful-and-modern-style-vector.jpg"),
+		fallbackFont: "https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2",
+		light: false,
+		rowOpacity: 1
+	}, {
+		name: "Development Hub",
+		imageURL: "https://cdn.discordapp.com/icons/950190034852646912/5a800bf4caf28bfcaccc214446b461c4.webp",
+		//memberCount: 20
+	}, {}).then(results => {
+		require("fs").writeFileSync("Tests/leaderboard.png", results.attachment);
 	});
 
 	await xp.charts("0987654321", {
@@ -128,7 +128,7 @@ async function test(dbType) {
 	});
 
 	await xp.db.deleteMany({
-		collection: "simply-xps-levelroles", data: {
+		collection: "simply-xp-levelroles", data: {
 			guild: "0987654321"
 		}
 	});
