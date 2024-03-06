@@ -17,6 +17,7 @@ import { xp } from "../../xp";
 export interface UserOptions {
 	collection: "simply-xps";
 	data: {
+		flags?: Array<number | string>;
 		guild: string;
 		user?: string;
 		name?: string;
@@ -39,9 +40,10 @@ export interface UserOptions {
  */
 export interface UserResult {
 	_id?: string,
+	flags?: Array<number | string>;
+	guild: string;
 	user: string;
 	name?: string;
-	guild: string;
 	lastUpdated: string;
 	level: number;
 	xp: number;
@@ -123,13 +125,13 @@ export class db {
 
 		switch (xp.dbType) {
 		case "mongodb":
-			(xp.database as MongoClient).db().collection(query.collection).insertOne({
+			await this.getCollection(query.collection).insertOne({
 				...query.data, lastUpdated: new Date().toISOString()
 			}).catch(error => handleError(error, "createOne()"));
 			break;
 
 		case "sqlite":
-			if (query.collection === "simply-xps") (xp.database as Database).prepare("INSERT INTO \"simply-xps\" (user, guild, level, name, lastUpdated, xp, xp_rate) VALUES (?, ?, ?, ?, ?, ?, ?)").run(query.data.user, query.data.guild, query.data.level, query.data?.name, new Date().toISOString(), query.data.xp, query.data.xp_rate);
+			if (query.collection === "simply-xps") (xp.database as Database).prepare("INSERT INTO \"simply-xps\" (user, guild, level, name, lastUpdated, xp, xp_rate, flags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").run(query.data.user, query.data.guild, query.data.level, query.data?.name, new Date().toISOString(), query.data.xp, query.data.xp_rate, JSON.stringify(query.data?.flags));
 			else (xp.database as Database).prepare("INSERT INTO \"simply-xp-levelroles\" (gid, lvlrole, lastUpdated) VALUES (?, ?, ?)").run(query.data.guild, JSON.stringify(query.data.lvlrole), new Date().toISOString());
 			break;
 		}
@@ -150,7 +152,7 @@ export class db {
 
 		switch (xp.dbType) {
 		case "mongodb":
-			result = (xp.database as MongoClient).db().collection(query.collection).deleteMany(query.data).catch(error => handleError(error, "deleteMany()")) as Document;
+			result = await this.getCollection(query.collection).deleteMany(query.data).catch(error => handleError(error, "deleteMany()")) as Document;
 			break;
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("DELETE FROM \"simply-xps\" WHERE guild = ?").run(query.data.guild);
@@ -174,7 +176,7 @@ export class db {
 
 		switch (xp.dbType) {
 		case "mongodb":
-			result = (xp.database as MongoClient).db().collection(query.collection).deleteOne(query.data).catch(error => handleError(error, "deleteOne()")) as Document;
+			result = await this.getCollection(query.collection).deleteOne(query.data).catch(error => handleError(error, "deleteOne()")) as Document;
 			break;
 		case "sqlite":
 			if (query.collection === "simply-xps") result = (xp.database as Database).prepare("DELETE FROM \"simply-xps\" WHERE guild = ? AND user = ?").run(query.data.guild, query.data.user);
@@ -202,10 +204,9 @@ export class db {
 
 		switch (xp.dbType) {
 		case "mongodb":
-			if (query.collection === "simply-xps") result = await (xp.database as MongoClient).db().collection(query.collection).findOne(query.data).catch(error => handleError(error, "findOne()")) as Document;
-			else result = await (xp.database as MongoClient).db().collection(query.collection).findOne({
-				guild: query.data.guild,
-				"lvlrole.lvl": query.data.lvlrole.lvl
+			if (query.collection === "simply-xps") result = await this.getCollection(query.collection).findOne(query.data).catch(error => handleError(error, "findOne()")) as Document;
+			else result = await this.getCollection(query.collection).findOne({
+				guild: query.data.guild, "lvlrole.lvl": query.data.lvlrole.lvl
 			}).catch(error => handleError(error, "findOne()")) as Document;
 			break;
 
@@ -236,16 +237,32 @@ export class db {
 
 		switch (xp.dbType) {
 		case "mongodb":
-			result = (xp.database as MongoClient).db().collection(collection).find({guild}).toArray().catch(error => handleError(error, "find()")) as Document;
+			result = (xp.database as MongoClient).db().collection(collection).find({ guild }).toArray().catch(error => handleError(error, "find()")) as Document;
 			break;
 
 		case "sqlite":
-			if (collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ?").all(guild) as Document;
-			else {
+			if (collection === "simply-xps") {
+				result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ?").all(guild) as Document;
+				if (result.length) result = await Promise.all(result.map(async (row: {
+						user: string;
+						guild: string;
+						name: string;
+						level: number;
+						flags: string;
+						xp: number;
+						voice_xp: number;
+						voice_time: number;
+						lastUpdated: string;
+						xp_rate: number;
+					}) => {
+					row.flags = JSON.parse(row.flags);
+					return row;
+				}));
+			} else {
 				result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE gid = ?").all(guild) as Document;
 				if (result.length) result = await Promise.all(result.map(async (row: {
-					gid: string; lvlrole: string; lastUpdated: string;
-				}) => {
+						gid: string; lvlrole: string; lastUpdated: string;
+					}) => {
 					row.lvlrole = JSON.parse(row.lvlrole);
 					return row;
 				}));
@@ -272,12 +289,28 @@ export class db {
 			break;
 
 		case "sqlite":
-			if (collection === "simply-xps") result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\"").all() as Document;
-			else {
+			if (collection === "simply-xps") {
+				result = (xp.database as Database).prepare("SELECT * FROM \"simply-xps\"").all() as Document;
+				if (result.length) result = await Promise.all(result.map(async (row: {
+						user: string;
+						guild: string;
+						name: string;
+						level: number;
+						flags: string;
+						xp: number;
+						voice_xp: number;
+						voice_time: number;
+						lastUpdated: string;
+						xp_rate: number;
+					}) => {
+					row.flags = JSON.parse(row.flags);
+					return row;
+				}));
+			} else {
 				result = (xp.database as Database).prepare("SELECT * FROM \"simply-xp-levelroles\"").all() as Document;
 				if (result.length) result = await Promise.all(result.map(async (row: {
-					gid: string; lvlrole: string; lastUpdated: string;
-				}) => {
+						gid: string; lvlrole: string; lastUpdated: string;
+					}) => {
 					row.lvlrole = JSON.parse(row.lvlrole);
 					return row;
 				}));
@@ -303,7 +336,7 @@ export class db {
 
 		switch (xp.dbType) {
 		case "mongodb":
-			await (xp.database as MongoClient).db().collection(update.collection).updateOne(filter.data, {
+			await this.getCollection(update.collection).updateOne(filter.data, {
 				$set: {
 					...update.data, lastUpdated: new Date().toISOString()
 				}
@@ -311,8 +344,18 @@ export class db {
 			break;
 
 		case "sqlite":
-			if (filter.collection === "simply-xps" && update.collection === "simply-xps") (xp.database as Database).prepare(`UPDATE "simply-xps" SET xp_rate = ?, xp = ?, lastUpdated = ?, level = ? ${(update.data?.name ? ", name = ?" : "")} WHERE guild = ? AND user = ?`).run(update.data?.name ? [update.data.xp_rate, update.data.xp, new Date().toISOString(), update.data.level, update.data.name, filter.data.guild, filter.data.user] : [update.data.xp_rate, update.data.xp, new Date().toISOString(), update.data.level, filter.data.guild, filter.data.user]);
-			else if (filter.collection === "simply-xp-levelroles" && update.collection === "simply-xp-levelroles") (xp.database as Database).prepare("UPDATE \"simply-xp-levelroles\" SET lvlrole = ? WHERE gid = ?").run(JSON.stringify(update.data.lvlrole), filter.data.guild);
+			if (filter.collection === "simply-xps" && update.collection === "simply-xps") {
+				if (!update.data.user || !update.data.guild || !update.data.level || !update.data.xp || !update.data.xp_rate) throw new XpFatal({
+					function: "updateOne()",
+					message: "User, guild, level, xp, and xp_rate are required fields for updating a user document."
+				});
+
+				(xp.database as Database).prepare(`UPDATE "simply-xps" SET xp_rate = ?, xp = ?, lastUpdated = ?, level = ? ${(update.data?.name ? ", name = ?" : "")} ${(update.data?.flags ? ", flags = ?" : "")} WHERE guild = ? AND user = ?`).run(
+					update.data?.name ?
+						(update.data?.flags ? [ update.data.xp_rate, update.data.xp, new Date().toISOString(), update.data.level, update.data.name, JSON.stringify(update.data.flags), filter.data.guild, filter.data.user ] : [ update.data.xp_rate, update.data.xp, new Date().toISOString(), update.data.level, update.data.name, filter.data.guild, filter.data.user ]) :
+						(update.data?.flags ? [ update.data.xp_rate, update.data.xp, new Date().toISOString(), update.data.level, JSON.stringify(update.data.flags), filter.data.guild, filter.data.user ] : [ update.data.xp_rate, update.data.xp, new Date().toISOString(), update.data.level, filter.data.guild, filter.data.user ])
+				);
+			} else if (filter.collection === "simply-xp-levelroles" && update.collection === "simply-xp-levelroles") (xp.database as Database).prepare("UPDATE \"simply-xp-levelroles\" SET lvlrole = ? WHERE gid = ?").run(JSON.stringify(update.data.lvlrole), filter.data.guild);
 			else throw new XpFatal({
 				function: "updateOne()",
 				message: "Collection mismatch, expected same collection on both filter and update."

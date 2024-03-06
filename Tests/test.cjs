@@ -1,9 +1,6 @@
 const xp = require("../lib/xp");
 const { XpLog } = require("../lib/src/functions/xplogs");
 
-
-const MongoURL = "mongodb+srv://test-bot:VoPMOHg4jBuvMYVP@test.k9xds.mongodb.net/?retryWrites=true&w=majority";
-
 async function test(dbType) {
 	xp.XpEvents.on({
 		levelDown: (data, lostRoles) => {
@@ -14,7 +11,8 @@ async function test(dbType) {
 		}
 	});
 
-	await xp.connect(dbType === "sqlite" ? "Tests/test.sqlite" : MongoURL, {
+	// can't snoop on my database connection anymore :)
+	await xp.connect(dbType === "sqlite" ? "Tests/test.sqlite" : require("../secrets.cjs").MongoURI, {
 		auto_clean: false,
 		auto_create: true,
 		debug: true,
@@ -45,11 +43,13 @@ async function test(dbType) {
 
 	await xp.roleSetup.add("0987654321", { level: 70, role: "01" });
 
-	await xp.addLevel("326815959358898189", "0987654321", 69, "アバディマ");
+	await xp.addLevel("326815959358898189", "0987654321", 69, "アバディマ️");
+
+	await xp.setFlags("326815959358898189", "0987654321", [ "admin" ], "アバディマ️");
 
 	await xp.addXP("326815959358898189", "0987654321", 13900);
 
-	await xp.removeXP("326815959358898189", "0987654321", 1)
+	await xp.removeXP("326815959358898189", "0987654321", 1);
 
 	await xp.setLevel("1234567896", "0987654321", 68, "Rahul");
 
@@ -65,7 +65,7 @@ async function test(dbType) {
 
 	await xp.roleSetup.add("0987654321", { level: 1, role: "01" });
 
-	await xp.roleSetup.list("0987654321").then(console.log);
+	await xp.roleSetup.list("0987654321");
 
 	await xp.roleSetup.remove("0987654321", 1);
 
@@ -132,6 +132,8 @@ async function test(dbType) {
 			guild: "0987654321"
 		}
 	});
+
+	console.log("Done!");
 }
 
 test("sqlite");

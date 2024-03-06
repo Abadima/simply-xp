@@ -29,12 +29,13 @@ export interface Plugin {
  * @property {number} xp - User XP
  */
 export interface User {
+	flags?: Array<number | string> | undefined;
 	guild: string;
 	user: string;
 	name?: string | null;
-	position: number;
 	lastUpdated?: string;
 	level: number;
+	position: number;
 	xp: number;
 }
 
@@ -81,6 +82,8 @@ export { reset } from "./src/reset";
 
 export { roleSetup } from "./src/roleSetup";
 
+export { setFlags } from "./src/setFlags";
+
 export { setLevel, setXP } from "./src/set";
 
 export { XpEvents } from "./src/functions/xplogs";
@@ -93,6 +96,6 @@ export const xp: XPClient = {
 	debug: false,
 	notify: true,
 	registeredFonts: [],
-	version: "2.0.0-beta.0-fix.0",
+	version: "2.0.0-beta.1",
 	xp_rate: 0.1
 };

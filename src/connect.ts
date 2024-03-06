@@ -66,6 +66,7 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
                                   guild       TEXT    NOT NULL,
                                   name        TEXT    NOT NULL DEFAULT user,
                                   level       INTEGER NOT NULL DEFAULT 0,
+                                  flags       TEXT             DEFAULT NULL,
                                   xp          INTEGER NOT NULL DEFAULT 0,
                                   voice_xp    INTEGER          DEFAULT 0,
                                   voice_time  INTEGER          DEFAULT 0,

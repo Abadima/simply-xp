@@ -1,5 +1,21 @@
 # VERSION 2 CHANGELOGS
 
+## [BETA 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.1)
+
+### Additions
+
+- Add `setFlags()` function, to flag users in the database, useful for level tampering, annotating users, etc.
+- Add `flags` property to `SQLite` and `MongoDB` databases, to store user flags.
+
+### Improvements
+
+- `db.updateOne()` will now throw better error when not enough parameters are provided. (SQLite)
+- Readability in `db` functions.
+
+### Bug Fixes
+
+- Fixed a future bug where some `db` functions would return `null` instead of actual data. (MongoDB)
+
 ## [BETA 0 FIX 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.0-fix.1)
 
 ### ⚠️ Breaking Changes

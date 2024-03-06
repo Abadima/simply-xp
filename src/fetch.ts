@@ -29,5 +29,10 @@ export async function fetch(userId: string, guildId: string, username?: string):
 	}
 
 	const position = users.sort((a, b) => b.xp - a.xp).findIndex((u) => u.user === userId) + 1;
-	return { name: user?.name, user: user.user, guild: user.guild, level: user.level, position, xp: user.xp };
+	return {
+		flags: user?.flags, guild: user.guild,
+		user: user.user, name: user?.name,
+		level: user.level, position,
+		xp: user.xp
+	};
 }

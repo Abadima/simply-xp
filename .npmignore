@@ -4,6 +4,7 @@
 .idea
 node_modules
 pnpm-lock.yaml
+secrets.cjs
 src
 !lib/src
 Tests
