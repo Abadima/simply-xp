@@ -42,7 +42,7 @@
     "url": "git+https://github.com/Abadima/simply-xp.git"
   },
   "dependencies": {
-    "@napi-rs/canvas": "0.1.41"
+    "@napi-rs/canvas": "0.1.51"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.0.2",
