@@ -37,30 +37,46 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 	}
 
 	switch (type) {
-	case "mongodb": {
-		const { MongoClient } = await import("mongodb"), goodVersion = await checkPackageVersion("mongodb", 3, 6);
-		if (!goodVersion) return XpLog.err("connect()", "MongoDB Version 3 to 6 is required");
-		const client = await MongoClient.connect(uri).catch((error) => {
-			throw new XpFatal({ function: "connect()", message: error.message });
-		});
+		case "mongodb": {
+			switch (await checkPackageVersion("mongodb", 3, 7)) {
+				case "too_low":
+					throw new XpFatal({ function: "connect()", message: "MONGODB V3 OR NEWER IS REQUIRED" });
+				case "too_high":
+					XpLog.warn("connect()", "MONGODB VERSION IS NEWER THAN TESTED (V7) -- CONTINUE WITH CAUTION");
+					break;
+				case "ok":
+					XpLog.debug("connect()", "MongoDB is natively compatible with our package! 🎉");
+			}
 
-		xp.dbType = "mongodb";
-		xp.database = client || undefined;
-	}
+			XpLog.debug("[connect()]", `ATTEMPTING MONGODB CONNECTION`);
+			const { MongoClient } = await import("mongodb");
 
-		break;
-	case "sqlite":
-		try {
-			const [ betterSqlite3, goodVersion ] = await Promise.all([
-				import("better-sqlite3"), checkPackageVersion("better-sqlite3", 7, 9)
-			]);
+			const client = await MongoClient.connect(uri).catch((error) => {
+				throw new XpFatal({ function: "connect()", message: error.message });
+			});
 
-			if (!goodVersion) return XpLog.err("connect()", "better-sqlite3 Version 7 to 9 is required");
+			xp.dbType = "mongodb";
+			xp.database = client || undefined;
+		}
 
-			xp.database = new betterSqlite3.default(uri);
-			xp.dbType = "sqlite";
+			break;
+		case "sqlite":
+			try {
+				switch (await checkPackageVersion("better-sqlite3", 7, 12)) {
+					case "too_low":
+						throw new XpFatal({ function: "connect()", message: "BETTER-SQLITE3 V7 OR NEWER IS REQUIRED" });
+					case "too_high":
+						XpLog.warn("connect()", "BETTER-SQLITE3 VERSION IS NEWER THAN TESTED (V12) -- CONTINUE WITH CAUTION");
+						break;
+					case "ok":
+						XpLog.debug("connect()", "better-sqlite3 is natively compatible with our package! 🎉");
+				}
 
-			xp.database.exec(`CREATE TABLE IF NOT EXISTS "simply-xps"
+				xp.database = new (await import("better-sqlite3")).default(uri);
+				XpLog.info("[connect()]", "Successfully connected to SQLite database.");
+				xp.dbType = "sqlite";
+
+				xp.database.exec(`CREATE TABLE IF NOT EXISTS "simply-xps"
                               (
                                   user        TEXT    NOT NULL,
                                   guild       TEXT    NOT NULL,
@@ -73,25 +89,25 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
                                   lastUpdated DATE    NOT NULL,
                                   xp_rate     INTEGER          DEFAULT 0.1
                               )`
-			);
-			xp.database.exec(`CREATE TABLE IF NOT EXISTS "simply-xp-levelroles"
+				);
+				xp.database.exec(`CREATE TABLE IF NOT EXISTS "simply-xp-levelroles"
                               (
                                   gid         TEXT NOT NULL,
                                   lvlrole     TEXT NOT NULL,
                                   lastUpdated TEXT NOT NULL
                               )`
-			);
-		} catch (error: unknown) {
-			if (typeof error === "object" && error !== null) {
-				const errorWithCode = error as { message: string, code?: string };
-				if (errorWithCode.code !== undefined && errorWithCode.code !== "MODULE_NOT_FOUND") {
-					throw new XpFatal({ function: "connect()", message: errorWithCode.message });
+				);
+			} catch (error: unknown) {
+				if (typeof error === "object" && error !== null) {
+					const errorWithCode = error as { message: string, code?: string };
+					if (errorWithCode.code !== undefined && errorWithCode.code !== "MODULE_NOT_FOUND") {
+						throw new XpFatal({ function: "connect()", message: errorWithCode.message });
+					}
 				}
 			}
-		}
-		break;
-	default:
-		throw new XpFatal({ function: "connect()", message: "DATABASE TYPE NOT PROVIDED OR INVALID" });
+			break;
+		default:
+			throw new XpFatal({ function: "connect()", message: "DATABASE TYPE NOT PROVIDED OR INVALID" });
 	}
 
 	if (!xp.database) return false;
@@ -127,19 +143,20 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 async function getPackageManager(): Promise<"yarn" | "npm" | "pnpm"> {
 	const { existsSync } = await import("fs");
 
-	const lockfiles = [ "yarn.lock", "pnpm-lock.yaml", "pnpm-lock.json", "package-lock.json" ];
-	const foundLockfiles = lockfiles.filter((lockfile) => existsSync(lockfile));
+	const lockfiles = {
+		"yarn.lock": "yarn",
+		"pnpm-lock.yaml": "pnpm",
+		"pnpm-lock.json": "pnpm",
+		"package-lock.json": "npm",
+	} as const;
 
-	if (foundLockfiles.length === 1) {
-		if (foundLockfiles[0] === "yarn.lock") {
-			XpLog.debug("getPackageManager()", "Using YARN");
-			return "yarn";
-		} else if (foundLockfiles[0] === "pnpm-lock.yaml" || foundLockfiles[0] === "pnpm-lock.json") {
-			XpLog.debug("getPackageManager()", "Using PNPM");
-			return "pnpm";
+	for (const [file, manager] of Object.entries(lockfiles)) {
+		if (existsSync(file)) {
+			XpLog.debug("getPackageManager()", `Using ${manager.toUpperCase()}`);
+			return manager;
 		}
 	}
-	XpLog.debug("getPackageManager()", "Using NPM");
+	XpLog.debug("getPackageManager()", "No lockfile found, defaulting to NPM");
 	return "npm";
 }
 
@@ -149,17 +166,22 @@ async function getPackageManager(): Promise<"yarn" | "npm" | "pnpm"> {
  * @param {string} type - NPM Package Name (lowercase)
  * @param {number} min - Minimum Major Version Number
  * @param {number} max - Maximum Major Version Number (Optional)
- * @returns {Promise<boolean>}
+ * @returns {Promise<"too_low" | "ok" | "too_high">} - Version Status
  * @throws {XpFatal} If the package version is not supported
  */
-export async function checkPackageVersion(type: string, min: number, max?: number): Promise<boolean> {
+export async function checkPackageVersion(type: string, min: number, max?: number): Promise<"too_low" | "ok" | "too_high"> {
 	try {
 		const chosenPackage = await import(`${type}/package.json`);
-		return parseInt(chosenPackage.version.substring(0, 1)) >= min && (max ? parseInt(chosenPackage.version.substring(0, 1)) <= max : true);
+		const majorVersion = parseInt(chosenPackage.version.split(".")[0], 10);
+
+		if (majorVersion < min) return "too_low";
+		if (max && majorVersion > max) return "too_high";
+		return "ok";
 	} catch (_) {
 		XpLog.info("checkPackageVersion()", `Installing ${type} [V${max || min}] | Please wait...`);
+
 		execSync(`${await getPackageManager()} add ${type}@${max || min}.x.x`);
 		XpLog.warn("checkPackageVersion()", `Installed ${type}. Please restart!`);
-		return process.exit(1);
+		return process.exit(0);
 	}
 }

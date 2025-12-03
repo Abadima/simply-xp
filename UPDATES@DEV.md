@@ -1,5 +1,23 @@
 # VERSION 2 CHANGELOGS
 
+## [BETA 2](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.2)
+
+### Improvements
+
+- Add `mongodb` V7 Support
+- Bump `@napi-rs/canvas` to V0.1.83.
+- Add `better-sqlite3` V10 & V11 Support
+- Update `rankCard()` and `compareCard()` to favor strokes over shadows for better system performance.
+- `checkPackageVersion()` (`substring()` => `split()`) and (`Promise<boolean>` => `Promise<"too_low" | "ok" | "too_high">`)
+  - > **⚠️ NOTE:** As a result of this change, now the process won't exit when the package version is too high, instead it will leave a warning in the console, call it "experimental support".
+- Update themes in `charts()` for better contrast and color differentiation.
+- Optimize `charts()` drawing code for better efficiency.
+- Add `light` and `pink` themes to `charts()`.
+
+### Bug Fixes
+
+- Fix `leaderboardCard()` not using user's preferred even/odd colours.
+
 ## [BETA 1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.1)
 
 ### Additions

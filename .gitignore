@@ -1,5 +1,13 @@
+# IDE/Editor files
 .idea
+
+# Dependencies
 lib
 node_modules
+
+# Lock files
 pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Secrets
 secrets.cjs

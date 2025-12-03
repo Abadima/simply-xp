@@ -187,30 +187,38 @@ export function updateOptions(clientOptions: NewClientOptions): void {
 		if (database) {
 			xp.database = database;
 			const dbInfo = xp.dbType === "mongodb" ?
-				{ name: "MongoDB", type: "mongodb", min: 3, max: 6 } :
-				{ name: "Better-SQLite3", type: "better-sqlite3", min: 7, max: 9 };
+				{ name: "MONGODB", type: "mongodb", min: 3, max: 7 } :
+				{ name: "BETTER-SQLITE3", type: "better-sqlite3", min: 7, max: 12 };
 
 			checkPackageVersion(dbInfo.type, dbInfo.min, dbInfo.max).then((result) => {
-				if (!result) throw new XpFatal({
-					function: "updateOptions()",
-					message: `${dbInfo.name} V${dbInfo.min} up to V${dbInfo.max} is required.`
-				});
+				switch (result) {
+					case "too_low":
+						throw new XpFatal({
+							function: "updateOptions()", message: `${dbInfo.name} V${dbInfo.min} OR NEWER IS REQUIRED`
+						});
+					case "too_high":
+						XpLog.warn("updateOptions()", `${dbInfo.name} VERSION IS NEWER THAN TESTED (V${dbInfo.max}) -- CONTINUE WITH CAUTION`);
+						break;
+					case "ok":
+						XpLog.debug("updateOptions()", `${dbInfo.name} is natively compatible with our package! 🎉`);
+						break;
+				}
 
 				switch (xp.dbType) {
-				case "mongodb":
-					(xp.database as MongoClient).db().command({ ping: 1 }).catch(() => {
-						xp.database = undefined;
-						throw new XpFatal({ function: "updateOptions()", message: "Invalid MongoDB connection" });
-					});
-					break;
+					case "mongodb":
+						(xp.database as MongoClient).db().command({ ping: 1 }).catch(() => {
+							xp.database = undefined;
+							throw new XpFatal({ function: "updateOptions()", message: "Invalid MongoDB connection" });
+						});
+						break;
 
-				case "sqlite":
-					try {
-						(xp.database as Database).prepare("SELECT 1").get();
-					} catch (error) {
-						throw new XpFatal({ function: "updateOptions()", message: "Invalid SQLite connection" });
-					}
-					break;
+					case "sqlite":
+						try {
+							(xp.database as Database).prepare("SELECT 1").get();
+						} catch (error) {
+							throw new XpFatal({ function: "updateOptions()", message: "Invalid SQLite connection" });
+						}
+						break;
 				}
 			});
 		}

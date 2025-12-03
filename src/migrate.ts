@@ -63,28 +63,45 @@ export class migrate {
 		let results: UserResult[];
 
 		switch (dbType) {
-		case "mongodb":
-			try {
-				if (!await checkPackageVersion("mongodb", 4, 6)) return XpLog.err("migrate.fromDB()", "MongoDB V4 up to V6 is required");
+			case "mongodb":
+				try {
+					switch (await checkPackageVersion("mongodb", 3, 7)) {
+						case "too_low":
+							throw new XpFatal({ function: "migrate.fromDB()", message: "MongoDB V3 OR NEWER IS REQUIRED" });
+						case "too_high":
+							XpLog.warn("migrate.fromDB()", "MongoDB VERSION IS NEWER THAN TESTED (V7) -- CONTINUE WITH CAUTION");
+							break;
+						case "ok":
+							XpLog.debug("migrate.fromDB()", "MongoDB is natively compatible with our package! 🎉");
+					}
 
-				results = await (connection as MongoClient).db().collection("simply-xps").find().toArray() as Document as UserResult[];
+					results = await (connection as MongoClient).db().collection("simply-xps").find().toArray() as Document as UserResult[];
 
-			} catch (error) {
-				XpLog.err("migrate.fromDB()", error as string);
-				return false;
-			}
-			break;
+				} catch (error) {
+					XpLog.err("migrate.fromDB()", error as string);
+					return false;
+				}
+				break;
 
-		case "sqlite":
-			try {
-				if (!await checkPackageVersion("better-sqlite3", 7, 8)) return XpLog.err("migrate.fromDB()", "better-sqlite3 V7 up to V8 is required");
-				results = (connection as Database).prepare("SELECT * FROM `simply-xps`").all() as UserResult[];
+			case "sqlite":
+				try {
+					switch (await checkPackageVersion("better-sqlite3", 7, 12)) {
+						case "too_low":
+							throw new XpFatal({ function: "migrate.fromDB()", message: "BETTER-SQLITE3 V7 OR NEWER IS REQUIRED" });
+						case "too_high":
+							XpLog.warn("migrate.fromDB()", "BETTER-SQLITE3 VERSION IS NEWER THAN TESTED (V12) -- CONTINUE WITH CAUTION");
+							break;
+						case "ok":
+							XpLog.debug("migrate.fromDB()", "better-sqlite3 is natively compatible with our package! 🎉");
+					}
 
-			} catch (error) {
-				XpLog.err("migrate.fromDB()", error as string);
-				return false;
-			}
-			break;
+					results = (connection as Database).prepare("SELECT * FROM `simply-xps`").all() as UserResult[];
+
+				} catch (error) {
+					XpLog.err("migrate.fromDB()", error as string);
+					return false;
+				}
+				break;
 		}
 
 		XpLog.debug("migrate.fromDB()", `FOUND ${results.length} RESULTS`);

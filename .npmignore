@@ -1,13 +1,29 @@
+# Configuration files
 .eslintrc.json
+tsconfig.json
+
+# Git-related files and directories
 .github
 .gitignore
+
+# IDE and editor files
 .idea
+
+# Dependency files
 node_modules
 pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Secrets and sensitive files
 secrets.cjs
+
+# Source and test files
 src
-!lib/src
 Tests
-tsconfig.json
+
+# Documentation and development files
 UPDATES@DEV.md
 xp.ts
+
+# Exceptions
+!lib/src

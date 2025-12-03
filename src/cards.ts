@@ -46,15 +46,15 @@ export type LeaderboardCardLocales = {
  * @property {string} secondaryFont - ABSOLUTE FILE PATH
  */
 export interface LeaderboardCardOptions {
-	artworkColors?: [ HexColor, HexColor ];
+	artworkColors?: [HexColor, HexColor];
 	artworkImage?: URL;
-	borderColors?: [ HexColor, HexColor ];
+	borderColors?: [HexColor, HexColor];
 	backgroundColor?: HexColor;
 	backgroundImage?: URL;
 	fallbackFont?: string;
 	light?: boolean;
 	primaryFont?: string;
-	rowColors?: [ HexColor, HexColor ];
+	rowColors?: [HexColor, HexColor];
 	rowOpacity?: number;
 	secondaryFont?: string;
 }
@@ -181,12 +181,11 @@ export async function compareCard(guild: {
 	// Add Usernames
 	context.save();
 	context.textAlign = "center";
-	context.fillStyle = "#ffffff";
-	context.shadowColor = "#000000";
-	context.shadowBlur = 6;
-	context.shadowOffsetX = 1;
-	context.shadowOffsetY = 1;
+	context.lineWidth = 6;
+	context.strokeStyle = "#000000";
 	context.font = "40px Baloo, FallbackFont";
+	context.strokeText(`${user1.username} ${locales.versus} ${user2.username}`, 540, 60);
+	context.fillStyle = "#ffffff";
 	context.fillText(`${user1.username} ${locales.versus} ${user2.username}`, 540, 60);
 	context.restore();
 
@@ -226,32 +225,41 @@ export async function compareCard(guild: {
 
 	// Add Level Texts
 	context.save();
-	context.globalAlpha = 1;
-	context.fillStyle = "#ffffff";
 	context.textAlign = "center";
 	context.font = "25px Baloo, FallbackFont";
-	if (options?.light) {
-		context.shadowColor = "#000000";
-		context.shadowBlur = 5;
-		context.shadowOffsetX = 1;
-		context.shadowOffsetY = 1;
-	}
+	context.lineWidth = 5;
+	context.strokeStyle = "#000000";
+	context.fillStyle = "#ffffff";
+
+	context.strokeText(LvlText1, 160, 350);
 	context.fillText(LvlText1, 160, 350);
 
+	context.strokeText(LvlText2, 920, 350);
 	context.fillText(LvlText2, 920, 350);
+
 	context.restore();
 
 	// Add sleek center bar
 	context.save();
-	context.globalAlpha = 1;
 	RoundedBox(context, 265, 330, 540, 25, 10);
 	context.clip();
+
 	context.fillStyle = CenterBarBackground;
 	context.fill();
-	context.fillStyle = "#ffffff";
+
 	context.textAlign = "center";
 	context.font = "22px Baloo, FallbackFont";
-	context.fillText(`${dbUser1.xp > dbUser2.xp ? "+" : "-"}${Math.abs(dbUser1.level - dbUser2.level)}`, 540, 350);
+	context.lineWidth = 4;
+	context.strokeStyle = "rgba(0,0,0,0.7)";
+	context.fillStyle = "#ffffff";
+
+	const diff = `${dbUser1.xp > dbUser2.xp ? "+" : "-"}${Math.abs(dbUser1.level - dbUser2.level)}`;
+
+	context.strokeText(diff, 540, 350);
+	context.fillText(diff, 540, 350);
+
+	context.restore();
+
 	if (xp.auto_clean) clean();
 
 	return {
@@ -306,20 +314,20 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardCar
 	// make a colour object containing colours for both dark and light mode
 	if (options?.light) {
 		colors = {
-			artworkColors: options?.artworkColors || [ "#997fe1", "#616bff" ],
+			artworkColors: options?.artworkColors || ["#997fe1", "#616bff"],
 			backgroundColor: "#FFFFFF",
-			borderColors: options?.borderColors || [ "#e0d440", "#fffa6b" ],
-			evenColor: "#f0f0f0" || options?.rowColors?.[0],
-			oddColor: "#dcdcdc" || options?.rowColors?.[1],
+			borderColors: options?.borderColors || ["#e0d440", "#fffa6b"],
+			evenColor: options?.rowColors?.[0] || "#f0f0f0",
+			oddColor: options?.rowColors?.[1] || "#dcdcdc",
 			primaryTextColor: "#000000",
 			secondaryTextColor: "rgba(0,0,0,0.5)"
 		};
 	} else colors = {
-		artworkColors: options?.artworkColors || [ "#6B46D4", "#2e3cff" ],
+		artworkColors: options?.artworkColors || ["#6B46D4", "#2e3cff"],
 		backgroundColor: "#141414",
-		borderColors: options?.borderColors || [ "#e0d440", "#fffa6b" ],
-		evenColor: "#1e1e1e" || options?.rowColors?.[0],
-		oddColor: "#282828" || options?.rowColors?.[1],
+		borderColors: options?.borderColors || ["#e0d440", "#fffa6b"],
+		evenColor: options?.rowColors?.[0] || "#1e1e1e",
+		oddColor: options?.rowColors?.[1] || "#282828",
 		primaryTextColor: "#ffffff",
 		secondaryTextColor: "rgba(255,255,255,0.5)"
 	};
@@ -531,199 +539,199 @@ export async function rankCard(guild: {
 
 	if (!options?.legacy) {
 
-		// Add Username
+		// Username
 		context.save();
 		context.textAlign = "center";
-		context.fillStyle = "#ffffff";
-		context.shadowColor = "#000000";
-		context.shadowBlur = 5;
-		context.shadowOffsetX = 1;
-		context.shadowOffsetY = 1;
 		context.font = "40px Baloo, FallbackFont";
+		context.lineWidth = 4;
+		context.strokeStyle = "#000000";
+		context.strokeText(user.username, 540, 80);
+		context.fillStyle = "#ffffff";
 		context.fillText(user.username, 540, 80);
 		context.restore();
 
-		// Add Avatar
+		// Avatar
+
 		context.save();
 		context.beginPath();
-		context.arc(160, 200, 105, 0, Math.PI * 2, true);
-		context.closePath();
-		context.lineWidth = 5;
+		context.arc(160, 200, 105, 0, Math.PI * 2);
 		context.strokeStyle = rankBoxColor;
+		context.lineWidth = 5;
 		context.stroke();
 		context.beginPath();
-		context.arc(160, 200, 100, 0, Math.PI * 2, true);
-		context.closePath();
+		context.arc(160, 200, 100, 0, Math.PI * 2);
 		context.clip();
 		context.fillStyle = rankBoxColor;
 		context.fill();
 		context.drawImage(avatarURL, 50, 90, 220, 220);
 		context.restore();
 
-		// Add Position Badge
+		// Position Badge
 		context.save();
 		context.beginPath();
-		context.arc(230, 130, 30, 0, Math.PI * 2, true);
-		context.closePath();
+		context.arc(230, 130, 30, 0, Math.PI * 2);
 		context.strokeStyle = rankBoxColor;
 		context.lineWidth = 5;
 		context.stroke();
 
 		context.beginPath();
-		context.arc(230, 130, 30, 0, Math.PI * 2, true);
-		context.closePath();
+		context.arc(230, 130, 30, 0, Math.PI * 2);
 		context.fillStyle = positionColour;
 		context.fill();
 		context.clip();
 
-		// Add Position Text
+		// Position Text
 		context.fillStyle = "#000000";
 		dynamicFont(context, shortener(dbUser.position, true), 230, 138, 45, 30);
 		context.restore();
 
-		// Add Level Text
+		// Level Text
 		context.save();
-		context.fillStyle = "#ffffff";
-		if (options?.light) {
-			context.shadowColor = "#000000";
-			context.shadowBlur = 5;
-			context.shadowOffsetX = 1;
-			context.shadowOffsetY = 1;
-		}
 		context.textAlign = "center";
 		context.font = "25px Baloo, FallbackFont";
+		context.lineWidth = 3;
+		context.strokeStyle = options?.light ? "#000000" : "#000000";
+		context.strokeText(LvlText, 160, 350);
+		context.fillStyle = "#ffffff";
 		context.fillText(LvlText, 160, 350);
 		context.restore();
 
-		// Add sleek progress bar
+		// Progress Bar
 		context.save();
 		RoundedBox(context, 265, 330, 540, 25, 10, {
 			clip: true, fill: { color: LevelBarBackground }
 		});
-
-		// now fill the progress bar
 		RoundedBox(context, 270, 335, progress, 15, 5, {
 			clip: true, fill: { color: LevelBarFill }
 		});
 		context.restore();
 
-		// Right in the middle, add the XP Text
+		// XP Text
 		context.save();
 		context.textAlign = "center";
-		context.fillStyle = (options?.light ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.6)");
 		context.font = "22px Baloo, FallbackFont";
-		context.fillText(TextXpNeeded.replace(/{needed}/g, shortener(nextLevelXP)).replace(/{current}/g, shortener(dbUser.xp)), 540, 320);
+		context.fillStyle = options?.light
+			? "rgba(0,0,0,0.6)"
+			: "rgba(255,255,255,0.6)";
+		context.fillText(
+			TextXpNeeded
+				.replace(/{needed}/g, shortener(nextLevelXP))
+				.replace(/{current}/g, shortener(dbUser.xp)),
+			540,
+			320
+		);
+		context.restore();
 
-		// Add Level Text (Next Level)
+		// Next Level
 		context.save();
-		context.fillStyle = "#ffffff";
 		context.textAlign = "center";
-		if (options?.light) {
-			context.shadowColor = "#000000";
-			context.shadowBlur = 5;
-			context.shadowOffsetX = 1;
-			context.shadowOffsetY = 1;
-		}
 		context.font = "25px Baloo, FallbackFont";
-		context.fillText(`${locales.level} ` + shortener(dbUser.level + 1), 920, 350);
+		const nextLvlText = `${locales.level} ` + shortener(dbUser.level + 1);
+		context.lineWidth = 3;
+		context.strokeStyle = options?.light ? "#000000" : "#000000";
+		context.strokeText(nextLvlText, 920, 350);
+		context.fillStyle = "#ffffff";
+		context.fillText(nextLvlText, 920, 350);
 		context.restore();
 
 	} else {
 
-		// Add Vertical Bar
+		// Vertical Bar
 		context.save();
 		context.globalAlpha = 0.4;
 		context.fillStyle = options?.light ? "#ffffff" : "#000000";
 		context.fillRect(40, 0, 240, canvas.height);
 		context.restore();
 
-		// Add User Avatar
+		// User Avatar
 		context.save();
-		RoundedBox(context, 70, 30, 180, 180, 50, {
-			clip: true, fill: { color: rankBoxColor }
-		});
+		RoundedBox(context, 70, 30, 180, 180, 50, { clip: true, fill: { color: rankBoxColor } });
 		RoundedBox(context, 75, 35, 170, 170, 50, { clip: true });
 		context.drawImage(avatarURL, 70, 30, 180, 180);
 		context.restore();
 
-		// Add EXP Text
+		// EXP Text
 		context.save();
-		RoundedBox(context, 70, 240 + 50 + 30, 180, 50, 20, { clip: true });
+		RoundedBox(context, 70, 320, 180, 50, 20, { clip: true });
 		context.fillStyle = rankBoxColor;
 		context.fillRect(70, 320, 180, 50);
 		context.fillStyle = "#ffffff";
-		dynamicFont(context, TextEXP, 160, 358, 160, 32);
+		dynamicFont(context, TextEXP, 160, 355, 160, 32);
 		context.restore();
 
-		// Add Level Text
+		// Level Text
 		context.save();
 		RoundedBox(context, 70, 240, 180, 50, 20, { clip: true });
 		context.fillStyle = rankBoxColor;
 		context.fillRect(70, 240, 180, 50);
 		context.fillStyle = "#ffffff";
 		context.textAlign = "center";
-		dynamicFont(context, LvlText, 160, 278, 160, 32);
+		dynamicFont(context, LvlText, 160, 275, 160, 32);
 		context.restore();
 
-		// Add Username
+		// Username
 		context.save();
 		context.textAlign = "left";
-		context.fillStyle = "#ffffff";
-		context.shadowColor = "#000000";
-		context.shadowBlur = 15;
-		context.shadowOffsetX = 1;
-		context.shadowOffsetY = 1;
 		context.font = "39px Baloo, FallbackFont";
+		context.fillStyle = "#ffffff";
+		context.lineWidth = 4;
+		context.strokeStyle = "#000000";
+		context.strokeText(user.username, 395, 80);
 		context.fillText(user.username, 395, 80);
 		context.restore();
 
-		// Add Position Number
+		// Position Number
 		context.save();
 		context.textAlign = "right";
-		context.fillStyle = "#ffffff";
-		context.shadowColor = "#000000";
-		context.shadowBlur = 15;
-		context.shadowOffsetX = 1;
-		context.shadowOffsetY = 1;
 		context.font = "55px Baloo, FallbackFont";
+		context.fillStyle = "#ffffff";
+		context.lineWidth = 4;
+		context.strokeStyle = "#000000";
+		context.strokeText("#" + dbUser.position, canvas.width - 55, 80);
 		context.fillText("#" + dbUser.position, canvas.width - 55, 80);
 		context.restore();
 
+		// Guild Name Background + Text
 		context.save();
 		RoundedBox(context, 390, 305, 660, 70, 20, { clip: true });
-		context.fillStyle = "#ffffff";
-		dynamicFont(context, guild.name, 720, 355, 700, 45);
 		context.globalAlpha = 0.2;
+		context.fillStyle = "#ffffff";
 		context.fillRect(390, 305, 660, 70);
+		context.globalAlpha = 1;
+		dynamicFont(context, guild.name, 720, 355, 700, 45);
 		context.restore();
 
+		// Level Bar Background
 		context.save();
 		RoundedBox(context, 390, 145, 660, 50, 20, { clip: true });
-		context.fillStyle = LevelBarBackground;
 		context.globalAlpha = 0.2;
+		context.fillStyle = LevelBarBackground;
 		context.fillRect(390, 145, 660, 50);
 		context.restore();
 
+		// Level Bar Fill
 		context.save();
 		RoundedBox(context, 390, 145, progress, 50, 20, { clip: true });
-		context.fillStyle = LevelBarFill;
 		context.globalAlpha = 0.5;
+		context.fillStyle = LevelBarFill;
 		context.fillRect(390, 145, progress, 50);
 		context.restore();
 
+		// Next Level XP Text
 		context.save();
 		context.textAlign = "left";
+		context.font = "30px Baloo, FallbackFont";
 		context.fillStyle = "#ffffff";
 		context.globalAlpha = 0.8;
-		context.font = "30px Baloo, FallbackFont";
-		context.fillText(`${locales.next_level}: ` + shortener(nextLevelXP) + ` ${locales.xp}`, 390, 230);
+		context.fillText(`${locales.next_level}: ${shortener(nextLevelXP)} ${locales.xp}`, 390, 230);
 		context.restore();
 
-		const textXPEdited = TextXpNeeded.replace(/{needed}/g, shortener(nextLevelXP)).replace(/{current}/g, shortener(dbUser.xp));
+		// XP Needed Text
 		context.textAlign = "center";
+		context.font = "30px Baloo, FallbackFont";
 		context.fillStyle = "#474747";
 		context.globalAlpha = 1;
-		context.font = "30px Baloo, FallbackFont";
+		const textXPEdited = TextXpNeeded.replace(/{needed}/g, shortener(nextLevelXP)).replace(/{current}/g, shortener(dbUser.xp));
 		context.fillText(textXPEdited, 730, 180);
 	}
 
@@ -818,30 +826,30 @@ function shortener(count: number | undefined, roundedNumber?: boolean): string {
 	}
 
 	switch (i) {
-	case 0:
-		abbreviation = ""; // Hundreds
-		break;
-	case 1:
-		abbreviation = "K"; // Thousands
-		break;
-	case 2:
-		abbreviation = "M"; // Millions
-		break;
-	case 3:
-		abbreviation = "B"; // Billions
-		break;
-	case 4:
-		abbreviation = "T"; // Trillions
-		break;
-	case 5:
-		abbreviation = "Qa"; // Quadrillions
-		break;
-	case 6:
-		abbreviation = "Qi"; // Quintillions
-		break;
-	default:
-		abbreviation = "S+"; // Quadrillions and more
-		break;
+		case 0:
+			abbreviation = ""; // Hundreds
+			break;
+		case 1:
+			abbreviation = "K"; // Thousands
+			break;
+		case 2:
+			abbreviation = "M"; // Millions
+			break;
+		case 3:
+			abbreviation = "B"; // Billions
+			break;
+		case 4:
+			abbreviation = "T"; // Trillions
+			break;
+		case 5:
+			abbreviation = "Qa"; // Quadrillions
+			break;
+		case 6:
+			abbreviation = "Qi"; // Quintillions
+			break;
+		default:
+			abbreviation = "S+"; // Quadrillions and more
+			break;
 	}
 
 	return `${count.toFixed(i === 0 ? 0 : (roundedNumber ? 0 : 2))}${abbreviation}`;

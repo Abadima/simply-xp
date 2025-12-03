@@ -1,6 +1,6 @@
 {
   "name": "simply-xp",
-  "version": "2.0.0-beta.1",
+  "version": "2.0.0-beta.2",
   "description": "The easiest way to implement xp system",
   "main": "lib/xp.js",
   "scripts": {
@@ -42,19 +42,19 @@
     "url": "git+https://github.com/Abadima/simply-xp.git"
   },
   "dependencies": {
-    "@napi-rs/canvas": "0.1.51"
+    "@napi-rs/canvas": "0.1.83"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.0.2",
-    "@types/better-sqlite3": "^7.6.9",
-    "@types/node": "^20.11.24",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "better-sqlite3": "^9.4.3",
-    "eslint": "^8.57.0",
-    "mongodb": "^6.4.0",
-    "typescript": "^5.3.3",
-    "uglify-js": "^3.17.4"
+    "@eslint/eslintrc": "^3.3.3",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "better-sqlite3": "12.5.0",
+    "eslint": "^9.39.1",
+    "mongodb": "^7.0.0",
+    "typescript": "^5.9.3",
+    "uglify-js": "^3.19.3"
   },
   "engines": {
     "node": ">=15.5.0"
