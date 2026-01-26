@@ -3,7 +3,7 @@ const levels = require("../src/models/level.js");
 async function setXP(userID, guildID, xp) {
 	if (!userID) throw new Error("[XP] User ID was not provided.");
 	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
-	if (!xp || isNaN(Number(xp))) throw new Error("[XP] Invalid XP amount.");
+	if (xp == null || isNaN(Number(xp))) throw new Error("[XP] Invalid XP amount.");
 
 	const user = await levels.findOneAndUpdate(
 		{ user: userID, guild: guildID },
