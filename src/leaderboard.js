@@ -44,6 +44,9 @@ async function leaderboard(client, guildID, limit) {
 		})
 	);
 
+	// Collect entries to purge for batch deletion
+	const entriesToPurge = [];
+
 	for (const entry of entriesWithMembers) {
 		entryIndex += 1;
 
@@ -54,7 +57,7 @@ async function leaderboard(client, guildID, limit) {
 
 		const { guild: entryGuildID, user: userID, xp, level } = rawEntry;
 		if (!member && shouldPurge) {
-			await levels.deleteOne({ user: userID, guild: entryGuildID });
+			entriesToPurge.push({ user: userID, guild: entryGuildID });
 		}
 		if (xp === 0 || !member) {
 			subtractPos += 1;
@@ -76,6 +79,13 @@ async function leaderboard(client, guildID, limit) {
 			position: pos,
 			username: member.user.username,
 			tag: member.user.tag
+		});
+	}
+
+	// Batch delete purged entries
+	if (entriesToPurge.length > 0) {
+		await levels.deleteMany({
+			$or: entriesToPurge
 		});
 	}
 
