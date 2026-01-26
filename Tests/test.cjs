@@ -42,7 +42,7 @@ async function test(dbType) {
 		await xp.create("1234567894", "0987654321", "Snowball");
 	*/
 
-	await xp.roleSetup.add("0987654321", { level: 70, role: "01" });
+	await xp.LevelRoles.add("0987654321", { level: 70, roles: ["01"] });
 
 	await xp.addLevel("326815959358898189", "0987654321", 69, "アバディマ️");
 
@@ -64,11 +64,11 @@ async function test(dbType) {
 
 	await xp.addLevel("1234567892", "0987654321", 10, "Jeremy");
 
-	await xp.roleSetup.add("0987654321", { level: 1, role: "01" });
+	await xp.LevelRoles.add("0987654321", { level: 1, roles: ["01"] })
 
-	await xp.roleSetup.list("0987654321");
+	await xp.LevelRoles.getGuildRoles("0987654321");
 
-	await xp.roleSetup.remove("0987654321", 1);
+	await xp.LevelRoles.delete("0987654321", { level: 1 });
 
 	// log RAM usage
 	console.log(`Before Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100} MB`);
@@ -153,8 +153,8 @@ async function test(dbType) {
 		}
 	});
 
-	await new Promise(resolve => setTimeout(resolve, 3000));
 	console.log("Done!");
+	await new Promise(resolve => setTimeout(resolve, 3000));
 }
 
 const dbType = "sqlite"; // "mongodb" or "sqlite"

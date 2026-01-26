@@ -1,4 +1,5 @@
 # Configuration files
+eslint.config.cjs
 .eslintrc.json
 tsconfig.json
 
@@ -22,7 +23,7 @@ src
 Tests
 
 # Documentation and development files
-UPDATES@DEV.md
+CHANGELOGS.md
 xp.ts
 
 # Exceptions

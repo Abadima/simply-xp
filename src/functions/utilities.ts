@@ -1,9 +1,9 @@
-import { checkPackageVersion } from "../connect";
+import { checkPackageVersion, ensureMongoSchemaVersion, ensureSqliteSchemaVersion } from "../connect";
 import { clearAllCache, GlobalFonts } from "@napi-rs/canvas";
 import { Database } from "better-sqlite3";
 import { db, https, Plugin, xp } from "../../xp";
 import { MongoClient } from "mongodb";
-import { UserResult } from "./database";
+import { UserResult } from "../classes/Database";
 import { XpFatal, XpLog } from "./xplogs";
 
 /**
@@ -117,44 +117,42 @@ export function registerPlugins(plugins: Plugin[]): void {
 		function: "registerPlugins()", message: "Plugins must be an array"
 	});
 
-	plugins.forEach(async (plugin: Plugin) => {
-		let invalidVersioning: boolean = false,
-			passedChecks: boolean = true;
+	Promise.all(plugins.map(async (plugin): Promise<void> => {
+		try {
+			let invalidVersioning: boolean = false,
+				passedChecks: boolean = true;
 
-		if (!plugin?.initialize || !plugin?.name) {
-			passedChecks = false;
-			XpLog.warn("registerPlugins()", plugin?.name ? `${plugin.name.toUpperCase()} PLUGIN NOT INITIALIZED: No initialize function provided.` : "INVALID PLUGIN PROVIDED");
-		}
-
-		if (Array.isArray(plugin?.requiredVersions) && !plugin.requiredVersions.includes(xp.version)) {
-			plugin.requiredVersions.forEach((version: string) => {
-				if (parseInt(version)) {
-					passedChecks = !!(parseInt(version) && version.length === 1 && xp.version.split(".")[0] === version);
-				} else {
-					if (!version.match(/\d\.\d\.\d/) && !passedChecks) {
-						invalidVersioning = true;
-						passedChecks = true;
-					}
-				}
-			});
-
-			if (invalidVersioning) XpLog.warn("registerPlugins()", `${plugin.name.toUpperCase()} PLUGIN FAILED VERSION CHECKS, ANYWAYS...`);
-			if (!passedChecks && !invalidVersioning) XpLog.warn("registerPlugins()", `${plugin.name.toUpperCase()} PLUGIN NOT INITIALIZED: Requires: v${plugin.requiredVersions.join(", v")}`);
-		}
-
-		if (passedChecks) {
-			try {
-				await plugin.initialize(xp).then((): void => {
-					XpLog.info("registerPlugins()", `${plugin.name.toUpperCase()} PLUGIN INITIALIZED`);
-				});
-			} catch (error) {
-				throw new XpFatal({
-					function: "registerPlugins()",
-					message: `Failed to initialize plugin: ${plugin.name}\n${error}`
-				});
+			if (!plugin?.initialize || !plugin?.name) {
+				passedChecks = false;
+				XpLog.warn("registerPlugins()", plugin?.name ? `${plugin.name.toUpperCase()} PLUGIN NOT INITIALIZED: No initialize function provided.` : "INVALID PLUGIN PROVIDED");
 			}
+
+			if (Array.isArray(plugin?.requiredVersions) && !plugin.requiredVersions.includes(xp.version)) {
+				plugin.requiredVersions.forEach((version: string) => {
+					const [xpMajor, xpMinor, xpPatch] = xp.version.split(".").map(n => parseInt(n));
+					const match = version.match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-[\w\d.-]+)?$/);
+					if (!match) return invalidVersioning = true;
+
+					if (parseInt(match[1] || "0") !== xpMajor) return passedChecks = false;
+					if (match[2] && parseInt(match[2]) !== xpMinor) return passedChecks = false;
+					if (match[3] && parseInt(match[3]) !== xpPatch) return passedChecks = false;
+
+					return passedChecks = true;
+				});
+
+				if (invalidVersioning) XpLog.warn("registerPlugins()", `${plugin.name.toUpperCase()} PLUGIN FAILED VERSION CHECKS, ANYWAYS...`);
+				if (!passedChecks) return XpLog.warn("registerPlugins()", `${plugin.name.toUpperCase()} PLUGIN NOT INITIALIZED: Requires: v${plugin.requiredVersions.join(", v")}`);
+			}
+
+			await plugin.initialize(xp)
+			XpLog.info("registerPlugins()", `${plugin.name.toUpperCase()} PLUGIN INITIALIZED`);
+		} catch (error) {
+			throw new XpFatal({
+				function: "registerPlugins()",
+				message: `Failed to register plugin: ${plugin.name}\n${error}`
+			});
 		}
-	});
+	}));
 }
 
 
@@ -210,12 +208,14 @@ export function updateOptions(clientOptions: NewClientOptions): void {
 							xp.database = undefined;
 							throw new XpFatal({ function: "updateOptions()", message: "Invalid MongoDB connection" });
 						});
+						ensureMongoSchemaVersion(xp.database as MongoClient).catch(() => { });
 						break;
 
 					case "sqlite":
 						try {
 							(xp.database as Database).prepare("SELECT 1").get();
-						} catch (error) {
+							ensureSqliteSchemaVersion(xp.database as Database);
+						} catch (_) {
 							throw new XpFatal({ function: "updateOptions()", message: "Invalid SQLite connection" });
 						}
 						break;

@@ -1,8 +1,8 @@
 import { clean, leaderboard, registerFont, xp } from "../xp";
-import { createCanvas } from "@napi-rs/canvas";
-import { join } from "path";
-import { RoundedBox } from "./cards";
 import { XpFatal, XpLog } from "./functions/xplogs";
+import { createCanvas } from "@napi-rs/canvas";
+import { RoundedBox } from "./cards";
+import { join } from "path";
 
 /**
  * Chart options

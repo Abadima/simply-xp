@@ -1,5 +1,5 @@
 import { xp } from "../../xp";
-import { UserResult } from "./database";
+import { UserResult } from "../classes/Database";
 
 type errOptions = {
 	function: string;

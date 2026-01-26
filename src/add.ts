@@ -1,6 +1,6 @@
+import { Database, UserResult } from "./classes/Database";
 import { XpEvents, XpFatal } from "./functions/xplogs";
-import { db, UserResult } from "./functions/database";
-import { convertFrom, roleSetup, xp } from "../xp";
+import { convertFrom, LevelRoles, xp } from "../xp";
 
 /**
  * Add XP to a user
@@ -21,18 +21,18 @@ export async function addLevel(userId: string, guildId: string, level: number, u
 
 	if (isNaN(level)) throw new XpFatal({ function: "addLevel()", message: "Level was not provided" });
 
-	const user = await db.findOne({
+	const user = await Database.findOne({
 		collection: "simply-xps", data: { user: userId, guild: guildId }
 	}) as UserResult;
 
 	if (!user) {
-		if (xp.auto_create && username) return await db.createOne({
+		if (xp.auto_create && username) return await Database.createOne({
 			collection: "simply-xps",
 			data: { guild: guildId, user: userId, name: username, level, xp: convertFrom(level), xp_rate: xp.xp_rate }
 		}) as UserResult;
 		else throw new XpFatal({ function: "addLevel()", message: "User does not exist" });
 	} else {
-		return await db.updateOne({
+		return await Database.updateOne({
 			collection: "simply-xps",
 			data: { user: userId, guild: guildId }
 		}, {
@@ -81,14 +81,14 @@ export async function addXP(userId: string, guildId: string, xpData: number | {
 
 	if (!guildId) throw new XpFatal({ function: "addXP()", message: "Guild ID was not provided" });
 
-	const user = await db.findOne({
+	const user = await Database.findOne({
 		collection: "simply-xps", data: { user: userId, guild: guildId }
 	}) as UserResult;
 
 	let data: UserResult;
 
 	if (!user) {
-		if (xp.auto_create && username) data = await db.createOne({
+		if (xp.auto_create && username) data = await Database.createOne({
 			collection: "simply-xps",
 			data: {
 				guild: guildId,
@@ -103,7 +103,7 @@ export async function addXP(userId: string, guildId: string, xpData: number | {
 		}) as UserResult;
 		else throw new XpFatal({ function: "addXP()", message: "User does not exist" });
 	} else {
-		data = await db.updateOne({
+		data = await Database.updateOne({
 			collection: "simply-xps",
 			data: { user: userId, guild: guildId }
 		}, {
@@ -122,10 +122,10 @@ export async function addXP(userId: string, guildId: string, xpData: number | {
 	const callback = XpEvents.eventCallback,
 		levelDifference = (user?.level && data?.level) ? (data.level !== user.level ? (data.level - user.level) : 0) : (data?.level > 0 ? data.level : 0);
 
-	if (levelDifference < 0 && callback?.levelDown && typeof callback.levelDown === "function") callback["levelDown"](data, await roleSetup.getRoles(userId, guildId, {
-		includeNextRoles: true
+	if (levelDifference < 0 && callback?.levelDown && typeof callback.levelDown === "function") callback["levelDown"](data, await LevelRoles.getUserRoles(userId, guildId, {
+		includeNext: true
 	}));
 
-	if (levelDifference > 0 && callback?.levelUp && typeof callback.levelUp === "function") callback["levelUp"](data, await roleSetup.getRoles(userId, guildId));
+	if (levelDifference > 0 && callback?.levelUp && typeof callback.levelUp === "function") callback["levelUp"](data, await LevelRoles.getUserRoles(userId, guildId));
 	return { ...data, levelDifference: levelDifference };
 }

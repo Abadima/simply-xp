@@ -1,5 +1,5 @@
+import { clean, create, convertFrom, Database, registerFont, User, xp } from "../xp";
 import { createCanvas, Image, loadImage, SKRSContext2D } from "@napi-rs/canvas";
-import { clean, create, convertFrom, db, registerFont, User, xp } from "../xp";
 import { XpFatal, XpLog } from "./functions/xplogs";
 import { join } from "path";
 
@@ -146,13 +146,13 @@ export async function compareCard(guild: {
 		});
 	});
 
-	let dbUser1 = await db.findOne({ collection: "simply-xps", data: { guild: guild.id, user: user1.id } }) as User;
+	let dbUser1 = await Database.findOne({ collection: "simply-xps", data: { guild: guild.id, user: user1.id } }) as User;
 	if (!dbUser1) {
 		if (xp.auto_create && user2?.username) dbUser1 = await create(user1.id, guild.id, user1.username) as User;
 		else throw new XpFatal({ function: "compareCard()", message: "[USER 1] User not found in database" });
 	}
 
-	let dbUser2 = await db.findOne({ collection: "simply-xps", data: { guild: guild.id, user: user2.id } }) as User;
+	let dbUser2 = await Database.findOne({ collection: "simply-xps", data: { guild: guild.id, user: user2.id } }) as User;
 	if (!dbUser2) {
 		if (xp.auto_create && user2?.username) dbUser2 = await create(user2.id, guild.id, user2.username) as User;
 		else throw new XpFatal({ function: "compareCard()", message: "[USER 2] User not found in database" });
@@ -500,13 +500,13 @@ export async function rankCard(guild: {
 		});
 	});
 
-	let dbUser = await db.findOne({ collection: "simply-xps", data: { guild: guild.id, user: user.id } }) as User;
+	let dbUser = await Database.findOne({ collection: "simply-xps", data: { guild: guild.id, user: user.id } }) as User;
 	if (!dbUser) {
 		if (xp.auto_create) dbUser = await create(user.id, guild.id, user.username) as User;
 		else throw new XpFatal({ function: "rankCard()", message: "User not found in database" });
 	}
 
-	const users = await db.find("simply-xps", guild.id) as User[];
+	const users = await Database.find("simply-xps", guild.id) as User[];
 
 	dbUser.position = 1 + users.sort((a, b) => b.xp - a.xp).findIndex((u) => u.user === user.id) || 1;
 

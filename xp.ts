@@ -9,14 +9,14 @@ import { MongoClient } from "mongodb";
  * @property {string} name - The name of the plugin.
  * @property {Record<string, (arg: number | object | string) => Promise<Array<unknown> | boolean | number | object | string | void>>} functions - The functions to add to the XP client.
  * @property {Function} initialize - The function to run when the plugin is initialized.
- * @property {Array<string>} requiredVersions - Compatible SimplyXP Versions.
+ * @property {Array<`${number}` | `${number}.${number}` | `${number}.${number}.${number}` | `${number}.${number}.${number}-${string}.${number}`>} requiredVersions - Compatible SimplyXP Versions.
  * @returns {Promise<boolean | Error>} - Returns true if the plugin was initialized successfully, otherwise returns an error.
  */
 export interface Plugin {
 	name: string;
 	functions?: Record<string, (arg: number | object | string) => Promise<Array<unknown> | boolean | number | object | string | void>>;
 	initialize: (client: XPClient) => Promise<void>;
-	requiredVersions?: Array<string>;
+	requiredVersions?: Array<`${number}` | `${number}.${number}` | `${number}.${number}.${number}` | `${number}.${number}.${number}-${string}.${number}`>;
 }
 
 /**
@@ -47,7 +47,7 @@ export interface XPClient {
 	debug: boolean;
 	notify: boolean;
 	registeredFonts: string[];
-	version: string;
+	version: `${number}.${number}.${number}` | `${number}.${number}.${number}-${string}.${number}`;
 	xp_rate: number;
 }
 
@@ -56,7 +56,7 @@ export interface XPClient {
 
 export { addLevel, addXP } from "./src/add";
 
-export { db } from "./src/functions/database";
+export { Database, db } from "./src/classes/Database";
 
 export { charts } from "./src/charts";
 
@@ -74,13 +74,13 @@ export { https } from "./src/functions/https";
 
 export { leaderboard } from "./src/leaderboard";
 
-export { migrate } from "./src/migrate";
+export { LevelRoles } from "./src/classes/LevelRoles";
+
+export { Migrate, migrate } from "./src/classes/Migrate";
 
 export { removeLevel, removeXP } from "./src/remove";
 
 export { reset } from "./src/reset";
-
-export { roleSetup } from "./src/roleSetup";
 
 export { setFlags } from "./src/setFlags";
 
@@ -96,6 +96,6 @@ export const xp: XPClient = {
 	debug: false,
 	notify: true,
 	registeredFonts: [],
-	version: "2.0.0-beta.1",
+	version: "2.0.0-beta.3",
 	xp_rate: 0.1
 };

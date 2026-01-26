@@ -1,4 +1,39 @@
-# VERSION 2 CHANGELOGS
+# VERSION 2
+
+## [BETA 3](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.3)
+
+### ⚠️ Breaking Changes
+
+- Complete overhaul of all `roleSetup` functionality. Now it's `LevelRoles`. Please refer to the updated [Documentation](https://simplyxp.js.org/docs/next/Classes/LevelRoles) for full details.
+  - > **⚠️ NOTE:** As a result of this change, all old level roles are no longer supported, please use `migrate.roleSetup()` to migrate your old level roles to the new system.
+
+### 🔥 Deprecations
+
+- Class `migrate` will be removed in the near future. Please use the new `Migrate` class instead.
+- Class `db` will be removed in the near future. Please use the new `Database` class instead.
+
+### Additions
+
+- Add `Migrate.roleSetup()` function, to migrate old level roles to the new `LevelRoles` system.
+- Add per-database `schemaVersion` metadata for SQLite and MongoDB (v1 for older DBs, v2 for new/migrated DBs).
+
+### Improvements
+
+- Bump `@napi-rs/canvas` to V0.1.88.
+- Update `connect.ts` for SQLite:
+  - Add `createdAt` columns to `simply-xps` and `simply-xp-levelroles` tables.
+  - Rename `lvlrole` column to `levelRole` in `simply-xp-levelroles` table.
+- Update `Database.ts`:
+  - Add `createdAt` to `UserResult` and `LevelRoleResult`.
+  - Rename `lvlrole` to `levelRole` in `LevelRoleResult`.
+  - Improve `updateOne()` for SQLite (+upsert support).
+  - Fix documentation links in JSDoc.
+- Update `leaderboard.ts`:
+  - Improve sorting efficiency, especially for duplicate users and large datasets.
+- Update `registerPlugins()` to support:
+  - Major (`2`), major.minor (`2.0`), and major.minor.patch (`2.0.0`) version specifications.
+  - Pre-release versions (e.g., `2.0.0-dev.1`).
+  - Improved registration logic.
 
 ## [BETA 2](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.2)
 
@@ -288,3 +323,97 @@
 - `rank()` is **deprecated**, use `rankCard()` instead.
 - `rankCard()` Requires completely new arguments.
 - `roleSetup()` functions loses `client` argument.
+
+# VERSION 1
+
+## [1.3.7](https://github.com/Abadima/simply-xp/commit/8922663d894e39142ec5516d19a406d0e94765eb)
+
+### ⚒️ Bug Fixes
+
+- Fix leaderboard not properly showing users when some have left the server.
+
+## [1.3.5](https://github.com/Abadima/simply-xp/commit/02958e9d991c7f58723a650a13b7a8d41ca116c2)
+
+### ✅ Additions
+
+- Add `eslint` to the
+  project. ([#c567aa5](https://github.com/Abadima/simply-xp/commit/c567aa55829f84d808ef46e64abf50cd629d863a#diff-6884918dc8291219be508e05e28965b958c734def85324f3b53858ea4702090f))
+- Add `auto_purge` option
+  to `connect()` ([#02958e9](https://github.com/Abadima/simply-xp/commit/02958e9d991c7f58723a650a13b7a8d41ca116c2#diff-7aa4473ede4abd9ec099e87fec67fd57afafaf39e05d493ab4533acc38547eb8))
+
+### ⚒️ Bug Fixes
+
+- Fix `charts()` not properly reporting when user doesn't have `canvas`
+  installed. ([#9cdaf7b](https://github.com/Abadima/simply-xp/commit/9cdaf7bacb4e7cd328fe3e1fef9487fcf5383858#diff-4b7e0d44140210d10ead1c1e4f5aa4dc6e889e8711c10ce2636afe6c98af8d0c))
+- Fix `rank()` not buffering image
+  as `image/webp`. ([#9cdaf7b](https://github.com/Abadima/simply-xp/commit/9cdaf7bacb4e7cd328fe3e1fef9487fcf5383858#diff-a5daabea44be64b61855cb928a433b98581d947c27563a257df28a29833f6119))
+- Fix `leaderboard()` Position & Cache issues.
+
+### ⬆️ Dependencies
+
+- Bump `mongoose` from V6 to V7.
+- Bump `@napi-rs/canvas` from v0.1.28 to v0.1.41.
+
+### ⭐ Improvements
+
+- Improved Code Quality.
+- Improved Performance.
+
+## [1.3.4](https://github.com/Abadima/simply-xp/commit/5a53925e4d3a75c419aa398394789716b8500761)
+
+### ⚒️ Bug Fixes
+
+- Fix `addLevel()` only adding 1 level.
+- Fix `roleSetup.find()` returning only 1 Role ID.
+
+### 💎 Design Changes
+
+- Update UI of `rank()`, including a new default background.
+
+## [1.3.2](https://github.com/Abadima/simply-xp/commit/c104afc015ee940caacbdd773df96a8c26b358ac)
+
+### ⬆️ Dependencies
+
+- Replace `canvas` with `@napi-rs/canvas` for better performance, and to fix `node-gyp` issues.
+
+### ⭐ Improvements
+
+- Update `rank()` to use `@napi-rs/canvas`.
+
+## [1.3.0](https://github.com/Abadima/simply-xp/commit/c7731049a80f74488ef506f950b3d40ce2cfa09a)
+
+### ⚒️ Bug Fixes
+
+- Fix `position` not actually working
+  in `charts()`. ([#72a1ac8](https://github.com/Abadima/simply-xp/commit/72a1ac8813e6f917a49848225c00a63c931d6592#diff-4b7e0d44140210d10ead1c1e4f5aa4dc6e889e8711c10ce2636afe6c98af8d0c))
+- Fix `addLevel` not correcting XP, and not adding specified level.
+
+### ⬆️ Dependencies
+
+- Replace `chart.js-image` with `chart.js` to remove vulnerabilities & improve
+  performance. ([#b57ad49](https://github.com/Abadima/simply-xp/commit/b57ad496a51248ac8a538c00ccfd3e0f66f53dbf#diff-7ae45ad102eab3b6d7e7896acd08c427a9b25b346470d7bc6507b6481575d519))
+
+### ⭐ Improvements
+
+- Eliminate `discord.js` functions from being used in the
+  package. ([#72a1ac8](https://github.com/Abadima/simply-xp/commit/72a1ac8813e6f917a49848225c00a63c931d6592))
+
+## [1.2.0](https://github.com/Abadima/simply-xp/commit/3ea40906a0b2c0d4506729a02dc11ca2803a57b8)
+
+### ⚒️ Bug Fixes
+
+- Fix `reset()` not saving user
+  sometimes. ([#9ac31bc](https://github.com/Abadima/simply-xp/commit/9ac31bc2b31fd5bd9b6d67bf58566a21303eb830#diff-c7ef6e12bc4d8fa07f027dd46cc1704859cc97add590b4a9ea2dcef8da4a9b71))
+
+### ⬆️ Dependencies
+
+- Bump `chart.js-image` from v5 to v6
+
+### ⭐ Improvements
+
+- `rank()` Can now count to an
+  undecillion! ([#9ac31bc](https://github.com/Abadima/simply-xp/commit/9ac31bc2b31fd5bd9b6d67bf58566a21303eb830#diff-a5daabea44be64b61855cb928a433b98581d947c27563a257df28a29833f6119))
+
+---
+
+> Looking for earlier versions? Refer to [GitHub Releases.](https://github.com/Abadima/simply-xp/commits/latest/)

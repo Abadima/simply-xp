@@ -1,10 +1,10 @@
 // noinspection SpellCheckingInspection
 
-import {readdir, readFileSync, writeFileSync} from "fs";
-import {exec} from "child_process";
-import {minify} from "uglify-js";
+import { readdir, readFileSync, writeFileSync } from "fs";
+import { exec } from "child_process";
+import { minify } from "uglify-js";
 
-const directories = ["lib/src/", "lib/src/functions/"];
+const directories = ["lib/src/", "lib/src/classes/", "lib/src/functions/"];
 
 directories.forEach(directory => {
 	readdir(directory, (err, files) => {
@@ -33,7 +33,7 @@ directories.forEach(directory => {
 						reduce_funcs: true,
 						reduce_vars: true
 					},
-					output: {comments: /^!|@returns/},
+					output: { comments: /^!|@returns/ },
 					keep_fargs: false
 				});
 

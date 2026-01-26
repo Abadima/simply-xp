@@ -1,16 +1,16 @@
-import { XpFatal, XpLog } from "./functions/xplogs";
-import { UserResult } from "./functions/database";
-import { convertFrom, db, xp } from "../xp";
+import { Database as SQLiteClient } from "better-sqlite3";
+import { XpFatal, XpLog } from "../functions/xplogs";
+import { Database, UserResult } from "./Database";
+import { checkPackageVersion } from "../connect";
 import { Document, MongoClient } from "mongodb";
-import { Database } from "better-sqlite3";
-import { checkPackageVersion } from "./connect";
+import { convertFrom, db, xp } from "../../xp";
 
 /**
  * Migration functions
- * @class migrate
+ * @class Migrate
+ * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/Migrate
  */
-export class migrate {
-
+export class Migrate {
 	/**
 	 * Effortlessly migrate from discord-xp to simply-xp.
 	 * @async
@@ -48,13 +48,16 @@ export class migrate {
 	 * Effortlessly migrate from MongoDB to SQLite. (or vice versa)
 	 * @async
 	 * @param {"mongodb"|"sqlite"} dbType
-	 * @param {Database | MongoClient} connection
+	 * @param {SQLiteClient | MongoClient} connection
 	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/migrate#migratefromdb
 	 * @returns {Promise<boolean>} - Returns true if migration is successful
 	 * @throws {XpFatal} - If parameters are not provided correctly
 	 */
-	static async fromDB(dbType: "mongodb" | "sqlite", connection: Database | MongoClient): Promise<boolean> {
-		if (!dbType) throw new XpFatal({ function: "migrate.database()", message: "No database type provided" });
+	static async fromDB(dbType: "mongodb" | "sqlite", connection: SQLiteClient | MongoClient): Promise<boolean> {
+		if (!dbType) throw new XpFatal({
+			function: "migrate.database()", message: "No database type provided"
+		});
+
 		if (!connection) throw new XpFatal({
 			function: "migrate.database()", message: "No database connection provided"
 		});
@@ -95,7 +98,7 @@ export class migrate {
 							XpLog.debug("migrate.fromDB()", "better-sqlite3 is natively compatible with our package! 🎉");
 					}
 
-					results = (connection as Database).prepare("SELECT * FROM `simply-xps`").all() as UserResult[];
+					results = (connection as SQLiteClient).prepare("SELECT * FROM `simply-xps`").all() as UserResult[];
 
 				} catch (error) {
 					XpLog.err("migrate.fromDB()", error as string);
@@ -124,4 +127,84 @@ export class migrate {
 
 		return true;
 	}
+
+	/**
+	 * Effortlessly migrate from roleSetup's schema to LevelRoles schema.
+	 * @async
+	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/migrate#migraterolesetup
+	 * @param {boolean} keepOld - Keep old data after migration
+	 * @returns {Promise<boolean>} - Returns true if migration is successful
+	 * @throws {XpLog.err} - If migration fails.
+	 */
+	static async roleSetup(keepOld: boolean = false): Promise<boolean> {
+		const allDocs = await Database.findAll("simply-xp-levelroles");
+
+		XpLog.debug("migrate.roleSetup()", `FOUND ${allDocs.length} DOCUMENTS`);
+
+		interface LevelRoleDoc {
+			guild?: string;
+			lvlrole?: {
+				lvl: number;
+				role: string | string[];
+			};
+			levelrole?: {
+				level: number;
+				roles: string[];
+			};
+			[key: string]: unknown;
+		}
+
+		try {
+			for (const doc of allDocs as LevelRoleDoc[]) {
+				const legacyLvlrole = doc.lvlrole;
+				if (!legacyLvlrole) continue;
+				if (doc.levelrole) continue;
+
+				const roles = Array.isArray(legacyLvlrole.role) ? legacyLvlrole.role : [legacyLvlrole.role];
+
+				if (!doc.guild) continue;
+
+				await Database.createOne({
+					collection: "simply-xp-levelroles",
+					data: {
+						guild: doc.guild,
+						levelrole: {
+							level: legacyLvlrole.lvl, roles: roles
+						}
+					}
+				});
+
+				if (!keepOld) {
+					switch (xp.dbType) {
+						case "mongodb":
+							await (Database.getCollection("simply-xp-levelroles").deleteOne({ guild: doc.guild, lvlrole: legacyLvlrole }));
+							break;
+						case "sqlite":
+							(xp.database as SQLiteClient).prepare("DELETE FROM `simply-xp-levelroles` WHERE gid = ? AND lvlrole = ?")
+								.run(doc.guild, JSON.stringify(legacyLvlrole));
+							break;
+					}
+
+				}
+			}
+
+			if (xp.dbType === "sqlite" && !keepOld) {
+				(xp.database as SQLiteClient).exec(`
+					CREATE TABLE "simply-xp-levelroles_tmp" AS SELECT gid, levelrole, createdAt, lastUpdated FROM "simply-xp-levelroles";
+					DROP TABLE "simply-xp-levelroles";
+					ALTER TABLE "simply-xp-levelroles_tmp" RENAME TO "simply-xp-levelroles";
+				`);
+			}
+
+			return true;
+		} catch (error) {
+			return XpLog.err("migrate.roleSetup()", error as string);
+		}
+	}
 }
+
+/**
+ * Exports the `Migrate` class as `migrate`.
+ * @deprecated Use `Migrate` class instead, this will be removed in the near future.
+ */
+export const migrate = Migrate;

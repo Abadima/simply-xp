@@ -10,19 +10,22 @@
 
 [![Downloads](https://img.shields.io/npm/dt/simply-xp?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
 [![Version](https://img.shields.io/npm/v/simply-xp.svg?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
-[![CodeFactor](https://www.codefactor.io/repository/github/abadima/simply-xp/badge?style=for-the-badge)](https://www.codefactor.io/repository/github/abadima/simply-xp)
+[![CodeFactor](https://www.codefactor.io/repository/github/abadima/simply-xp/badge/pre-release?style=for-the-badge)](https://www.codefactor.io/repository/github/abadima/simply-xp/overview/pre-release)
 
 [![Documentation](https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge)](https://simplyxp.js.org/docs/next/intro/)
 [![Support](https://img.shields.io/badge/Discord-Support-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/hjhnjYJNHX)
+
 </div>
 
 ---
+
 > CREDITS TO [RAHULETTO](https://github.com/rahuletto) FOR SIMPLY-XP **VERSION 1**
+
 ---
 
 <br>
 
-## 🖥️ <b>[DEV] Installation</b>
+## 🖥️ <b>[BETA] Installation</b>
 
 ```shell
 npm install simply-xp@beta
@@ -41,48 +44,50 @@ yarn add simply-xp@beta
 ## ✅ V2 Additions
 
 - Add `auto_create`, `auto_clean`, `debug`, and `xp_rate` options to `connect()`.
-- Add `compareCard()`
-- Add `convertFrom()`
-- Add `db` class for extended database functionality
-- Add `https()`
-- Add `leaderboardCard()`
-- Add `migrate` class
-- Add `SQLite` Support
-- Add `roleSetup.getRoles()`
-- Add `registerPlugins()`
+- Add `compareCard()`.
+- Add `convertFrom()`.
+- Add `db` class for extended database functionality.
+- Add `https()` function.
+- Add `leaderboardCard()`.
+- Add `Migrate` class with `Migrate.roleSetup()` for migrating old level roles.
+- Add `SQLite` support.
+- Add `LevelRoles` system (replaces old `roleSetup` functionality).
+- Add `registerPlugins()`.
 - Add `removeLevel()` and `removeXP()`.
-- Add `roleSetup.getRoles()`
-- Add `updateOptions()`
-- Add `xp_rate` Support For Unique Level Rates!
+- Add `updateOptions()`.
+- Add `xp_rate` support for unique level rates.
+- Add `createdAt` property to `UserResult` and `LevelRoleResult`.
+- Add `levelRole` column to `simply-xp-levelroles` table in SQLite.
 
 ## 🎉 V2 Changes
 
-- All functions returning either `UserResult` or `LevelRoleResult` now includes `lastUpdated` property.
-- Better Performance & Reduced RAM overhead.
-- Better Code Quality (EsLint)
-- Complete & Revamped Documentation
-- Complete TypeScript Rewrite
-- New Fonts
-- Reduced Package Size!
-- Renewed Logging System (`XpLog`)
-- Deleted `chart.js` dependency
-- `addLevel(), addXP(), setLevel(), setXP()` now has a `username` parameter, to automatically create the user if it doesn't exist.
-- `fetch()` now also returns `position`, and accepts `username` parameter
-- `leaderboard()` now supports Global Leaderboards, by simply not passing a `guildID` argument.
-- `roleSetup` functions now accept RoleID arrays! `["role1", "role2", "role3"]`.
-- `reset()` function now accepts `erase` and `username` as optional arguments
+- All functions returning `UserResult` or `LevelRoleResult` now include `lastUpdated` and `createdAt` properties.
+- `lvlrole` column renamed to `levelRole`.
+- `connect()` now automatically creates missing `createdAt` and `levelRole` columns for SQLite tables.
+- Improved `updateOne()` for SQLite with upsert support.
+- Updated `registerPlugins()` to support major, minor, patch, and pre-release versions.
+- Better performance and reduced RAM usage.
+- Improved code quality (ESLint) and full TypeScript rewrite.
+- Renewed logging system (`XpLog`).
+- Reduced package size and new fonts.
+- `addLevel()`, `addXP()`, `setLevel()`, `setXP()` now accept `username` to auto-create users if they don’t exist.
+- `fetch()` now returns `position` and accepts `username`.
+- `leaderboard()` supports global leaderboards by omitting `guildId`.
+- `roleSetup` functions now replaced by `LevelRoles` class; old `roleSetup` arrays are migrated via `Migrate.roleSetup()`.
 
 ## ⚠️ V2 Breaking Changes
 
+- Old `roleSetup` system removed; migrate to `LevelRoles`.
+- `lvlRole()` removed; use `LevelRoles` or `roleSetup.getRoles()`.
+- `create()` now requires `username`.
+- `charts()` arguments revamped.
+- `rank()` removed; use `rankCard()` with new arguments.
+- `client.on()` replaced with `XpEvents.on()`.
 - All functions lose `client` and `message` arguments where applicable.
-- `create()` Now requires `username` argument.
-- `charts()` Requires new arguments, and is revamped.
-- `rank()` is **removed**, use `rankCard()` instead. (REQUIRES NEW ARGUMENTS)
-- `leaderboard()` replaces `userID` with `user` in `UserResult`.
-- `client.on()` => `XpEvents.on()` (READ DOCS)
-- `roleSetup` functions loses `client` argument.
-- `roleSetup.fetch()` => `roleSetup.list()`
+- `roleSetup.fetch()` replaced with `roleSetup.list()`.
 
 ## ❌ V2 Removals
 
-- `lvlRole()` is removed, use `roleSetup.getRoles()` instead. (READ DOCS)
+- `lvlRole()` removed.
+- `migrate` and `db` classes will be removed in future; use `Migrate` and `Database` instead.
+- Old `roleSetup` methods no longer supported.

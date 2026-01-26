@@ -1,6 +1,6 @@
+import { UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
-import { db, xp } from "../xp";
-import { UserResult } from "./functions/database";
+import { Database, xp } from "../xp";
 
 
 /**
@@ -17,12 +17,12 @@ export async function setFlags(userId: string, guildId: string, flags: Array<num
 		function: "flagUser()", message: "Flags must be an array of numbers or strings"
 	});
 
-	const user = await db.findOne({ collection: "simply-xps", data: { user: userId, guild: guildId } }) as UserResult;
+	const user = await Database.findOne({ collection: "simply-xps", data: { user: userId, guild: guildId } }) as UserResult;
 
 	if (!user) {
 		// TODO: GET RID OF THIS CONSOLE LOG
 		console.log("FLAGS => NO USER FOUND LMAO");
-		if (xp.auto_create && username) return await db.createOne({
+		if (xp.auto_create && username) return await Database.createOne({
 			collection: "simply-xps",
 			data: {
 				flags, guild: guildId, user: userId, name: username, level: 0, xp: 0, xp_rate: xp.xp_rate
@@ -30,7 +30,7 @@ export async function setFlags(userId: string, guildId: string, flags: Array<num
 		}) as UserResult;
 		else throw new XpFatal({ function: "setLevel()", message: "User does not exist" });
 	} else {
-		return await db.updateOne({
+		return await Database.updateOne({
 			collection: "simply-xps",
 			data: { user: userId, guild: guildId }
 		}, {

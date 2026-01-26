@@ -1,5 +1,5 @@
 import { XpFatal, XpLog } from "./functions/xplogs";
-import { db, xp } from "../xp";
+import { Database, xp } from "../xp";
 
 /**
  * Reset user levels to 0 in a guild
@@ -19,9 +19,9 @@ export async function reset(userId: string, guildId: string, erase: boolean = fa
 
 	const userData = { guild: guildId, user: userId, xp_rate: xp.xp_rate };
 
-	if (!await db.findOne({ collection: "simply-xps", data: userData })) {
+	if (!await Database.findOne({ collection: "simply-xps", data: userData })) {
 		if (xp.auto_create && !erase && username) {
-			await db.createOne({ collection: "simply-xps", data: userData }).catch((error) => {
+			await Database.createOne({ collection: "simply-xps", data: userData }).catch((error) => {
 				throw new XpFatal({ function: "reset()", message: error.stack });
 			});
 			return true;
@@ -31,13 +31,13 @@ export async function reset(userId: string, guildId: string, erase: boolean = fa
 	}
 
 	if (erase) {
-		await db.deleteOne({ collection: "simply-xps", data: userData }).catch((error) => {
+		await Database.deleteOne({ collection: "simply-xps", data: userData }).catch((error) => {
 			throw new XpFatal({ function: "reset()", message: error });
 		});
 		return true;
 	}
 
-	await db.updateOne(
+	await Database.updateOne(
 		{ collection: "simply-xps", data: { user: userId, guild: guildId } },
 		{ collection: "simply-xps", data: { ...userData, level: 0, xp: 0 } }
 	).catch((error) => {

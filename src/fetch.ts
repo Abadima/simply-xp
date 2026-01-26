@@ -1,6 +1,6 @@
+import { UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
 import { clean, User, xp } from "../xp";
-import { UserResult } from "./functions/database";
 
 /**
  * Fetch user data
@@ -17,7 +17,7 @@ export async function fetch(userId: string, guildId: string, username?: string):
 	if (!guildId) throw new XpFatal({ function: "create()", message: "Guild ID was not provided" });
 	clean({ db: true });
 
-	const users: User[] = await (await import("./functions/database")).db.find("simply-xps", guildId) as User[];
+	const users: User[] = await (await import("./classes/Database")).db.find("simply-xps", guildId) as User[];
 
 	let user: User | UserResult | undefined = users.find((u) => u.user === userId);
 

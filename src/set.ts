@@ -1,6 +1,6 @@
+import { convertFrom, Database, LevelRoles, xp } from "../xp";
 import { XpEvents, XpFatal } from "./functions/xplogs";
-import { UserResult } from "./functions/database";
-import { convertFrom, db, roleSetup, xp } from "../xp";
+import { UserResult } from "./classes/Database";
 import { XPResult } from "./add";
 
 /**
@@ -20,10 +20,10 @@ export async function setLevel(userId: string, guildId: string, level: number, u
 	if (!guildId) throw new XpFatal({ function: "setLevel()", message: "Guild ID was not provided" });
 	if (isNaN(level)) throw new XpFatal({ function: "setLevel()", message: "Level was not provided" });
 
-	const user = await db.findOne({ collection: "simply-xps", data: { user: userId, guild: guildId } });
+	const user = await Database.findOne({ collection: "simply-xps", data: { user: userId, guild: guildId } });
 
 	if (!user) {
-		if (xp.auto_create && username) return await db.createOne({
+		if (xp.auto_create && username) return await Database.createOne({
 			collection: "simply-xps",
 			data: {
 				guild: guildId, user: userId, name: username, level, xp: convertFrom(level), xp_rate: xp.xp_rate
@@ -31,7 +31,7 @@ export async function setLevel(userId: string, guildId: string, level: number, u
 		}) as UserResult;
 		else throw new XpFatal({ function: "setLevel()", message: "User does not exist" });
 	} else {
-		return await db.updateOne({
+		return await Database.updateOne({
 			collection: "simply-xps",
 			data: { user: userId, guild: guildId }
 		}, {
@@ -60,11 +60,11 @@ export async function setXP(userId: string, guildId: string, xpData: number, use
 	if (!guildId) throw new XpFatal({ function: "setXP()", message: "Guild ID was not provided" });
 	if (isNaN(xpData)) throw new XpFatal({ function: "setXP()", message: "XP was not provided" });
 
-	const user = await db.findOne({ collection: "simply-xps", data: { user: userId, guild: guildId } }) as UserResult;
+	const user = await Database.findOne({ collection: "simply-xps", data: { user: userId, guild: guildId } }) as UserResult;
 	let data;
 
 	if (!user) {
-		if (xp.auto_create && username) data = await db.createOne({
+		if (xp.auto_create && username) data = await Database.createOne({
 			collection: "simply-xps",
 			data: {
 				guild: guildId, user: userId, name: username,
@@ -73,7 +73,7 @@ export async function setXP(userId: string, guildId: string, xpData: number, use
 		}) as UserResult;
 		else throw new XpFatal({ function: "setXP()", message: "User does not exist" });
 	} else {
-		data = await db.updateOne({
+		data = await Database.updateOne({
 			collection: "simply-xps",
 			data: { user: userId, guild: guildId }
 		}, {
@@ -89,10 +89,10 @@ export async function setXP(userId: string, guildId: string, xpData: number, use
 	const callback = XpEvents.eventCallback,
 		levelDifference = (user?.level && data?.level) ? (data.level !== user.level ? (data.level - user.level) : 0) : (data?.level > 0 ? data.level : 0);
 
-	if (levelDifference < 0 && callback?.levelDown && typeof callback.levelDown === "function") callback["levelDown"](data, await roleSetup.getRoles(userId, guildId, {
-		includeNextRoles: true
+	if (levelDifference < 0 && callback?.levelDown && typeof callback.levelDown === "function") callback["levelDown"](data, await LevelRoles.getUserRoles(userId, guildId, {
+		includeNext: true
 	}));
 
-	if (levelDifference > 0 && callback?.levelUp && typeof callback.levelUp === "function") callback["levelUp"](data, await roleSetup.getRoles(userId, guildId));
+	if (levelDifference > 0 && callback?.levelUp && typeof callback.levelUp === "function") callback["levelUp"](data, await LevelRoles.getUserRoles(userId, guildId));
 	return { ...data, levelDifference: levelDifference };
 }

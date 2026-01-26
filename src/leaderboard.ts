@@ -1,5 +1,5 @@
 import { XpFatal } from "./functions/xplogs";
-import { db, User } from "../xp";
+import { Database, User } from "../xp";
 
 /**
  * Get array of all users in the leaderboard
@@ -15,20 +15,25 @@ export async function leaderboard(guildId?: string, limit?: number): Promise<Use
 		function: "leaderboard()", message: "Limit must be a number greater than 0"
 	});
 
-	let users: Array<User>;
-	const userIds: Set<string> = new Set<string>();
+	let users: User[];
 
-	if (guildId) users = (await db.find("simply-xps", guildId) as Array<User>).sort((a, b) => b.xp - a.xp);
-	else users = (await db.findAll("simply-xps") as Array<User>).sort((a, b) => b.xp - a.xp).filter((user) => {
-		if (userIds.has(user.user)) return false;
-		userIds.add(user.user);
-		return true;
-	});
+	if (guildId) {
+		users = (await Database.find("simply-xps", guildId) as User[]).sort((a, b) => b.xp - a.xp);
+	} else {
+		users = await Database.findAll("simply-xps") as User[];
 
-	await Promise.all(users.map(async (user, index) => {
-		user.position = index + 1;
-		return user;
+		const userMap = new Map<string, User>();
+		for (const user of users) {
+			const existing = userMap.get(user.user);
+			if (!existing || user.xp > existing.xp) {
+				userMap.set(user.user, user);
+			}
+		}
+
+		users = Array.from(userMap.values()).sort((a, b) => b.xp - a.xp);
+	}
+
+	return users.slice(0, limit).map((user, index) => ({
+		...user, position: index + 1
 	}));
-
-	return users.slice(0, limit);
 }
