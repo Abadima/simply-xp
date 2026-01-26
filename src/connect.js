@@ -15,7 +15,7 @@ async function connect(db, options = {}) {
 	});
 
 
-	if (options.notify !== false) return console.log("{ XP } Database Connected");
+	if (options.notify) return console.log("{ XP } Database Connected");
 }
 
 module.exports = connect;
