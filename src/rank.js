@@ -125,6 +125,7 @@ async function rank(message, userID, guildID, options = []) {
 			ctx.lineTo(0, Number(BackgroundRadius));
 			ctx.quadraticCurveTo(0, 0, Number(BackgroundRadius), 0);
 			ctx.closePath();
+			ctx.save();
 			ctx.clip();
 			ctx.fillStyle = "#000000";
 			ctx.fillRect(0, 0, 1080, 400);

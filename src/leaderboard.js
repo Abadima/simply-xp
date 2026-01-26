@@ -24,16 +24,40 @@ async function leaderboard(client, guildID, limit) {
 	const shouldPurge = Boolean(options?.auto_purge);
 	const limitNumber = limit ? Number(limit) : null;
 
-	for (const rawEntry of leaderboard) {
+	// Fetch all members concurrently to avoid sequential awaits in the loop
+	const entriesWithMembers = await Promise.all(
+		leaderboard.map(async (rawEntry) => {
+			if (!rawEntry || typeof rawEntry !== "object") {
+				return { rawEntry: null, member: null };
+			}
+
+			const normalizedEntry =
+				typeof rawEntry.toObject === "function" ? rawEntry.toObject() : rawEntry;
+
+			const { user: userID } = normalizedEntry;
+			let member = null;
+			if (userID) {
+				member = await g.members.fetch(userID).catch(() => null);
+			}
+
+			return { rawEntry: normalizedEntry, member };
+		})
+	);
+
+	// Collect entries to purge for batch deletion
+	const entriesToPurge = [];
+
+	for (const entry of entriesWithMembers) {
 		entryIndex += 1;
-		if (!rawEntry || typeof rawEntry !== "object") {
+
+		const { rawEntry, member } = entry;
+		if (!rawEntry) {
 			continue;
 		}
-		const { guild: entryGuildID, user: userID, xp, level } =
-			typeof rawEntry.toObject === "function" ? rawEntry.toObject() : rawEntry;
-		const member = await g.members.fetch(userID).catch(() => null);
+
+		const { guild: entryGuildID, user: userID, xp, level } = rawEntry;
 		if (!member && shouldPurge) {
-			await levels.deleteOne({ user: userID, guild: entryGuildID });
+			entriesToPurge.push({ user: userID, guild: entryGuildID });
 		}
 		if (xp === 0 || !member) {
 			subtractPos += 1;
@@ -55,6 +79,13 @@ async function leaderboard(client, guildID, limit) {
 			position: pos,
 			username: member.user.username,
 			tag: member.user.tag
+		});
+	}
+
+	// Batch delete purged entries
+	if (entriesToPurge.length > 0) {
+		await levels.deleteMany({
+			$or: entriesToPurge
 		});
 	}
 

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const simplyxp = require("../simplyxp");
 
 /**
  * @param {string} db
@@ -14,6 +15,10 @@ async function connect(db, options = {}) {
 		useUnifiedTopology: true
 	});
 
+	// Propagate auto_purge option to module options
+	if (options.auto_purge !== undefined) {
+		simplyxp.options.auto_purge = options.auto_purge;
+	}
 
 	if (options.notify) return console.log("{ XP } Database Connected");
 }

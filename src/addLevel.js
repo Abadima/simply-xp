@@ -13,7 +13,7 @@ async function addLevel(message, userID, guildID, level) {
 
 	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
 
-	if (!level) throw new Error("[XP] Level amount is not provided.");
+	if (level == null || Number.isNaN(Number(level))) throw new Error("[XP] Invalid level amount.");
 
 	const user = await levels.findOne({ user: userID, guild: guildID });
 
