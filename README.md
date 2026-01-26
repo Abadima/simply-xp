@@ -1,22 +1,19 @@
-<div class="Heading" style="text-align: center;">
-  <img src="https://i.ibb.co/cCKJ9FS/simplyxp.png" width="320" height="125" alt="XP Logo">
+<p align="center">
+  <img src="https://i.ibb.co/cCKJ9FS/simplyxp.png" width="320" height="125" alt="Simply-XP logo" />
+</p>
+
+A simple, beginner-friendly XP system that brings levels, ranks, and role rewards to Discord.js.
 
 <p align="center">
-<h2>A simple, beginner-friendly XP System for Discord.js bots</h2> 
-<h3>Originally by Rahuletto, maintained by Abadima</h3>
+  <a href="https://www.npmjs.com/package/simply-xp"><img src="https://img.shields.io/npm/v/simply-xp.svg?style=for-the-badge" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/simply-xp"><img src="https://img.shields.io/npm/dt/simply-xp?style=for-the-badge" alt="npm downloads" /></a>
+  <a href="https://www.codefactor.io/repository/github/abadima/simply-xp/overview/lts"><img src="https://www.codefactor.io/repository/github/abadima/simply-xp/badge/lts?style=for-the-badge" alt="CodeFactor grade" /></a>
 </p>
-</div>
 
-<div class="badges" style="text-align: center;">
-
-[![Downloads](https://img.shields.io/npm/dt/simply-xp?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
-[![Version](https://img.shields.io/npm/v/simply-xp.svg?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
-[![CodeFactor](https://www.codefactor.io/repository/github/abadima/simply-xp/badge/lts?style=for-the-badge)](https://www.codefactor.io/repository/github/abadima/simply-xp/overview/lts)
-
-[![Documentation](https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge)](https://simplyxp.js.org/docs/next/intro/)
-[![Support](https://img.shields.io/badge/Discord-Support-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/hjhnjYJNHX)
-
-</div>
+<p align="center">
+  <a href="https://simplyxp.js.org/docs/next/intro/"><img src="https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge" alt="Docs" /></a>
+  <a href="https://discord.gg/hjhnjYJNHX"><img src="https://img.shields.io/badge/Discord-Support-5865F2?style=for-the-badge&logo=discord" alt="Discord support" /></a>
+</p>
 
 ## 🖥️ How to install?
 

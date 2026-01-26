@@ -24,11 +24,12 @@ async function leaderboard(client, guildID, limit) {
 	const limitNumber = limit ? Number(limit) : null;
 
 	for (let i = 0; i < leaderboard.length; i += 1) {
-		const key = leaderboard[i];
-		if (!key || typeof key !== "object") {
+		const rawEntry = leaderboard[i];
+		if (!rawEntry || typeof rawEntry !== "object") {
 			continue;
 		}
-		const { guild: entryGuildID, user: userID, xp, level } = key;
+		const entry = Object.assign(Object.create(null), rawEntry);
+		const { guild: entryGuildID, user: userID, xp, level } = entry;
 		const member = await g.members.fetch(userID).catch(() => null);
 		if (!member && shouldPurge) {
 			await levels.deleteOne({ user: userID, guild: entryGuildID });
