@@ -29,8 +29,8 @@ async function leaderboard(client, guildID, limit) {
 		if (!rawEntry || typeof rawEntry !== "object") {
 			continue;
 		}
-		const entry = Object.assign(Object.create(null), rawEntry);
-		const { guild: entryGuildID, user: userID, xp, level } = entry;
+		const { guild: entryGuildID, user: userID, xp, level } =
+			typeof rawEntry.toObject === "function" ? rawEntry.toObject() : rawEntry;
 		const member = await g.members.fetch(userID).catch(() => null);
 		if (!member && shouldPurge) {
 			await levels.deleteOne({ user: userID, guild: entryGuildID });
