@@ -13,7 +13,7 @@ async function addXP(message, userID, guildID, xp) {
 
 	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
 
-	if (!xp) throw new Error("[XP] XP amount is not provided.");
+	if (xp == null || isNaN(Number(xp))) throw new Error("[XP] Invalid XP amount.");
 
 	let { client } = message;
 

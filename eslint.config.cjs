@@ -12,7 +12,7 @@ module.exports = [
             },
             parserOptions: {
                 ecmaVersion: "latest",
-                sourceType: "module"
+                sourceType: "script"
             }
         },
         rules: {
