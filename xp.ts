@@ -39,6 +39,18 @@ export interface User {
 	xp: number;
 }
 
+/**
+ * Runtime configuration and metadata surface exposed through `xp`.
+ * @property {boolean} auto_clean - Automatically clean caches or databases after major operations.
+ * @property {boolean} auto_create - Allow functions to create missing users when queried.
+ * @property {MongoClient | Database | undefined} database - Underlying database connection reference.
+ * @property {"mongodb" | "sqlite"} dbType - The configured database provider.
+ * @property {boolean} debug - Emit debug logging via `XpLog.debug`.
+ * @property {boolean} notify - Enable console notifications (on by default).
+ * @property {string[]} registeredFonts - Fonts already registered for rendering helpers.
+ * @property {`${number}.${number}.${number}` | `${number}.${number}.${number}-${string}.${number}`} version - The simply-xp version string baked into the package.
+ * @property {number} xp_rate - Global XP rate used in XP ↔︎ level conversions.
+ */
 export interface XPClient {
 	auto_clean: boolean;
 	auto_create: boolean;
