@@ -11,7 +11,7 @@ const buildLevelPayload = require("./utils/levelPayload");
 async function setLevel(message, userID, guildID, level) {
 	if (!userID) throw new Error("[XP] User ID was not provided.");
 	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
-	if (!level || isNaN(Number(level))) throw new Error("[XP] Invalid level amount.");
+	if (level == null || isNaN(Number(level))) throw new Error("[XP] Invalid level amount.");
 
 	const user = await levels.findOneAndUpdate(
 		{ user: userID, guild: guildID },
