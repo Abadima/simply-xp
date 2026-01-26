@@ -25,11 +25,15 @@ async function leaderboard(client, guildID, limit) {
 
 	for (let i = 0; i < leaderboard.length; i += 1) {
 		const key = leaderboard[i];
-		const user = await g.members.fetch(key.user).catch(() => null);
-		if (!user && shouldPurge) {
-			await levels.deleteOne({ user: key.user, guild: guildID });
+		if (!key || typeof key !== "object") {
+			continue;
 		}
-		if (key.xp === 0 || !user) {
+		const { guild: entryGuildID, user: userID, xp, level } = key;
+		const member = await g.members.fetch(userID).catch(() => null);
+		if (!member && shouldPurge) {
+			await levels.deleteOne({ user: userID, guild: entryGuildID });
+		}
+		if (xp === 0 || !member) {
 			subtractPos += 1;
 			continue;
 		}
@@ -41,14 +45,14 @@ async function leaderboard(client, guildID, limit) {
 		}
 
 		led.push({
-			guildID: key.guild,
-			userID: key.user,
-			xp: key.xp,
-			shortxp: shortener(key.xp),
-			level: key.level,
+			guildID: entryGuildID,
+			userID,
+			xp,
+			shortxp: shortener(xp),
+			level,
 			position: pos,
-			username: user.user.username,
-			tag: user.user.tag
+			username: member.user.username,
+			tag: member.user.tag
 		});
 	}
 

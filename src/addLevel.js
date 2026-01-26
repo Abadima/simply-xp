@@ -15,8 +15,6 @@ async function addLevel(message, userID, guildID, level) {
 
 	if (!level) throw new Error("[XP] Level amount is not provided.");
 
-	let { client } = message;
-
 	const user = await levels.findOne({ user: userID, guild: guildID });
 
 	if (!user) {
