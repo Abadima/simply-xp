@@ -1,4 +1,4 @@
-const { roleSetup } = require("../simplyxp");
+const { roleSetup } = require("../../simplyxp");
 
 /**
  * Emits the shared level-up event using the configured role setup.

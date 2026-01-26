@@ -1,6 +1,6 @@
 const levels = require("../src/models/level.js");
-const { options } = require("../simplyxp");
 const shortener = require("./utils/shortener");
+const { options } = require("../simplyxp");
 
 /**
  * @param {Discord.Client} client
