@@ -1,5 +1,5 @@
 const levels = require("../src/models/level.js");
-let {roleSetup} = require("../simplyxp");
+let { roleSetup } = require("../simplyxp");
 
 /**
  * @param {Discord.Message} message
@@ -15,7 +15,7 @@ async function addXP(message, userID, guildID, xp) {
 
 	if (!xp) throw new Error("[XP] XP amount is not provided.");
 
-	let {client} = message;
+	let { client } = message;
 
 	let min;
 	let max;
@@ -47,7 +47,7 @@ async function addXP(message, userID, guildID, xp) {
 		xp = Math.floor(Math.random() * (max - min) + min);
 	}
 
-	const user = await levels.findOne({user: userID, guild: guildID});
+	const user = await levels.findOne({ user: userID, guild: guildID });
 
 	let lvl = Math.floor(0.1 * Math.sqrt(xp));
 

@@ -1,5 +1,6 @@
 const levels = require("../src/models/level.js");
-const {join} = require("path");
+const { join } = require("path");
+const getUserPosition = require("./utils/getUserPosition");
 
 /**
  * @param {Discord.Message} message
@@ -19,14 +20,7 @@ async function rank(message, userID, guildID, options = []) {
 	});
 	if (!user) throw new Error("[XP] NO_DATA | User has no XP data.");
 
-	const leaderboard = await levels
-		.find({
-			guild: guildID
-		})
-		.sort([["xp", "descending"]])
-		.exec();
-
-	user.position = leaderboard.findIndex((i) => i.user === userID) + 1;
+	user.position = (await getUserPosition(userID, guildID)) || 1;
 
 	let targetxp = user.level + 1;
 
@@ -48,7 +42,7 @@ async function rank(message, userID, guildID, options = []) {
 		try {
 			const Canvas = require("@napi-rs/canvas");
 			Canvas.GlobalFonts.registerFromPath(
-				join(__dirname, "Fonts", "Baloo-Regular.ttf"),
+				join(__dirname, "Fonts", "Baloo2-Regular.woff2"),
 				"Sans Serif"
 			);
 
@@ -114,7 +108,12 @@ async function rank(message, userID, guildID, options = []) {
 			ctx.fillRect(0, 0, 1080, 400);
 			let background = await Canvas.loadImage(BackGroundImg);
 			ctx.globalAlpha = 0.7;
-			ctx.drawImage(background, 0, 0, 1080, 400);
+			const canvasWidth = canvas.width;
+			const canvasHeight = canvas.height;
+			const scale = canvasWidth / background.width;
+			const scaledHeight = background.height * scale;
+			const yOffset = (canvasHeight - scaledHeight) / 2;
+			ctx.drawImage(background, 0, yOffset, canvasWidth, scaledHeight);
 			ctx.restore();
 
 			ctx.fillStyle = DrawLayerColor;

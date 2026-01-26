@@ -36,7 +36,7 @@ class roleSetup {
 					await newrol.save();
 				}
 
-				newrol.lvlrole.push({lvl: options.level, role: options.role});
+				newrol.lvlrole.push({ lvl: options.level, role: options.role });
 
 				await newrol
 					.save()
@@ -75,7 +75,7 @@ class roleSetup {
 					gid: guildID
 				},
 				{
-					$pull: {lvlrole: {lvl: options.level}}
+					$pull: { lvlrole: { lvl: options.level } }
 				}
 			);
 

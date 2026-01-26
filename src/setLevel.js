@@ -1,5 +1,5 @@
 const levels = require("../src/models/level.js");
-const {roleSetup} = require("../simplyxp");
+const { roleSetup } = require("../simplyxp");
 
 /**
  * @param {Discord.Message} message
@@ -12,12 +12,12 @@ async function setLevel(message, userID, guildID, level) {
 	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
 	if (!level || isNaN(Number(level))) throw new Error("[XP] Invalid level amount.");
 
-	const {client} = message;
+	const { client } = message;
 
 	const user = await levels.findOneAndUpdate(
-		{user: userID, guild: guildID},
-		{xp: (level * 10) ** 2, level: Math.floor(0.1 * Math.sqrt((level * 10) ** 2))},
-		{upsert: true, new: true}
+		{ user: userID, guild: guildID },
+		{ xp: (level * 10) ** 2, level: Math.floor(0.1 * Math.sqrt((level * 10) ** 2)) },
+		{ upsert: true, new: true }
 	);
 
 	if (user.level !== level) {

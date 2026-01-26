@@ -4,7 +4,7 @@ try {
 	console.warn("[XP] Discord.js is recommended for this package.");
 }
 
-module.exports.options = {auto_purge: false};
+module.exports.options = { auto_purge: false };
 
 module.exports.roleSetup = require("./src/roleSetup");
 

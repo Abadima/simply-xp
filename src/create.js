@@ -10,7 +10,7 @@ async function create(userID, guildID) {
 
 	if (!guildID) throw new Error("[XP] User ID was not provided.");
 
-	let uzer = await levels.findOne({user: userID, guild: guildID});
+	let uzer = await levels.findOne({ user: userID, guild: guildID });
 
 	if (uzer) return;
 

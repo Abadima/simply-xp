@@ -6,9 +6,9 @@ async function setXP(userID, guildID, xp) {
 	if (!xp || isNaN(Number(xp))) throw new Error("[XP] Invalid XP amount.");
 
 	const user = await levels.findOneAndUpdate(
-		{user: userID, guild: guildID},
-		{xp: xp},
-		{upsert: true}
+		{ user: userID, guild: guildID },
+		{ xp: xp },
+		{ upsert: true }
 	);
 
 	const lvl = Math.floor(0.1 * Math.sqrt(xp));
@@ -17,7 +17,7 @@ async function setXP(userID, guildID, xp) {
 		await user.save().catch((e) => console.log(`[XP] Failed to set XP | User: ${userID} | Err: ${e}`));
 	}
 
-	return {xp};
+	return { xp };
 }
 
 module.exports = setXP;

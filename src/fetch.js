@@ -1,4 +1,5 @@
 const levels = require("../src/models/level.js");
+const getUserPosition = require("./utils/getUserPosition");
 
 /**
  * @param {string} userID
@@ -25,24 +26,7 @@ async function fetch(userID, guildID) {
 		await user.save();
 	}
 
-	const leaderboard = await levels
-		.find({
-			guild: guildID
-		})
-		.sort([["xp", "descending"]])
-		.exec();
-
-	if (user === null)
-		return {
-			level: 0,
-			xp: 0,
-			reqxp: 100,
-			rank: leaderboard.findIndex((i) => i.user === userID) + 1,
-			shortxp: 0,
-			shortreq: 100
-		};
-
-	user.position = leaderboard.findIndex((i) => i.user === userID) + 1;
+	user.position = (await getUserPosition(userID, guildID)) || 1;
 
 	let targetxp = user.level + 1;
 

@@ -1,9 +1,20 @@
+# Configurations
+eslint.config.cjs
 .eslintrc.json
-.gitignore
-.github
-.idea
-.tgz
-.vscode
-Examples
-node_modules
+tsconfig.json
 pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Version control / CI
+.github
+.gitignore
+
+# IDE / editor settings
+.vscode
+.idea
+
+# Dependencies
+node_modules
+
+# Documentation
+Examples

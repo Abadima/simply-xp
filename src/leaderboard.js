@@ -1,5 +1,5 @@
 const levels = require("../src/models/level.js");
-const {options} = require("../simplyxp");
+const { options } = require("../simplyxp");
 
 /**
  * @param {Discord.Client} client
@@ -13,9 +13,14 @@ async function leaderboard(client, guildID, limit) {
 	let g = client.guilds.cache.get(guildID);
 	if (!g) throw new Error("[XP] Guild was not found.");
 
-	let leaderboard = await levels.find({guild: guildID}).sort([["xp", "descending"]]);
+	const leaderboard = await levels
+		.find({ guild: guildID })
+		.sort([["xp", "descending"]]);
 
-	let led = [], subtractPos = 0;
+	const led = [];
+	let subtractPos = 0;
+	const shouldPurge = Boolean(options?.auto_purge);
+	const limitNumber = limit ? Number(limit) : null;
 
 	function shortener(count) {
 		const COUNT_ABBRS = ["", "k", "M", "T"];
@@ -26,13 +31,22 @@ async function leaderboard(client, guildID, limit) {
 		return result;
 	}
 
-	const led2 = leaderboard.map(async (key) => {
+	for (let i = 0; i < leaderboard.length; i += 1) {
+		const key = leaderboard[i];
 		const user = await g.members.fetch(key.user).catch(() => null);
-		if (!user && options?.auto_purge) return levels.deleteOne({user: key.user, guild: guildID});
-		if (key.xp === 0 || !user) return subtractPos++;
+		if (!user && shouldPurge) {
+			await levels.deleteOne({ user: key.user, guild: guildID });
+		}
+		if (key.xp === 0 || !user) {
+			subtractPos += 1;
+			continue;
+		}
 
-		let pos = leaderboard.indexOf(key) + 1 - subtractPos;
-		if (limit && pos > Number(limit)) return;
+		const pos = i + 1 - subtractPos;
+		if (limitNumber && pos > limitNumber) {
+			if (!shouldPurge) break;
+			continue;
+		}
 
 		led.push({
 			guildID: key.guild,
@@ -44,8 +58,9 @@ async function leaderboard(client, guildID, limit) {
 			username: user.user.username,
 			tag: user.user.tag
 		});
-	});
-	return Promise.all(led2).then(() => led);
+	}
+
+	return led;
 }
 
 module.exports = leaderboard;

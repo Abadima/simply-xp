@@ -6,14 +6,9 @@ let leaderboard = require("./leaderboard");
  */
 
 async function charts(message, options) {
-	try {
-		require("canvas");
-	} catch {
-		throw "[XP] This requires canvas to be installed. \n\"npm install canvas\"";
-	}
 	const ChartJS = require("chart.js");
-	const Canvas = require("canvas");
-	let {client} = message;
+	const Canvas = require("@napi-rs/canvas");
+	let { client } = message;
 
 	let data = [];
 	let pos = options?.position || 5;
