@@ -49,6 +49,10 @@ async function rank(message, userID, guildID, options = []) {
 
 			const member = options.member;
 
+			if (!member) {
+				throw new Error("[XP] Member not found or not cached.");
+			}
+
 			const canvas = Canvas.createCanvas(1080, 400),
 				ctx = canvas.getContext("2d");
 

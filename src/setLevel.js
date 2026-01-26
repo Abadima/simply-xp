@@ -14,9 +14,6 @@ async function setLevel(message, userID, guildID, level) {
 	if (level == null || isNaN(Number(level))) throw new Error("[XP] Invalid level amount.");
 	
 	// Coerce level to number to ensure proper comparisons
-	level = Number(level);
-
-	// Coerce level to number for consistent comparison
 	const newLevel = Number(level);
 
 	// Get the previous user document to capture the old level
