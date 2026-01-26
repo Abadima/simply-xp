@@ -1,5 +1,6 @@
 const levels = require("../src/models/level.js");
 const getUserPosition = require("./utils/getUserPosition");
+const shortener = require("./utils/shortener");
 
 /**
  * @param {string} userID
@@ -31,15 +32,6 @@ async function fetch(userID, guildID) {
 	let targetxp = user.level + 1;
 
 	let target = targetxp * targetxp * 100;
-
-	function shortener(count) {
-		const COUNT_ABBRS = ["", "k", "M", "T"];
-
-		const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000));
-		let result = parseFloat((count / Math.pow(1000, i)).toFixed(2));
-		result += `${COUNT_ABBRS[i]}`;
-		return result;
-	}
 
 	let shortXP = shortener(user.xp);
 

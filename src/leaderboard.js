@@ -1,5 +1,6 @@
 const levels = require("../src/models/level.js");
 const { options } = require("../simplyxp");
+const shortener = require("./utils/shortener");
 
 /**
  * @param {Discord.Client} client
@@ -21,15 +22,6 @@ async function leaderboard(client, guildID, limit) {
 	let subtractPos = 0;
 	const shouldPurge = Boolean(options?.auto_purge);
 	const limitNumber = limit ? Number(limit) : null;
-
-	function shortener(count) {
-		const COUNT_ABBRS = ["", "k", "M", "T"];
-
-		const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000));
-		let result = parseFloat((count / Math.pow(1000, i)).toFixed(2));
-		result += `${COUNT_ABBRS[i]}`;
-		return result;
-	}
 
 	for (let i = 0; i < leaderboard.length; i += 1) {
 		const key = leaderboard[i];

@@ -1,6 +1,7 @@
 const levels = require("../src/models/level.js");
 const { join } = require("path");
 const getUserPosition = require("./utils/getUserPosition");
+const shortener = require("./utils/shortener");
 
 /**
  * @param {Discord.Message} message
@@ -86,6 +87,23 @@ async function rank(message, userID, guildID, options = []) {
 				CurrentXP = options.currentXP,
 				NeededXP = options.neededXP;
 
+			const drawStatBadge = (x, y, text, textY) => {
+				ctx.save();
+				RoundedBox(ctx, x, y, 180, 50, 20);
+				ctx.strokeStyle = "#BFC85A22";
+				ctx.stroke();
+				ctx.clip();
+				ctx.fillStyle = BoxColor;
+				ctx.globalAlpha = 1;
+				ctx.fillRect(x, y, 180, 50);
+				ctx.globalAlpha = 1;
+				ctx.fillStyle = "#ffffff";
+				ctx.font = "32px \"Sans Serif\"";
+				ctx.textAlign = "center";
+				ctx.fillText(text, x + 90, textY);
+				ctx.restore();
+			};
+
 			ctx.beginPath();
 			ctx.moveTo(Number(BackgroundRadius), 0);
 			ctx.lineTo(1080 - Number(BackgroundRadius), 0);
@@ -131,35 +149,8 @@ async function rank(message, userID, guildID, options = []) {
 			ctx.drawImage(avatar, 70, 30, 180, 180);
 			ctx.restore();
 
-			ctx.save();
-			RoundedBox(ctx, 70, 240 + 50 + 30, 180, 50, 20);
-			ctx.strokeStyle = "#BFC85A22";
-			ctx.stroke();
-			ctx.clip();
-			ctx.fillStyle = BoxColor;
-			ctx.globalAlpha = 1;
-			ctx.fillRect(70, 320, 180, 50);
-			ctx.globalAlpha = 1;
-			ctx.fillStyle = "#ffffff";
-			ctx.font = "32px \"Sans Serif\"";
-			ctx.textAlign = "center";
-			ctx.fillText(TextEXP, 160, 358);
-			ctx.restore();
-
-			ctx.save();
-			RoundedBox(ctx, 70, 240, 180, 50, 20);
-			ctx.strokeStyle = "#BFC85A22";
-			ctx.stroke();
-			ctx.clip();
-			ctx.fillStyle = BoxColor;
-			ctx.globalAlpha = 1;
-			ctx.fillRect(70, 240, 180, 50, 50);
-			ctx.globalAlpha = 1;
-			ctx.fillStyle = "#ffffff";
-			ctx.font = "32px \"Sans Serif\"";
-			ctx.textAlign = "center";
-			ctx.fillText(LvlText, 70 + 180 / 2, 278);
-			ctx.restore();
+			drawStatBadge(70, 320, TextEXP, 358);
+			drawStatBadge(70, 240, LvlText, 278);
 
 			ctx.save();
 			ctx.textAlign = "left";
@@ -265,29 +256,6 @@ function RoundedBox(ctx, x, y, width, height, radius) {
 	ctx.lineTo(x, y + radius);
 	ctx.quadraticCurveTo(x, y, x + radius, y);
 	ctx.closePath();
-}
-
-function shortener(count) {
-	const COUNT_ABBRS = [
-		"",
-		"k",
-		"M",
-		"B",
-		"T",
-		"Q",
-		"Q+",
-		"S",
-		"S+",
-		"O",
-		"N",
-		"D",
-		"U"
-	];
-
-	const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000));
-	let result = parseFloat((count / Math.pow(1000, i)).toFixed(2));
-	result += `${COUNT_ABBRS[i]}`;
-	return result;
 }
 
 module.exports = rank;

@@ -1,5 +1,5 @@
 const levels = require("../src/models/level.js");
-const { roleSetup } = require("../simplyxp");
+const notifyLevelUp = require("./utils/levelUpNotifier");
 
 /**
  * @param {Discord.Message} message
@@ -28,9 +28,7 @@ async function setLevel(message, userID, guildID, level) {
 			guildID
 		};
 
-		let role = await roleSetup.find(client, guildID, level);
-
-		client.emit("levelUp", message, data, role);
+		await notifyLevelUp(message, data, level);
 	}
 
 	return {
