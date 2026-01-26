@@ -8,7 +8,7 @@ const levels = require("../src/models/level.js");
 async function create(userID, guildID) {
 	if (!userID) throw new Error("[XP] User ID was not provided.");
 
-	if (!guildID) throw new Error("[XP] User ID was not provided.");
+	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
 
 	let uzer = await levels.findOne({ user: userID, guild: guildID });
 
