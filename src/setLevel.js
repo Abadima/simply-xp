@@ -6,7 +6,7 @@ const buildLevelPayload = require("./utils/levelPayload");
  * @param {Discord.Message} message
  * @param {string} userID
  * @param {string} guildID
- * @param {string} level
+ * @param {string|number} level
  */
 async function setLevel(message, userID, guildID, level) {
 	if (!userID) throw new Error("[XP] User ID was not provided.");
