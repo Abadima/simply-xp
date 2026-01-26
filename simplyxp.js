@@ -1,31 +1,33 @@
 try {
-	require('discord.js');
+	require("discord.js");
 } catch (e) {
-	console.warn('[XP] Discord.js is recommended for this package.');
+	console.warn("[XP] Discord.js is recommended for this package.");
 }
 
-module.exports.roleSetup = require('./src/roleSetup');
+module.exports.options = { auto_purge: false };
 
-module.exports.addLevel = require('./src/addLevel');
+module.exports.roleSetup = require("./src/roleSetup");
 
-module.exports.addXP = require('./src/addXP');
+module.exports.addLevel = require("./src/addLevel");
 
-module.exports.charts = require('./src/charts');
+module.exports.addXP = require("./src/addXP");
 
-module.exports.connect = require('./src/connect');
+module.exports.charts = require("./src/charts");
 
-module.exports.create = require('./src/create');
+module.exports.connect = require("./src/connect");
 
-module.exports.fetch = require('./src/fetch');
+module.exports.create = require("./src/create");
 
-module.exports.leaderboard = require('./src/leaderboard');
+module.exports.fetch = require("./src/fetch");
 
-module.exports.lvlRole = require('./src/lvlRole');
+module.exports.leaderboard = require("./src/leaderboard");
 
-module.exports.rank = require('./src/rank');
+module.exports.lvlRole = require("./src/lvlRole");
 
-module.exports.setLevel = require('./src/setLevel');
+module.exports.rank = require("./src/rank");
 
-module.exports.setXP = require('./src/setXP');
+module.exports.setLevel = require("./src/setLevel");
 
-module.exports.reset = require('./src/reset');
+module.exports.setXP = require("./src/setXP");
+
+module.exports.reset = require("./src/reset");

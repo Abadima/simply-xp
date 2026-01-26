@@ -1,53 +1,80 @@
 {
   "name": "simply-xp",
-  "version": "1.3.5-beta-7",
+  "version": "1.3.8-fix.0",
   "description": "A Simple, Easy and Beginner Friendly XP System",
   "main": "simplyxp.js",
   "typings": "index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "beta": "eslint . --fix && npm update && npm publish --tag beta"
+    "beta": "eslint . --fix && pnpm update && npm publish --tag beta",
+    "legacy": "eslint . --fix && pnpm update && npm publish --tag legacy"
   },
-  "author": "Rahuletto",
-  "keywords": [
-    "xp",
-    "simply",
-    "easy",
-    "xp-system",
-    "system",
-    "mongoose",
-    "discord",
-    "discord xp",
-    "discord-xp",
-    "simply-djs",
-    "discord.js",
-    "simplydjs",
-    "weky",
-    "nuggies",
-    "experience",
-    "level role",
-    "amari",
-    "package",
-    "leaderboard",
-    "mee6",
-    "charts",
-    "ChartJS",
-    "level up"
+  "author": {
+    "name": "Abadima",
+    "url": "https://abadima.dev"
+  },
+  "maintainers": [
+    {
+      "name": "Abadima",
+      "url": "https://abadima.dev"
+    }
+  ],
+  "contributors": [
+    {
+      "name": "Rahuletto",
+      "role": "Original Author",
+      "url": "https://marban.is-a.dev/"
+    }
   ],
   "license": "Apache-2.0",
+  "keywords": [
+    "xp",
+    "experience",
+    "level",
+    "leveling",
+    "leveling system",
+    "discord",
+    "discord bot",
+    "discord.js",
+    "discord-xp",
+    "leaderboard",
+    "rank",
+    "rank card",
+    "leaderboard card",
+    "gamification",
+    "xp system",
+    "simply",
+    "simplydjs",
+    "charts",
+    "@napi-rs/canvas",
+    "chart.js",
+    "mongoose",
+    "mongodb",
+    "sqlite",
+    "nodejs",
+    "bot",
+    "mee6",
+    "amari",
+    "weky"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Rahuletto/simply-xp"
+    "url": "git+https://github.com/Abadima/simply-xp.git"
   },
+  "homepage": "https://simplyxp.js.org",
+  "bugs": {
+    "url": "https://github.com/Abadima/simply-xp/issues"
+  },
+  "readme": "README.md",
   "dependencies": {
-    "@napi-rs/canvas": "^0.1.41",
+    "@napi-rs/canvas": "0.1.88",
     "chart.js": "^3.9.1",
-    "mongoose": "^6.11.2"
+    "mongoose": "^7.8.8"
   },
   "peerDependencies": {
     "discord.js": ">=13.12.0"
   },
   "devDependencies": {
-    "eslint": "^8.43.0"
+    "eslint": "^9.39.2"
   }
 }

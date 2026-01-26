@@ -1,4 +1,6 @@
-const levels = require('../src/models/level.js');
+const levels = require("../src/models/level.js");
+const getUserPosition = require("./utils/getUserPosition");
+const shortener = require("./utils/shortener");
 
 /**
  * @param {string} userID
@@ -6,9 +8,9 @@ const levels = require('../src/models/level.js');
  */
 
 async function fetch(userID, guildID) {
-	if (!userID) throw new Error('[XP] User ID was not provided.');
+	if (!userID) throw new Error("[XP] User ID was not provided.");
 
-	if (!guildID) throw new Error('[XP] Guild ID was not provided.');
+	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
 
 	let user = await levels.findOne({
 		user: userID,
@@ -25,37 +27,11 @@ async function fetch(userID, guildID) {
 		await user.save();
 	}
 
-	const leaderboard = await levels
-		.find({
-			guild: guildID
-		})
-		.sort([['xp', 'descending']])
-		.exec();
-
-	if (user === null)
-		return {
-			level: 0,
-			xp: 0,
-			reqxp: 100,
-			rank: leaderboard.findIndex((i) => i.user === userID) + 1,
-			shortxp: 0,
-			shortreq: 100
-		};
-
-	user.position = leaderboard.findIndex((i) => i.user === userID) + 1;
+	user.position = (await getUserPosition(userID, guildID)) || 1;
 
 	let targetxp = user.level + 1;
 
 	let target = targetxp * targetxp * 100;
-
-	function shortener(count) {
-		const COUNT_ABBRS = ['', 'k', 'M', 'T'];
-
-		const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000));
-		let result = parseFloat((count / Math.pow(1000, i)).toFixed(2));
-		result += `${COUNT_ABBRS[i]}`;
-		return result;
-	}
 
 	let shortXP = shortener(user.xp);
 

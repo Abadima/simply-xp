@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const Levelz = new mongoose.Schema({
 	user: { type: String, unique: true },
@@ -7,4 +7,6 @@ const Levelz = new mongoose.Schema({
 	level: { type: Number, default: 0 }
 });
 
-module.exports = mongoose.model('Simply-XP', Levelz);
+Levelz.index({ guild: 1, xp: -1 });
+
+module.exports = mongoose.model("Simply-XP", Levelz);

@@ -1,51 +1,19 @@
-const levels = require('../src/models/level.js');
-
-/**
- * @param {string} userID
- * @param {string} guildID
- * @param {string} xp
- */
+const levels = require("../src/models/level.js");
 
 async function setXP(userID, guildID, xp) {
-	if (!userID) throw new Error('[XP] User ID was not provided.');
+	if (!userID) throw new Error("[XP] User ID was not provided.");
+	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
+	if (xp == null || isNaN(Number(xp))) throw new Error("[XP] Invalid XP amount.");
 
-	if (!guildID) throw new Error('[XP] Guild ID was not provided.');
+	const lvl = Math.floor(0.1 * Math.sqrt(xp));
 
-	if (!xp) throw new Error('[XP] XP amount is not provided.');
+	await levels.findOneAndUpdate(
+		{ user: userID, guild: guildID },
+		{ xp: xp, level: lvl },
+		{ upsert: true }
+	).catch((e) => console.log(`[XP] Failed to set XP | User: ${userID} | Err: ${e}`));
 
-	if (Number(xp).toString() === 'NaN')
-		throw new Error('[XP] XP amount is not a number.');
-
-	const user = await levels.findOne({ user: userID, guild: guildID });
-
-	let lvl = Math.floor(0.1 * Math.sqrt(xp));
-
-	if (!user) {
-		const newUser = new levels({
-			user: userID,
-			guild: guildID,
-			xp: xp,
-			level: lvl
-		});
-
-		await newUser
-			.save()
-			.catch(() => console.log('[XP] Failed to save new use to database'));
-
-		return {
-			xp: 0
-		};
-	}
-	user.xp = xp;
-	user.level = Math.floor(0.1 * Math.sqrt(user.xp));
-
-	await user
-		.save()
-		.catch((e) =>
-			console.log(`[XP] Failed to set XP | User: ${userID} | Err: ${e}`)
-		);
-
-	return { xp };
+	return { xp, level: lvl };
 }
 
 module.exports = setXP;

@@ -1,4 +1,6 @@
-const levels = require('../src/models/level.js');
+const levels = require("../src/models/level.js");
+const shortener = require("./utils/shortener");
+const { options } = require("../simplyxp");
 
 /**
  * @param {Discord.Client} client
@@ -7,46 +9,87 @@ const levels = require('../src/models/level.js');
  */
 
 async function leaderboard(client, guildID, limit) {
-	if (!guildID) throw new Error('[XP] Guild ID was not provided.');
+	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
 
 	let g = client.guilds.cache.get(guildID);
-	if (!g) throw new Error('[XP] Guild was not found.');
+	if (!g) throw new Error("[XP] Guild was not found.");
 
-	let leaderboard = await levels.find({guild: guildID}).sort([['xp', 'descending']]);
+	const leaderboard = await levels
+		.find({ guild: guildID })
+		.sort([["xp", "descending"]]);
 
-	let led = [];
+	const led = [];
+	let subtractPos = 0;
+	let entryIndex = 0;
+	const shouldPurge = Boolean(options?.auto_purge);
+	const limitNumber = limit ? Number(limit) : null;
 
-	function shortener(count) {
-		const COUNT_ABBRS = ['', 'k', 'M', 'T'];
+	// Fetch all members concurrently to avoid sequential awaits in the loop
+	const entriesWithMembers = await Promise.all(
+		leaderboard.map(async (rawEntry) => {
+			if (!rawEntry || typeof rawEntry !== "object") {
+				return { rawEntry: null, member: null };
+			}
 
-		const i = 0 === count ? count : Math.floor(Math.log(count) / Math.log(1000));
-		let result = parseFloat((count / Math.pow(1000, i)).toFixed(2));
-		result += `${COUNT_ABBRS[i]}`;
-		return result;
-	}
+			const normalizedEntry =
+				typeof rawEntry.toObject === "function" ? rawEntry.toObject() : rawEntry;
 
-	const led2 = leaderboard.map(async (key) => {
-		const user = await g.members.fetch(key.user).catch(() => null);
-		if (!user) return levels.deleteOne({user: key.user, guild: guildID});
-		if (key.xp === 0) return;
-		let pos = leaderboard.indexOf(key) + 1;
+			const { user: userID } = normalizedEntry;
+			let member = null;
+			if (userID) {
+				member = await g.members.fetch(userID).catch(() => null);
+			}
 
-		if (limit) {
-			if (pos > Number(limit)) return;
+			return { rawEntry: normalizedEntry, member };
+		})
+	);
+
+	// Collect entries to purge for batch deletion
+	const entriesToPurge = [];
+
+	for (const entry of entriesWithMembers) {
+		entryIndex += 1;
+
+		const { rawEntry, member } = entry;
+		if (!rawEntry) {
+			continue;
+		}
+
+		const { guild: entryGuildID, user: userID, xp, level } = rawEntry;
+		if (!member && shouldPurge) {
+			entriesToPurge.push({ user: userID, guild: entryGuildID });
+		}
+		if (xp === 0 || !member) {
+			subtractPos += 1;
+			continue;
+		}
+
+		const pos = entryIndex - subtractPos;
+		if (limitNumber && pos > limitNumber) {
+			if (!shouldPurge) break;
+			continue;
 		}
 
 		led.push({
-			guildID: key.guild,
-			userID: key.user,
-			xp: key.xp,
-			shortxp: shortener(key.xp),
-			level: key.level,
+			guildID: entryGuildID,
+			userID,
+			xp,
+			shortxp: shortener(xp),
+			level,
 			position: pos,
-			username: user.user.username,
-			tag: user.user.tag
+			username: member.user.username,
+			tag: member.user.tag
 		});
-	});
-	return Promise.all(led2).then(() => led);
+	}
+
+	// Batch delete purged entries
+	if (entriesToPurge.length > 0) {
+		await levels.deleteMany({
+			$or: entriesToPurge
+		});
+	}
+
+	return led;
 }
 
 module.exports = leaderboard;
