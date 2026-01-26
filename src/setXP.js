@@ -13,7 +13,7 @@ async function setXP(userID, guildID, xp) {
 		{ upsert: true }
 	).catch((e) => console.log(`[XP] Failed to set XP | User: ${userID} | Err: ${e}`));
 
-	return { xp };
+	return { xp, level: lvl };
 }
 
 module.exports = setXP;
