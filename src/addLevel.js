@@ -1,5 +1,6 @@
 const levels = require("../src/models/level.js");
 const notifyLevelUp = require("./utils/levelUpNotifier");
+const buildLevelPayload = require("./utils/levelPayload");
 
 /**
  * @param {Discord.Message} message
@@ -45,12 +46,7 @@ async function addLevel(message, userID, guildID, level) {
 	);
 
 	if (level1 !== level) {
-		let data = {
-			xp: user.xp,
-			level: user.level,
-			userID,
-			guildID
-		};
+		const data = buildLevelPayload(user, userID, guildID);
 
 		await notifyLevelUp(message, data, level);
 	}
