@@ -20,11 +20,12 @@ async function leaderboard(client, guildID, limit) {
 
 	const led = [];
 	let subtractPos = 0;
+	let entryIndex = 0;
 	const shouldPurge = Boolean(options?.auto_purge);
 	const limitNumber = limit ? Number(limit) : null;
 
-	for (let i = 0; i < leaderboard.length; i += 1) {
-		const rawEntry = leaderboard[i];
+	for (const rawEntry of leaderboard) {
+		entryIndex += 1;
 		if (!rawEntry || typeof rawEntry !== "object") {
 			continue;
 		}
@@ -39,7 +40,7 @@ async function leaderboard(client, guildID, limit) {
 			continue;
 		}
 
-		const pos = i + 1 - subtractPos;
+		const pos = entryIndex - subtractPos;
 		if (limitNumber && pos > limitNumber) {
 			if (!shouldPurge) break;
 			continue;

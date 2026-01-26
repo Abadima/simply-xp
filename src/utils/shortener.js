@@ -23,8 +23,9 @@ function shortener(count) {
     const numericCount = Number(count) || 0;
     const rawIndex = numericCount === 0 ? 0 : Math.floor(Math.log(numericCount) / Math.log(1000));
     const safeIndex = Math.max(0, Math.min(rawIndex, COUNT_ABBRS.length - 1));
+    const safeSuffix = COUNT_ABBRS[safeIndex] ?? "";
     let result = parseFloat((numericCount / Math.pow(1000, safeIndex)).toFixed(2));
-    result += COUNT_ABBRS[safeIndex];
+    result += safeSuffix;
     return result;
 }
 
