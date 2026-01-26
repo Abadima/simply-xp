@@ -46,7 +46,7 @@ async function addLevel(message, userID, guildID, level) {
 	if (level1 !== user.level) {
 		const data = buildLevelPayload(user, userID, guildID);
 
-		await notifyLevelUp(message, data, level);
+		await notifyLevelUp(message, data, user.level);
 	}
 
 	return {
