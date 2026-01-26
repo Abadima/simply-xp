@@ -43,7 +43,7 @@ async function addLevel(message, userID, guildID, level) {
 		console.log(`[XP] Failed to add Level | User: ${userID} | Err: ${e}`)
 	);
 
-	if (level1 !== level) {
+	if (level1 !== user.level) {
 		const data = buildLevelPayload(user, userID, guildID);
 
 		await notifyLevelUp(message, data, level);
