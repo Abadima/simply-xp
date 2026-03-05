@@ -1,9 +1,9 @@
-<div class="Heading" style="text-align: center;">
+<p align="center">
   <img src="https://i.ibb.co/cCKJ9FS/simplyxp.png" width="320" height="125" alt="XP Logo">
+</p>
 
-<h2>We have levelling! - You handle the rest.</h2>
-<h3>Made by Abadima</h3>
-</div>
+<h2 align="center">We have levelling! - You handle the rest.</h2>
+<h3 align="center">Made by Abadima</h3>
 
 <br>
 <div class="badges" style="text-align: center;">
