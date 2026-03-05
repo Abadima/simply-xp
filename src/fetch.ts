@@ -1,6 +1,7 @@
-import { UserResult } from "./classes/Database";
+import { Database, UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
 import { clean, User, xp } from "../xp";
+import { create } from "./create";
 
 /**
  * Fetch user data
@@ -17,18 +18,18 @@ export async function fetch(userId: string, guildId: string, username?: string):
 	if (!guildId) throw new XpFatal({ function: "create()", message: "Guild ID was not provided" });
 	clean({ db: true });
 
-	const users: User[] = await (await import("./classes/Database")).db.find("simply-xps", guildId) as User[];
+	const users: User[] = await Database.find("simply-xps", guildId) as User[];
 
 	let user: User | UserResult | undefined = users.find((u) => u.user === userId);
 
 	if (!user) {
 		if (xp.auto_create && username) {
-			user = await (await import("./create")).create(guildId, userId, username);
+			user = await create(guildId, userId, username);
 			users.push(user as User);
 		} else throw new XpFatal({ function: "fetch()", message: "User data not found" });
 	}
 
-	const position = users.sort((a, b) => b.xp - a.xp).findIndex((u) => u.user === userId) + 1;
+	const position = 1 + users.filter((u) => u.xp > user!.xp).length;
 	return {
 		flags: user?.flags, guild: user.guild,
 		user: user.user, name: user?.name,

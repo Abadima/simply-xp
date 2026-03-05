@@ -78,7 +78,7 @@ export class Migrate {
 							XpLog.debug("migrate.fromDB()", "MongoDB is natively compatible with our package! 🎉");
 					}
 
-					results = await (connection as MongoClient).db().collection("simply-xps").find().toArray() as Document as UserResult[];
+					results = await (connection as MongoClient).db(xp.dbName).collection("simply-xps").find().toArray() as Document as UserResult[];
 
 				} catch (error) {
 					XpLog.err("migrate.fromDB()", error as string);

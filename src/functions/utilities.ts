@@ -1,10 +1,10 @@
 import { checkPackageVersion, ensureMongoSchemaVersion, ensureSqliteSchemaVersion } from "../connect";
 import { clearAllCache, GlobalFonts } from "@napi-rs/canvas";
-import { Database } from "better-sqlite3";
-import { db, https, Plugin, xp } from "../../xp";
-import { MongoClient } from "mongodb";
+import { Database as db, https, Plugin, xp } from "../../xp";
 import { UserResult } from "../classes/Database";
 import { XpFatal, XpLog } from "./xplogs";
+import { Database } from "better-sqlite3";
+import { MongoClient } from "mongodb";
 
 /**
  * Options for clean function.
@@ -20,6 +20,7 @@ type CleanOptions = { db?: boolean };
  * @property {object} dbOptions - The database options.
  * @property {"mongodb" | "sqlite"} dbOptions.type - The database type.
  * @property {MongoClient | Database} dbOptions.database - The database connection.
+ * @property {string} [dbOptions.name] - MongoDB only: explicit database name. If set, overrides the default derived from the connection URI.
  * @property {boolean} debug - Whether to enable debug logs.
  * @property {boolean} notify - Enable/Disable console notifications.
  * @property {"slow" | "normal" | "fast" | number} xp_rate - The XP rate.
@@ -27,7 +28,7 @@ type CleanOptions = { db?: boolean };
 interface NewClientOptions {
 	auto_create: boolean;
 	auto_clean: boolean;
-	dbOptions: { type: "mongodb", database: MongoClient } | { type: "sqlite", database: Database };
+	dbOptions: { type: "mongodb", database: MongoClient, name?: string } | { type: "sqlite", database: Database };
 	debug: boolean;
 	notify: boolean;
 	xp_rate?: "slow" | "normal" | "fast" | number;
@@ -184,6 +185,7 @@ export function updateOptions(clientOptions: NewClientOptions): void {
 
 		if (database) {
 			xp.database = database;
+			if (type === "mongodb") xp.dbName = (clientOptions.dbOptions as { name?: string }).name;
 			const dbInfo = xp.dbType === "mongodb" ?
 				{ name: "MONGODB", type: "mongodb", min: 3, max: 7 } :
 				{ name: "BETTER-SQLITE3", type: "better-sqlite3", min: 7, max: 12 };
@@ -204,7 +206,7 @@ export function updateOptions(clientOptions: NewClientOptions): void {
 
 				switch (xp.dbType) {
 					case "mongodb":
-						(xp.database as MongoClient).db().command({ ping: 1 }).catch(() => {
+						(xp.database as MongoClient).db(xp.dbName).command({ ping: 1 }).catch(() => {
 							xp.database = undefined;
 							throw new XpFatal({ function: "updateOptions()", message: "Invalid MongoDB connection" });
 						});

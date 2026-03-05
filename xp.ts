@@ -44,6 +44,7 @@ export interface User {
  * @property {boolean} auto_clean - Automatically clean caches or databases after major operations.
  * @property {boolean} auto_create - Allow functions to create missing users when queried.
  * @property {MongoClient | Database | undefined} database - Underlying database connection reference.
+ * @property {string} [dbName] - MongoDB only: explicit database name. When set, used instead of the default derived from the connection URI.
  * @property {"mongodb" | "sqlite"} dbType - The configured database provider.
  * @property {boolean} debug - Emit debug logging via `XpLog.debug`.
  * @property {boolean} notify - Enable console notifications (on by default).
@@ -55,6 +56,7 @@ export interface XPClient {
 	auto_clean: boolean;
 	auto_create: boolean;
 	database: MongoClient | Database | undefined;
+	dbName?: string;
 	dbType: "mongodb" | "sqlite";
 	debug: boolean;
 	notify: boolean;
@@ -108,6 +110,6 @@ export const xp: XPClient = {
 	debug: false,
 	notify: true,
 	registeredFonts: [],
-	version: "2.0.0-beta.3",
+	version: "2.0.0-beta.4",
 	xp_rate: 0.1
 };

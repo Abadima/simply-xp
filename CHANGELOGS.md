@@ -1,5 +1,31 @@
 # VERSION 2
 
+## [BETA 4](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.4) — V2 RELEASE CANDIDATE
+
+### Additions
+
+- Add `dbOptions.name` to `updateOptions()` — MongoDB only: specify the database name explicitly instead of relying on the default derived from the connection URI. All internal MongoDB calls (`Database`, `connect`, `Migrate`) now respect this setting via `xp.dbName`.
+
+### Improvements
+
+- Bump `@napi-rs/canvas` to V0.1.96.
+- **`compareCard()`** redesigned: per-user names above avatars, tug-of-war XP bar (proportional fill, level diff inside), per-user XP shown below level label.
+- Avatar ring rendering improved across `rankCard()` and `compareCard()`: image drawn first, stroke ring overlaid on top.
+- Text strokes changed to translucent (`rgba(0,0,0,0.5)`, `lineJoin="round"`) across all cards — shadow-like instead of hard black.
+- Text stroke thickness reduced (large labels: 7px, standard: 5px).
+- `rankCard()` and `fetch()` position calculation: `filter()` count instead of `sort()` + `findIndex()`.
+- `fetch()`: static imports for `Database` and `create` (was dynamic per-call).
+- `create()`: static import for `Database` (was dynamic per-call).
+- `addXP()`: `levelUp`/`levelDown` callbacks are now `await`ed.
+- All `XpEventCallback` properties are now optional; return type supports `Promise<void>`.
+- `description` on all card/chart return values is now contextual (includes username, level, guild, etc.).
+
+### Bug Fixes
+
+- Fix operator-precedence bug in `compareCard()` `cardBoxColor` assignment.
+- Fix redundant ternary in `rankCard()` modern stroke style.
+- Remove extension checks on avatar URLs in `compareCard()` — any valid image URL is accepted.
+
 ## [BETA 3](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0-beta.3)
 
 ### ⚠️ Breaking Changes

@@ -1,6 +1,5 @@
 const xp = require("../lib/xp");
 const { XpLog } = require("../lib/src/functions/xplogs");
-const { clean } = require("../lib/xp");
 
 async function test(dbType) {
 	xp.XpEvents.on({
@@ -52,7 +51,7 @@ async function test(dbType) {
 
 	await xp.removeXP("326815959358898189", "0987654321", 1);
 
-	await xp.setLevel("1234567896", "0987654321", 68, "Rahul");
+	await xp.setLevel("1234567896", "0987654321", 66, "Rahul");
 
 	await xp.addXP("1234567896", "0987654321", 13700, "Rahul");
 
@@ -81,7 +80,7 @@ async function test(dbType) {
 				id: "326815959358898189", username: "アバディマ"
 			},
 			{
-				fallbackFont: "https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2",
+				fallbackFont: "https://cdn.jsdelivr.net/npm/@fontsource/kiwi-maru@5.2.8/files/kiwi-maru-japanese-400-normal.woff",
 				light: true, legacy: mode === "legacy"
 			}).then(results => {
 				require("fs").writeFileSync(`Tests/Images/rankCard/${mode}.webp`, results.attachment);
@@ -100,7 +99,7 @@ async function test(dbType) {
 				id: "1234567896", username: "Rahuletto"
 			},
 			{
-				fallbackFont: "https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2",
+				fallbackFont: "https://cdn.jsdelivr.net/npm/@fontsource/kiwi-maru@5.2.8/files/kiwi-maru-japanese-400-normal.woff",
 				light: theme === "light"
 			}).then(results => {
 				require("fs").writeFileSync(`Tests/Images/compareCard/${theme}.webp`, results.attachment);
@@ -113,7 +112,7 @@ async function test(dbType) {
 				await xp.leaderboardCard(await xp.leaderboard(), {
 					// artworkImage: "https://th.bing.com/th/id/R.8cd8594560bd9cf4b042833a4acefaa5?rik=A6B1qYN%2b5GQAcA&riu=http%3a%2f%2fwallpaperswide.com%2fdownload%2fdesert_sky-wallpaper-2560x720.jpg&ehk=rE5VYZy8njd5ZeNT2p4sP7C5psjSf%2bxLZmV%2bvlQCffs%3d&risl=&pid=ImgRaw&r=0",
 					//backgroundImage: new URL("https://static.vecteezy.com/system/resources/previews/000/962/809/original/abstract-gradient-background-with-colorful-and-modern-style-vector.jpg"),
-					fallbackFont: "https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2",
+					fallbackFont: "https://cdn.jsdelivr.net/npm/@fontsource/kiwi-maru@5.2.8/files/kiwi-maru-japanese-400-normal.woff",
 					light: theme === "light",
 					rowOpacity: 1
 				}, {
@@ -127,7 +126,7 @@ async function test(dbType) {
 		} else {
 			for (const theme of ["blue", "dark", "discord", "green", "light", "orange", "pink", "red", "space", "yellow"]) {
 				await xp.charts("0987654321", {
-					fallbackFont: "https://cdn.jsdelivr.net/fontsource/fonts/mochiy-pop-one@latest/japanese-400-normal.woff2",
+					fallbackFont: "https://cdn.jsdelivr.net/npm/@fontsource/kiwi-maru@5.2.8/files/kiwi-maru-japanese-400-normal.woff",
 					theme: theme, type: type
 				}).then(results => {
 					require("fs").writeFileSync(`Tests/Images/Leaderboards/${type}/${theme}.webp`, results.attachment);
@@ -139,7 +138,6 @@ async function test(dbType) {
 	// log RAM usage
 	console.log(`After Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100} MB`);
 
-	clean();
 
 	await xp.db.deleteMany({
 		collection: "simply-xps", data: {

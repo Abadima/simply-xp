@@ -54,7 +54,7 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 
 	if (users.length < 2) throw new XpFatal({ function: "charts()", message: "Not enough users to create a chart" });
 
-	await registerFont(options?.font || join(__dirname, "fonts", "Baloo2-ExtraBold.woff2"), "Baloo");
+	await registerFont(options?.font || join(__dirname, "fonts", "Baloo2-Regular.woff2"), "Baloo");
 	if (options.fallbackFont) await registerFont(options.fallbackFont, "FallbackFont");
 
 	switch (options.theme) {
@@ -351,7 +351,8 @@ export async function charts(guildId: string, options: ChartOptions = {}): Promi
 	if (xp.auto_clean) clean();
 
 	return {
-		attachment: canvas.toBuffer("image/png"),
-		description: "Chart", name: "chart.png"
+		attachment: canvas.toBuffer("image/webp"),
+		description: `${options.type!.charAt(0).toUpperCase() + options.type!.slice(1)} chart — Top ${users.length} users (${options.theme} theme)`.slice(0, 200),
+		name: "chart.webp"
 	};
 }

@@ -120,7 +120,7 @@ export class Database {
 			function: "getCollection()",
 			message: "MongoDB has to be your database type to use this function."
 		});
-		return (xp.database as MongoClient).db().collection(collection);
+		return (xp.database as MongoClient).db(xp.dbName).collection(collection);
 	}
 
 	/**
@@ -241,7 +241,7 @@ export class Database {
 
 		switch (xp.dbType) {
 			case "mongodb":
-				return (xp.database as MongoClient).db().collection(collection).find({ guild }).toArray().catch(error => handleError(error, "find()")) as Document as UserResult[] | LevelRoleResult[];
+				return (xp.database as MongoClient).db(xp.dbName).collection(collection).find({ guild }).toArray().catch(error => handleError(error, "find()")) as Document as UserResult[] | LevelRoleResult[];
 
 			case "sqlite":
 				if (collection === "simply-xps") {
@@ -273,7 +273,7 @@ export class Database {
 
 		switch (xp.dbType) {
 			case "mongodb":
-				return (xp.database as MongoClient).db().collection(collection).find().toArray().catch(error => handleError(error, "findAll()")) as Document as UserResult[] | LevelRoleResult[];
+				return (xp.database as MongoClient).db(xp.dbName).collection(collection).find().toArray().catch(error => handleError(error, "findAll()")) as Document as UserResult[] | LevelRoleResult[];
 
 			case "sqlite":
 				if (collection === "simply-xps") {

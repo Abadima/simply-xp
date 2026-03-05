@@ -1,9 +1,10 @@
+import type { Database as SQLiteDatabase } from "better-sqlite3";
 import { clean, convertFrom, Database, xp } from "../xp";
 import { XpFatal, XpLog } from "./functions/xplogs";
 import { UserResult } from "./classes/Database";
-import { execSync } from "child_process";
-import type { Database as SQLiteDatabase } from "better-sqlite3";
 import type { MongoClient } from "mongodb";
+import { execSync } from "child_process";
+import { existsSync } from "fs";
 
 export type ConnectionOptions = {
 	auto_clean?: boolean;
@@ -145,6 +146,9 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 	return true;
 }
 
+/**
+ * @private
+ */
 export function ensureSqliteSchemaVersion(db: SQLiteDatabase, existingDb?: boolean): number {
 	const hasMetaTable = Boolean(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='simply-xp-meta'").get());
 	const hasUserTable = Boolean(db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='simply-xps'").get());
@@ -236,8 +240,12 @@ function migrateSqliteToV2(db: SQLiteDatabase): void {
 	}
 }
 
+/**
+ * Ensures the MongoDB schema version is set and up to date, performs necessary migrations if required
+ * @private
+ */
 export async function ensureMongoSchemaVersion(client: MongoClient): Promise<number> {
-	const database = client.db();
+	const database = client.db(xp.dbName);
 	type MetaDoc = { _id: string; schemaVersion?: number };
 	const metaCollection = database.collection<MetaDoc>("simply-xp-meta");
 	const metaDoc = await metaCollection.findOne({ _id: "schema" });
@@ -262,8 +270,6 @@ export async function ensureMongoSchemaVersion(client: MongoClient): Promise<num
  * @returns {Promise<"yarn" | "npm" | "pnpm">}
  */
 async function getPackageManager(): Promise<"yarn" | "npm" | "pnpm"> {
-	const { existsSync } = await import("fs");
-
 	const lockfiles = {
 		"yarn.lock": "yarn",
 		"pnpm-lock.yaml": "pnpm",

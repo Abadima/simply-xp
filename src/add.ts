@@ -122,10 +122,10 @@ export async function addXP(userId: string, guildId: string, xpData: number | {
 	const callback = XpEvents.eventCallback,
 		levelDifference = (user?.level && data?.level) ? (data.level !== user.level ? (data.level - user.level) : 0) : (data?.level > 0 ? data.level : 0);
 
-	if (levelDifference < 0 && callback?.levelDown && typeof callback.levelDown === "function") callback["levelDown"](data, await LevelRoles.getUserRoles(userId, guildId, {
+	if (levelDifference < 0 && callback?.levelDown && typeof callback.levelDown === "function") await callback["levelDown"](data, await LevelRoles.getUserRoles(userId, guildId, {
 		includeNext: true
 	}));
 
-	if (levelDifference > 0 && callback?.levelUp && typeof callback.levelUp === "function") callback["levelUp"](data, await LevelRoles.getUserRoles(userId, guildId));
+	if (levelDifference > 0 && callback?.levelUp && typeof callback.levelUp === "function") await callback["levelUp"](data, await LevelRoles.getUserRoles(userId, guildId));
 	return { ...data, levelDifference: levelDifference };
 }

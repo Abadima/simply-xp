@@ -1,4 +1,4 @@
-import { UserResult } from "./classes/Database";
+import { Database, UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
 import { xp } from "../xp";
 
@@ -17,8 +17,7 @@ export async function create(userId: string, guildId: string, username: string):
 	if (!guildId) throw new XpFatal({ function: "create()", message: "Guild ID was not provided" });
 	if (!username) throw new XpFatal({ function: "create()", message: "Username was not provided" });
 
-	const { Database } = await import("./classes/Database"),
-		user = await Database.findOne({ collection: "simply-xps", data: { user: userId, guild: guildId } }) as UserResult;
+	const user = await Database.findOne({ collection: "simply-xps", data: { user: userId, guild: guildId } }) as UserResult;
 
 	if (user) return user;
 	return await Database.createOne({

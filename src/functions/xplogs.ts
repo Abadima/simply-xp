@@ -102,13 +102,13 @@ export class XpLog {
 }
 
 export type XpEventCallback = {
-	custom: (message: string) => void;
-	debug: (xpFunction: string, message: string) => void;
-	error: (xpFunction: string, message: string) => void;
-	info: (xpFunction: string, message: string) => void;
-	levelDown: (data: UserResult, lostRoles: string[]) => void;
-	levelUp: (data: UserResult, newRoles: string[]) => void;
-	warn: (xpFunction: string, message: string) => void;
+	custom?: (message: string) => void | Promise<void>;
+	debug?: (xpFunction: string, message: string) => void | Promise<void>;
+	error?: (xpFunction: string, message: string) => void | Promise<void>;
+	info?: (xpFunction: string, message: string) => void | Promise<void>;
+	levelDown?: (data: UserResult, lostRoles: string[]) => void | Promise<void>;
+	levelUp?: (data: UserResult, newRoles: string[]) => void | Promise<void>;
+	warn?: (xpFunction: string, message: string) => void | Promise<void>;
 };
 
 /**

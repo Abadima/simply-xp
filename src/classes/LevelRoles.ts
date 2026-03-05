@@ -1,6 +1,6 @@
-import { db } from "../../xp";
-import { LevelRoleResult } from "./Database";
 import { XpFatal } from "../functions/xplogs";
+import { LevelRoleResult } from "./Database";
+import { Database } from "../../xp";
 
 /**
  * Get Roles Object
@@ -57,7 +57,7 @@ export class LevelRoles {
 			});
 		}
 
-		const existingRoles = await db.findOne({
+		const existingRoles = await Database.findOne({
 			collection: "simply-xp-levelroles",
 			data: { guild: guildId, levelrole: { level: options.level } }
 		}) as LevelRoleResult;
@@ -66,7 +66,7 @@ export class LevelRoles {
 			options.roles = Array.from(new Set([...(existingRoles.levelrole.roles ? existingRoles.levelrole.roles : []), ...options.roles]));
 		}
 
-		return await db.updateOne(
+		return await Database.updateOne(
 			{
 				collection: "simply-xp-levelroles",
 				data: { guild: guildId, levelrole: { level: options.level } }
@@ -108,7 +108,7 @@ export class LevelRoles {
 			});
 		}
 
-		const existingRoles = await db.findOne({
+		const existingRoles = await Database.findOne({
 			collection: "simply-xp-levelroles",
 			data: { guild: guildId, levelrole: { level: options.level } }
 		}) as LevelRoleResult;
@@ -117,13 +117,13 @@ export class LevelRoles {
 
 		let newRoles: string[] = options.roles ? (existingRoles.levelrole.roles || []).filter(role => !options.roles.includes(role)) : [];
 
-		if (newRoles.length === 0) return await db.deleteOne({
+		if (newRoles.length === 0) return await Database.deleteOne({
 			collection: "simply-xp-levelroles",
 			data: { guild: guildId, levelrole: { level: options.level } }
 		}).then(() => true).catch(() => false);
 
 
-		return await db.updateOne({
+		return await Database.updateOne({
 			collection: "simply-xp-levelroles",
 			data: { guild: guildId, levelrole: { level: options.level } }
 		}, {
@@ -143,7 +143,7 @@ export class LevelRoles {
 	static async deleteAll(guildId: string): Promise<boolean> {
 		if (!guildId) throw new XpFatal({ function: "LevelRoles.deleteAll()", message: "Guild ID was not provided" });
 
-		return await db.deleteMany({
+		return await Database.deleteMany({
 			collection: "simply-xp-levelroles",
 			data: { guild: guildId }
 		}).then(() => true).catch(() => false);
@@ -160,7 +160,7 @@ export class LevelRoles {
 	static async getGuildRoles(guildId: string): Promise<LevelRoleResult[]> {
 		if (!guildId) throw new XpFatal({ function: "LevelRoles.fetchAll()", message: "Guild ID was not provided" });
 
-		return await db.find("simply-xp-levelroles", guildId) as LevelRoleResult[];
+		return await Database.find("simply-xp-levelroles", guildId) as LevelRoleResult[];
 	}
 
 	/**
@@ -177,7 +177,7 @@ export class LevelRoles {
 		if (!userId) throw new XpFatal({ function: "LevelRoles.getUserRoles()", message: "User ID was not provided" });
 		if (!guildId) throw new XpFatal({ function: "LevelRoles.getUserRoles()", message: "Guild ID was not provided" });
 
-		const user = await db.findOne({
+		const user = await Database.findOne({
 			collection: "simply-xps", data: { user: userId, guild: guildId }
 		}) as { level: number };
 
@@ -226,7 +226,7 @@ export class LevelRoles {
 			});
 		}
 
-		return await db.updateOne({
+		return await Database.updateOne({
 			collection: "simply-xp-levelroles",
 			data: { guild: guildId, levelrole: { level: options.level } }
 		}, {
