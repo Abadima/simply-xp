@@ -6,7 +6,8 @@
 <h3 align="center">Made by Abadima</h3>
 
 <br>
-<div class="badges" style="text-align: center;">
+
+<div align="center">
 
 [![Downloads](https://img.shields.io/npm/dt/simply-xp?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
 [![Version](https://img.shields.io/npm/v/simply-xp.svg?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
