@@ -501,8 +501,8 @@ export class Database {
 					message: "Collection mismatch, expected same collection on both filter and update."
 				});
 
-				let setClause: string[] = [];
-				let params: Array<string | number | (string | number)[] | undefined> = [];
+				const setClause: string[] = [];
+				const params: Array<string | number | (string | number)[] | undefined> = [];
 				let shouldReturnNull = false;
 
 				if (update.collection === "simply-xps") {
