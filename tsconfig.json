@@ -1,0 +1,32 @@
+{
+	"compilerOptions": {
+		"allowJs": false,
+		"allowSyntheticDefaultImports": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"alwaysStrict": true,
+		"declaration": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"module": "node16",
+		"moduleResolution": "node16",
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitAny": true,
+		"noImplicitReturns": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"outDir": "lib",
+		"removeComments": false,
+		"resolveJsonModule": true,
+		"strict": true,
+		"strictFunctionTypes": true,
+		"strictNullChecks": true,
+		"target": "ESNext"
+	},
+	"exclude": ["node_modules", "lib"],
+	"include": ["./src/fonts/Baloo2-Regular.woff2", "./src/**/*", "xp.ts"],
+	"paths": {
+		"@src/*": ["src/*"]
+	}
+}

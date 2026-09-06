@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [latest, LTS, pre-release]
+  pull_request:
+    branches: [latest, LTS, pre-release]
+
+jobs:
+  verify:
+    name: Lint, typecheck & test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # better-sqlite3 v13 requires Node 22+, so that is the floor we test on.
+      # simply-xp itself supports Node 14+; the adapters set the higher bar.
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Catches a known-vulnerable package landing in that resolution before it ships anywhere.
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Lint (Oxlint)
+        run: npm run lint
+
+      - name: Typecheck (TypeScript)
+        run: npm run typecheck
+
+      - name: Build
+        run: npx tsc && node Tests/clean.mjs
+
+      # secrets.cjs is absent in CI, so the MongoDB groups skip themselves
+      # and the SQLite + adapter-agnostic coverage still runs.
+      - name: Regression tests
+        run: node Tests/regression.test.cjs

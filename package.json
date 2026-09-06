@@ -1,80 +1,96 @@
 {
   "name": "simply-xp",
-  "version": "1.3.8-fix.0",
-  "description": "A Simple, Easy and Beginner Friendly XP System",
-  "main": "simplyxp.js",
-  "typings": "index.d.ts",
+  "version": "2.0.0",
+  "description": "The easiest way to implement an xp system",
+  "main": "lib/xp.js",
+  "types": "lib/xp.d.ts",
+  "exports": {
+    ".": {
+      "require": "./lib/xp.js",
+      "import": "./lib/xp.js",
+      "types": "./lib/xp.d.ts"
+    }
+  },
+  "files": [
+    "FUNDING.yml",
+    "lib",
+    "LICENSE"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "beta": "eslint . --fix && pnpm update && npm publish --tag beta",
-    "legacy": "eslint . --fix && pnpm update && npm publish --tag legacy"
+    "beta": "npx oxlint && npx tsc && node Tests/clean.mjs && npm update && npm publish --tag beta",
+    "dev": "npx oxlint && npx tsc && node Tests/clean.mjs && npm update && npm publish --tag dev",
+    "latest": "npx oxlint && npx tsc && node Tests/clean.mjs && npm update && npm publish",
+    "lint": "npx oxlint",
+    "lint:fix": "npx oxlint --fix",
+    "performance": "npx tsc && node Tests/performance.test.cjs",
+    "test": "npx oxlint && npx tsc && node Tests/clean.mjs && node Tests/regression.test.cjs && node Tests/performance.test.cjs",
+    "typecheck": "npx tsc --noEmit"
   },
-  "author": {
-    "name": "Abadima",
-    "url": "https://abadima.dev"
-  },
-  "maintainers": [
-    {
-      "name": "Abadima",
-      "url": "https://abadima.dev"
-    }
-  ],
-  "contributors": [
-    {
-      "name": "Rahuletto",
-      "role": "Original Author",
-      "url": "https://marban.is-a.dev/"
-    }
-  ],
-  "license": "Apache-2.0",
+  "author": "Abadima",
   "keywords": [
-    "xp",
-    "experience",
-    "level",
-    "leveling",
-    "leveling system",
+    "amaribot",
+    "canvacord",
+    "charts",
+    "compare",
+    "compete",
     "discord",
-    "discord bot",
     "discord.js",
     "discord-xp",
+    "easy",
+    "fun",
+    "guilded",
     "leaderboard",
-    "rank",
-    "rank card",
-    "leaderboard card",
-    "gamification",
-    "xp system",
-    "simply",
-    "simplydjs",
-    "charts",
-    "@napi-rs/canvas",
-    "chart.js",
-    "mongoose",
-    "mongodb",
-    "sqlite",
-    "nodejs",
-    "bot",
+    "level",
+    "leveling",
     "mee6",
-    "amari",
-    "weky"
+    "mongodb",
+    "package",
+    "simply",
+    "simply-djs",
+    "simplydjs",
+    "slack",
+    "sqlite",
+    "system",
+    "xp"
   ],
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Abadima/simply-xp.git"
   },
-  "homepage": "https://simplyxp.js.org",
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.4.1",
+    "better-sqlite3": "^13.0.3",
+    "logena": "^1.1.0",
+    "mongodb": "^7.6.0",
+    "oxlint": "^1.81.0",
+    "typescript": "^7.0.2",
+    "uglify-js": "^3.19.3"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0 || ^13.0.0",
+    "mongodb": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
+    "mongodb": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "bugs": {
     "url": "https://github.com/Abadima/simply-xp/issues"
   },
-  "readme": "README.md",
-  "dependencies": {
-    "@napi-rs/canvas": "0.1.88",
-    "chart.js": "^3.9.1",
-    "mongoose": "^7.8.8"
-  },
-  "peerDependencies": {
-    "discord.js": ">=13.12.0"
-  },
-  "devDependencies": {
-    "eslint": "^9.39.2"
+  "homepage": "https://simplyxp.js.org",
+  "directories": {
+    "lib": "lib"
   }
 }

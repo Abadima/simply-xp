@@ -1,50 +1,151 @@
 <p align="center">
-  <img src="https://i.ibb.co/cCKJ9FS/simplyxp.png" width="320" height="125" alt="Simply-XP logo" />
+  <img src="https://i.ibb.co/cCKJ9FS/simplyxp.png" width="320" height="125" alt="XP Logo">
 </p>
 
-A simple, beginner-friendly XP system that brings levels, ranks, and role rewards to Discord.js.
+<h2 align="center">We have levelling! - You handle the rest.</h2>
+<h3 align="center">Made by Abadima</h3>
 
-<p align="center">
-  <a href="https://www.npmjs.com/package/simply-xp"><img src="https://img.shields.io/npm/v/simply-xp.svg?style=for-the-badge" alt="npm version" /></a>
-  <a href="https://www.npmjs.com/package/simply-xp"><img src="https://img.shields.io/npm/dt/simply-xp?style=for-the-badge" alt="npm downloads" /></a>
-  <a href="https://www.codefactor.io/repository/github/abadima/simply-xp/overview/lts"><img src="https://www.codefactor.io/repository/github/abadima/simply-xp/badge/lts?style=for-the-badge" alt="CodeFactor grade" /></a>
-</p>
+<br>
 
-<p align="center">
-  <a href="https://simplyxp.js.org/docs/next/intro/"><img src="https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge" alt="Docs" /></a>
-  <a href="https://discord.gg/hjhnjYJNHX"><img src="https://img.shields.io/badge/Discord-Support-5865F2?style=for-the-badge&logo=discord" alt="Discord support" /></a>
-</p>
+<div align="center">
 
-## 🖥️ How to install?
+[![Downloads](https://img.shields.io/npm/dt/simply-xp?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
+[![Version](https://img.shields.io/npm/v/simply-xp.svg?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
+[![CodeFactor](https://www.codefactor.io/repository/github/abadima/simply-xp/badge?style=for-the-badge)](https://www.codefactor.io/repository/github/abadima/simply-xp/overview)
 
-```
-npm install simply-xp
+[![Documentation](https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge)](https://simplyxp.js.org/docs/intro/)
+[![Support](https://img.shields.io/badge/Discord-Support-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/hjhnjYJNHX)
+
+</div>
+
+---
+
+> CREDITS TO ORIGINAL CREATOR [RAHULETTO](https://github.com/rahuletto) FOR SIMPLY-XP **VERSION 1**
+
+---
+
+<br>
+
+## 🖥️ <b>Installation</b>
+
+```shell
+npm install simply-xp@latest mongodb
 ```
 
 (or)
 
+```shell
+npm install simply-xp@latest better-sqlite3
 ```
-yarn add simply-xp
+
+Install only the adapter you actually use:
+
+- `mongodb` for the MongoDB adapter
+- `better-sqlite3` for the SQLite adapter
+
+simply-xp itself supports Node.js 14+, but the adapters set their own, higher floors:
+
+| Adapter             | Requires Node.js |
+| ------------------- | ---------------- |
+| `better-sqlite3@13` | `>=22`           |
+| `mongodb@7`         | `>=20.19`        |
+
+<br>
+
+## 🚀 Examples
+
+### Connect to a database
+
+```js
+const { connect } = require("simply-xp");
+
+// SQLite
+await connect("./xp.sqlite", { type: "sqlite" });
+
+// or MongoDB
+await connect(process.env.MONGO_URI, { type: "mongodb" });
 ```
 
-## 🎉 Recent Updates
+### Add and fetch XP
 
-- Fixed Various Bugs
-- Updated `Chart.js`
-- D.JS v14 Support
-- Patched v1.3.5 Bugs
+```js
+const { addXP, fetch } = require("simply-xp");
 
-# ⭐ Features
+const result = await addXP(userId, guildId, { min: 10, max: 25 }, username);
+if (result.levelDifference > 0)
+	console.log(`${username} levelled up to ${result.level}!`);
 
-- Easy XP System
-- Automatic Role Assignment
-- Beautiful Rank Cards
-- Optimized for Performance
-- Lightweight & Flexible
-- Beginner Friendly
+const user = await fetch(userId, guildId);
+console.log(
+	`${user.name} is level ${user.level} with ${user.xp} XP (rank #${user.position})`,
+);
+```
 
-## **Need Help?** Join the [Discord Server](https://discord.gg/3JzDV9T5Fn)
+### Leaderboards
 
-## 👥 Contact & Support
+```js
+const { leaderboard } = require("simply-xp");
 
-[![Discord invite](https://invidget.switchblade.xyz/3JzDV9T5Fn)](https://discord.gg/3JzDV9T5Fn)
+const top10 = await leaderboard(guildId, 10);
+for (const user of top10)
+	console.log(`#${user.position} ${user.name} - ${user.xp} XP`);
+```
+
+### Level roles and events
+
+```js
+const { LevelRoles, XpEvents } = require("simply-xp");
+
+await LevelRoles.add(guildId, { level: 5, roles: [roleId] });
+
+XpEvents.on({
+	levelUp: (user, newRoles) => {
+		console.log(`${user.name} reached level ${user.level}!`);
+		// newRoles are the role IDs LevelRoles has set for this level
+	},
+});
+```
+
+<br>
+
+## ⚡ Benchmarks
+
+> Benchmarks run for 50 iterations and report average/peak Node.js process memory as `heapUsed + external`, plus wall-clock execution time per iteration.
+
+| Database | Avg Total Memory | Avg Completion Time | Peak Total Memory |
+| -------- | ---------------- | ------------------- | ----------------- |
+| SQLite   | 9.5 MB           | 0.9 s               | 11.0 MB           |
+| MongoDB  | 34.5 MB          | 2.4 s               | 35.2 MB           |
+
+**Test Environment (This Benchmark Run)**:
+
+- **OS:** Ubuntu 26.04 (Linux 7.0.0-31-generic)
+- **CPU:** AMD Ryzen 9 9950X3D
+- **RAM:** 6400 MHz DDR5
+
+> Benchmarks include common operations like addXP(), setLevel(), rankCard(), compareCard(), charts(), and leaderboardCard(). Actual usage may vary depending on server load, GC timing, and configuration.
+>
+> SQLite memory reflects simply-xp's footprint with a local file-based adapter,
+> while MongoDB execution time is higher due to network latency and the nature of the database, but still performs well within typical expectations for a leveling system.
+
+---
+
+## 🆕 What's new in V2
+
+This is a complete rewrite of simply-xp transitioning to TypeScript and a more modular architecture, with a focus on improved performance, better error handling, and more flexible database support. I've also removed `discord.js` as a dependency, making the library simply more flexible!
+
+### ✅ Additions
+
+- `SQLite` support (`better-sqlite3`) next to `MongoDB`, both optional peer dependencies, install only the one you use.
+- New: `LevelRoles`, `compareCard()`, `leaderboardCard()`, `XpEvents`, `registerPlugins()`, `setFlags()`, `removeXP()`/`removeLevel()`, and a `Migrate` class for moving data around.
+- Every XP/level mutation is now atomic, no more lost XP from concurrent updates hitting the same user.
+
+### ⚠️ Breaking Changes
+
+- Functions take plain IDs and strings now (`userId`, `guildId`, `username`), not a `message` or `client`.
+- `roleSetup` / `lvlRole()` => `LevelRoles`. `rank()` => `rankCard()`.
+- `fetch()` and `leaderboard()` return a different shape: `rank` is now `position`, and `reqxp`/`shortxp`/`shortreq` are gone.
+- `create()` now requires a `username`. `charts()` no longer takes a `message`.
+- Imports are named exports now: `const { connect, addXP } = require("simply-xp")` instead of `xp.addXP(...)`.
+
+Full migration details: [v2.0.0 release notes](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0).
