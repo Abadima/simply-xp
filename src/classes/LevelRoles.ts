@@ -116,7 +116,7 @@ export class LevelRoles {
 		if (!existingRoles) return false;
 
 		const rolesToRemove = options.roles ?? [];
-		let newRoles: string[] = rolesToRemove.length > 0 ? (existingRoles.levelrole.roles || []).filter((role) => !rolesToRemove.includes(role)) : [];
+		const newRoles: string[] = rolesToRemove.length > 0 ? (existingRoles.levelrole.roles || []).filter((role) => !rolesToRemove.includes(role)) : [];
 
 		if (newRoles.length === 0) return await Database.deleteOne({
 			collection: "simply-xp-levelroles",
