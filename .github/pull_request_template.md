@@ -8,3 +8,5 @@ Issue URL: URL
 
 # Checks
 - [ ] Does the package work as intended?
+- [ ] `npm run lint` passes (Oxlint)
+- [ ] `npm run typecheck` passes (TypeScript)

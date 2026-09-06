@@ -1,13 +1,30 @@
 {
   "name": "simply-xp",
-  "version": "2.0.0-beta.4",
-  "description": "The easiest way to implement xp system",
+  "version": "2.0.0",
+  "description": "The easiest way to implement an xp system",
   "main": "lib/xp.js",
+  "types": "lib/xp.d.ts",
+  "exports": {
+    ".": {
+      "require": "./lib/xp.js",
+      "import": "./lib/xp.js",
+      "types": "./lib/xp.d.ts"
+    }
+  },
+  "files": [
+    "FUNDING.yml",
+    "lib",
+    "LICENSE"
+  ],
   "scripts": {
-    "beta": "node Tests/clean.mjs && pnpm update && npm publish --tag beta",
-    "dev": "node Tests/clean.mjs && pnpm update && npm publish --tag dev",
-    "latest": "node Tests/clean.mjs && pnpm update && npm publish",
-    "test": "node Tests/clean.mjs && node Tests/test.cjs"
+    "beta": "npx oxlint && npx tsc && node Tests/clean.mjs && pnpm update && npm publish --tag beta",
+    "dev": "npx oxlint && npx tsc && node Tests/clean.mjs && pnpm update && npm publish --tag dev",
+    "latest": "npx oxlint && npx tsc && node Tests/clean.mjs && pnpm update && npm publish",
+    "lint": "npx oxlint",
+    "lint:fix": "npx oxlint --fix",
+    "performance": "npx tsc && node Tests/performance.test.cjs",
+    "test": "npx oxlint && npx tsc && node Tests/clean.mjs && node Tests/regression.test.cjs && node Tests/performance.test.cjs",
+    "typecheck": "npx tsc --noEmit"
   },
   "author": "Abadima",
   "keywords": [
@@ -42,22 +59,32 @@
     "url": "git+https://github.com/Abadima/simply-xp.git"
   },
   "dependencies": {
-    "@napi-rs/canvas": "0.1.96"
+    "@napi-rs/canvas": "^1.0.8"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.4",
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^25.3.3",
-    "@typescript-eslint/eslint-plugin": "^8.56.1",
-    "@typescript-eslint/parser": "^8.56.1",
-    "better-sqlite3": "^12.6.2",
-    "eslint": "^9.39.3",
-    "mongodb": "^7.1.0",
-    "typescript": "^5.9.3",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.4.1",
+    "better-sqlite3": "^13.0.3",
+    "logena": "^1.1.0",
+    "mongodb": "^7.6.0",
+    "oxlint": "^1.81.0",
+    "typescript": "^7.0.2",
     "uglify-js": "^3.19.3"
   },
+  "peerDependencies": {
+    "better-sqlite3": "^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0 || ^13.0.0",
+    "mongodb": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
+    "mongodb": {
+      "optional": true
+    }
+  },
   "engines": {
-    "node": ">=15.5.0"
+    "node": ">=14.0.0"
   },
   "bugs": {
     "url": "https://github.com/Abadima/simply-xp/issues"

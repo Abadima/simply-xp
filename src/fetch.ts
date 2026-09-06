@@ -1,7 +1,8 @@
+import { requireGuildId, requireUserId } from "./functions/guards";
 import { Database, UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
-import { clean, User, xp } from "../xp";
 import { create } from "./create";
+import { User, xp } from "../xp";
 
 /**
  * Fetch user data
@@ -9,29 +10,25 @@ import { create } from "./create";
  * @param {string} userId
  * @param {string} guildId
  * @param {string?} username - Username to use if auto_create is enabled
- * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/fetch
+ * @link `Documentation:` https://simplyxp.js.org/docs/functions/fetch
  * @returns {Promise<{name: string | null, user: string, guild: string, level: number, position: number, xp: number}>}
  * @throws {XpFatal} If invalid parameters are provided, or if the user data is not found.
  */
 export async function fetch(userId: string, guildId: string, username?: string): Promise<User> {
-	if (!userId) throw new XpFatal({ function: "create()", message: "User ID was not provided" });
-	if (!guildId) throw new XpFatal({ function: "create()", message: "Guild ID was not provided" });
-	clean({ db: true });
+	requireUserId("fetch()", userId);
+	requireGuildId("fetch()", guildId);
 
-	const users: User[] = await Database.find("simply-xps", guildId) as User[];
-
-	let user: User | UserResult | undefined = users.find((u) => u.user === userId);
+	let user = await Database.findOne({ collection: "simply-xps", data: { guild: guildId, user: userId } }) as UserResult | null;
 
 	if (!user) {
 		if (xp.auto_create && username) {
-			user = await create(guildId, userId, username);
-			users.push(user as User);
+			user = await create(userId, guildId, username);
 		} else throw new XpFatal({ function: "fetch()", message: "User data not found" });
 	}
 
-	const position = 1 + users.filter((u) => u.xp > user!.xp).length;
+	const position = 1 + await Database.countUsersWithMoreXp(guildId, user.xp);
 	return {
-		flags: user?.flags, guild: user.guild,
+		flags: Array.isArray(user.flags) ? user.flags : [], guild: user.guild,
 		user: user.user, name: user?.name,
 		level: user.level, position,
 		xp: user.xp

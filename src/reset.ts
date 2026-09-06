@@ -8,7 +8,7 @@ import { Database, xp } from "../xp";
  * @param {string} guildId
  * @param {boolean?} erase - Erase user entry from the database
  * @param {string?} username - Username to use if auto_create is enabled
- * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/reset
+ * @link `Documentation:` https://simplyxp.js.org/docs/functions/reset
  * @returns {Promise<boolean>}
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
  */
@@ -17,11 +17,22 @@ export async function reset(userId: string, guildId: string, erase: boolean = fa
 		throw new XpFatal({ function: "reset()", message: "Invalid parameters provided" });
 	}
 
-	const userData = { guild: guildId, user: userId, xp_rate: xp.xp_rate };
+	const userFilter = { guild: guildId, user: userId };
+	const userData = await Database.findOne({ collection: "simply-xps", data: userFilter });
 
-	if (!await Database.findOne({ collection: "simply-xps", data: userData })) {
+	if (!userData) {
 		if (xp.auto_create && !erase && username) {
-			await Database.createOne({ collection: "simply-xps", data: userData }).catch((error) => {
+			await Database.createOne({
+				collection: "simply-xps",
+				data: {
+					guild: guildId,
+					level: 0,
+					name: username,
+					user: userId,
+					xp: 0,
+					xp_rate: xp.xp_rate
+				}
+			}).catch((error) => {
 				throw new XpFatal({ function: "reset()", message: error.stack });
 			});
 			return true;
@@ -31,15 +42,30 @@ export async function reset(userId: string, guildId: string, erase: boolean = fa
 	}
 
 	if (erase) {
-		await Database.deleteOne({ collection: "simply-xps", data: userData }).catch((error) => {
+		await Database.deleteOne({ collection: "simply-xps", data: userFilter }).catch((error) => {
 			throw new XpFatal({ function: "reset()", message: error });
 		});
 		return true;
 	}
 
+	const normalizedFlags = Array.isArray((userData as { flags?: Array<number | string> }).flags)
+		? ((userData as { flags?: Array<number | string> }).flags || []).filter((flag) => flag !== "modified")
+		: [];
+
 	await Database.updateOne(
-		{ collection: "simply-xps", data: { user: userId, guild: guildId } },
-		{ collection: "simply-xps", data: { ...userData, level: 0, xp: 0 } }
+		{ collection: "simply-xps", data: userFilter },
+		{
+			collection: "simply-xps",
+			data: {
+				flags: normalizedFlags,
+				guild: guildId,
+				level: 0,
+				name: username || (userData as { name?: string }).name || userId,
+				user: userId,
+				xp: 0,
+				xp_rate: xp.xp_rate
+			}
+		}
 	).catch((error) => {
 		throw new XpFatal({ function: "reset()", message: error });
 	});

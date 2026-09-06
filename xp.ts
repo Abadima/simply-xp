@@ -7,15 +7,14 @@ import { MongoClient } from "mongodb";
 /**
  * XP Plugin
  * @property {string} name - The name of the plugin.
- * @property {Record<string, (arg: number | object | string) => Promise<Array<unknown> | boolean | number | object | string | void>>} functions - The functions to add to the XP client.
  * @property {Function} initialize - The function to run when the plugin is initialized.
+ * @property {Function} [destroy] - Optional cleanup, run by `unregisterPlugins()`. Use it to clear timers, close handles or remove event listeners.
  * @property {Array<`${number}` | `${number}.${number}` | `${number}.${number}.${number}` | `${number}.${number}.${number}-${string}.${number}`>} requiredVersions - Compatible SimplyXP Versions.
- * @returns {Promise<boolean | Error>} - Returns true if the plugin was initialized successfully, otherwise returns an error.
  */
 export interface Plugin {
 	name: string;
-	functions?: Record<string, (arg: number | object | string) => Promise<Array<unknown> | boolean | number | object | string | void>>;
-	initialize: (client: XPClient) => Promise<void>;
+	initialize: (client: XPClient) => void | Promise<void>;
+	destroy?: (client: XPClient) => void | Promise<void>;
 	requiredVersions?: Array<`${number}` | `${number}.${number}` | `${number}.${number}.${number}` | `${number}.${number}.${number}-${string}.${number}`>;
 }
 
@@ -29,7 +28,7 @@ export interface Plugin {
  * @property {number} xp - User XP
  */
 export interface User {
-	flags?: Array<number | string> | undefined;
+	flags: Array<number | string>;
 	guild: string;
 	user: string;
 	name?: string | null;
@@ -41,7 +40,6 @@ export interface User {
 
 /**
  * Runtime configuration and metadata surface exposed through `xp`.
- * @property {boolean} auto_clean - Automatically clean caches or databases after major operations.
  * @property {boolean} auto_create - Allow functions to create missing users when queried.
  * @property {MongoClient | Database | undefined} database - Underlying database connection reference.
  * @property {string} [dbName] - MongoDB only: explicit database name. When set, used instead of the default derived from the connection URI.
@@ -53,7 +51,6 @@ export interface User {
  * @property {number} xp_rate - Global XP rate used in XP ↔︎ level conversions.
  */
 export interface XPClient {
-	auto_clean: boolean;
 	auto_create: boolean;
 	database: MongoClient | Database | undefined;
 	dbName?: string;
@@ -70,7 +67,7 @@ export interface XPClient {
 
 export { addLevel, addXP } from "./src/add";
 
-export { Database, db } from "./src/classes/Database";
+export { Database } from "./src/classes/Database";
 
 export { charts } from "./src/charts";
 
@@ -78,7 +75,7 @@ export { compareCard, leaderboardCard, rankCard } from "./src/cards";
 
 export { connect } from "./src/connect";
 
-export { clean, convertFrom, registerFont, registerPlugins, updateOptions } from "./src/functions/utilities";
+export { clean, convertFrom, registerFont, registerPlugins, unregisterPlugins, updateOptions } from "./src/functions/utilities";
 
 export { create } from "./src/create";
 
@@ -90,7 +87,7 @@ export { leaderboard } from "./src/leaderboard";
 
 export { LevelRoles } from "./src/classes/LevelRoles";
 
-export { Migrate, migrate } from "./src/classes/Migrate";
+export { Migrate } from "./src/classes/Migrate";
 
 export { removeLevel, removeXP } from "./src/remove";
 
@@ -103,13 +100,12 @@ export { setLevel, setXP } from "./src/set";
 export { XpEvents } from "./src/functions/xplogs";
 
 export const xp: XPClient = {
-	auto_clean: false,
 	auto_create: false,
 	database: undefined,
 	dbType: "mongodb",
 	debug: false,
 	notify: true,
 	registeredFonts: [],
-	version: "2.0.0-beta.4",
+	version: "2.0.0",
 	xp_rate: 0.1
 };

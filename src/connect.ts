@@ -1,17 +1,15 @@
+import type { Collection, Document, MongoClient } from "mongodb";
 import type { Database as SQLiteDatabase } from "better-sqlite3";
-import { clean, convertFrom, Database, xp } from "../xp";
 import { XpFatal, XpLog } from "./functions/xplogs";
-import { UserResult } from "./classes/Database";
-import type { MongoClient } from "mongodb";
-import { execSync } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
+import { dirname, join } from "path";
+import { clean, xp } from "../xp";
 
 export type ConnectionOptions = {
-	auto_clean?: boolean;
 	auto_create?: boolean;
 	debug?: boolean;
 	notify?: boolean;
-	type: "mongodb" | "sqlite" | undefined;
+	type?: "mongodb" | "sqlite";
 	xp_rate?: "slow" | "normal" | "fast" | number;
 }
 
@@ -21,31 +19,32 @@ export type ConnectionOptions = {
  * @async
  * @param {string} uri
  * @param {ConnectionOptions} options
- * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/connect
+ * @link `Documentation:` https://simplyxp.js.org/docs/functions/connect
  * @returns {Promise<boolean>}
  * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
+ * @throws {XpFatal} `SX_ADAPTER_MISSING` when the selected adapter package is not installed.
  */
-export async function connect(uri: string, options: ConnectionOptions = { type: undefined }): Promise<boolean> {
-	const { type, auto_create, auto_clean, notify, debug, xp_rate } = options;
-	if (xp_rate && (xp_rate === "slow" || xp_rate === "normal" || xp_rate === "fast" || !isNaN(xp_rate))) xp.xp_rate = (xp_rate === "slow" ? 0.05 : xp_rate === "normal" ? 0.1 : xp_rate === "fast" ? 0.5 : xp_rate);
+export async function connect(uri: string, options: ConnectionOptions = {}): Promise<boolean> {
+	const { type, auto_create, notify, debug, xp_rate } = options;
+	if (xp_rate !== undefined) xp.xp_rate = resolveXpRate("connect()", xp_rate);
 	if (!uri) throw new XpFatal({ function: "connect()", message: "No URI Provided" });
-	if (notify === false) xp.notify = false;
-	if (auto_create) xp.auto_create = true;
-	if (auto_clean) xp.auto_clean = true;
-	if (debug) xp.debug = true;
+	if (typeof notify === "boolean") xp.notify = notify;
+	if (typeof auto_create === "boolean") xp.auto_create = auto_create;
+	if (typeof debug === "boolean") xp.debug = debug;
+	const resolvedType = type ?? "mongodb";
 
 	if (!type) {
-		options.type = "mongodb";
 		XpLog.warn("connect()", "Database type not provided, defaulting to MongoDB");
 	}
 
-	switch (type) {
+	switch (resolvedType) {
 		case "mongodb": {
-			switch (await checkPackageVersion("mongodb", 3, 7)) {
+			assertAdapterInstalled("mongodb", "MongoDB", "npm install mongodb");
+			switch (await checkPackageVersion("mongodb", ADAPTER_VERSION_RANGES.mongodb.min, ADAPTER_VERSION_RANGES.mongodb.max)) {
 				case "too_low":
-					throw new XpFatal({ function: "connect()", message: "MONGODB V3 OR NEWER IS REQUIRED" });
+					throw new XpFatal({ function: "connect()", message: `MONGODB V${ADAPTER_VERSION_RANGES.mongodb.min} OR NEWER IS REQUIRED` });
 				case "too_high":
-					XpLog.warn("connect()", "MONGODB VERSION IS NEWER THAN TESTED (V7) -- CONTINUE WITH CAUTION");
+					XpLog.warn("connect()", `MONGODB VERSION IS NEWER THAN TESTED (V${ADAPTER_VERSION_RANGES.mongodb.max}) -- CONTINUE WITH CAUTION`);
 					break;
 				case "ok":
 					XpLog.debug("connect()", "MongoDB is natively compatible with our package! 🎉");
@@ -60,17 +59,22 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 
 			xp.dbType = "mongodb";
 			xp.database = client || undefined;
-			if (xp.database) await ensureMongoSchemaVersion(xp.database as MongoClient);
+			xp.dbName = client.db().databaseName;
+			if (xp.database) {
+				await ensureMongoSchemaVersion(xp.database as MongoClient);
+				await ensureMongoIndexes(xp.database as MongoClient);
+			}
 		}
 
 			break;
 		case "sqlite":
 			try {
-				switch (await checkPackageVersion("better-sqlite3", 7, 12)) {
+				assertAdapterInstalled("better-sqlite3", "SQLite", "npm install better-sqlite3");
+				switch (await checkPackageVersion("better-sqlite3", ADAPTER_VERSION_RANGES["better-sqlite3"].min, ADAPTER_VERSION_RANGES["better-sqlite3"].max)) {
 					case "too_low":
-						throw new XpFatal({ function: "connect()", message: "BETTER-SQLITE3 V7 OR NEWER IS REQUIRED" });
+						throw new XpFatal({ function: "connect()", message: `BETTER-SQLITE3 V${ADAPTER_VERSION_RANGES["better-sqlite3"].min} OR NEWER IS REQUIRED` });
 					case "too_high":
-						XpLog.warn("connect()", "BETTER-SQLITE3 VERSION IS NEWER THAN TESTED (V12) -- CONTINUE WITH CAUTION");
+						XpLog.warn("connect()", `BETTER-SQLITE3 VERSION IS NEWER THAN TESTED (V${ADAPTER_VERSION_RANGES["better-sqlite3"].max}) -- CONTINUE WITH CAUTION`);
 						break;
 					case "ok":
 						XpLog.debug("connect()", "better-sqlite3 is natively compatible with our package! 🎉");
@@ -99,7 +103,7 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 					);
 
 					CREATE TABLE IF NOT EXISTS "simply-xp-levelroles" (
-						gid       	TEXT    NOT NULL,
+						guild      	TEXT    NOT NULL,
 						levelrole   TEXT    NOT NULL,
 						createdAt   DATE    NOT NULL DEFAULT (datetime('now')),
 						lastUpdated DATE    NOT NULL DEFAULT (datetime('now'))
@@ -108,13 +112,10 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 
 
 				ensureSqliteSchemaVersion(xp.database as SQLiteDatabase, hadUserTable);
+				ensureSqliteUniqueness(xp.database as SQLiteDatabase);
 			} catch (error: unknown) {
-				if (typeof error === "object" && error !== null) {
-					const errorWithCode = error as { message: string, code?: string };
-					if (errorWithCode.code !== undefined && errorWithCode.code !== "MODULE_NOT_FOUND") {
-						throw new XpFatal({ function: "connect()", message: errorWithCode.message });
-					}
-				}
+				const details = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+				throw new XpFatal({ function: "connect()", message: `SQLite connection/setup failed: ${details}` });
 			}
 			break;
 		default:
@@ -123,27 +124,58 @@ export async function connect(uri: string, options: ConnectionOptions = { type: 
 
 	if (!xp.database) return false;
 	XpLog.info("connect()", "Connected to database!");
-	if (auto_clean) clean({ db: true });
-
-	// Update all users with the new XP rate
-	await Database.findAll("simply-xps").then((users) => {
-		(users as UserResult[]).filter((user) => user?.xp_rate !== xp.xp_rate).map((user) => {
-			Database.updateOne({
-				collection: "simply-xps",
-				data: { user: user.user, guild: user.guild }
-			}, {
-				collection: "simply-xps",
-				data: {
-					user: user.user, guild: user.guild,
-					level: convertFrom(user.xp, "xp"),
-					xp: user.xp, xp_rate: xp.xp_rate
-				}
-			});
-		});
-	});
-
-	XpLog.debug("connect()", "UPDATED ALL USERS WITH NEW XP RATE");
+	await clean({ db: true });
+	await syncUsersXpRate("connect()");
 	return true;
+}
+
+function assertAdapterInstalled(packageName: string, adapterName: string, installCommand: string): void {
+	if (!findInstalledPackageJsonPath(packageName)) {
+		const message = `Missing required package "${packageName}". simply-xp needs it to connect to ${adapterName}. Install it with: ${installCommand}`;
+		throw new XpFatal({
+			code: "SX_ADAPTER_MISSING",
+			function: "connect()",
+			message,
+		});
+	}
+}
+
+function findInstalledPackageJsonPath(packageName: string): string | null {
+	let currentDir: string;
+
+	try {
+		currentDir = dirname(require.resolve(packageName));
+	} catch {
+		return null;
+	}
+
+	while (true) {
+		const packageJsonPath = join(currentDir, "package.json");
+		if (existsSync(packageJsonPath)) {
+			try {
+				const metadata = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { name?: string };
+				if (metadata.name === packageName) return packageJsonPath;
+			} catch {
+				return null;
+			}
+		}
+
+		const parentDir = dirname(currentDir);
+		if (parentDir === currentDir) return null;
+		currentDir = parentDir;
+	}
+}
+
+function readInstalledPackageVersion(packageName: string): string | null {
+	const packageJsonPath = findInstalledPackageJsonPath(packageName);
+	if (!packageJsonPath) return null;
+
+	try {
+		const metadata = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
+		return typeof metadata.version === "string" ? metadata.version : null;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -167,12 +199,8 @@ export function ensureSqliteSchemaVersion(db: SQLiteDatabase, existingDb?: boole
 
 	let schemaVersion = getSqliteSchemaVersion(db) || 1;
 
-	if (schemaVersion < 2 && needsMigration) {
-		migrateSqliteToV2(db);
-		setSqliteSchemaVersion(db, 2);
-		schemaVersion = 2;
-	}
-	if (schemaVersion < 2 && !needsMigration) {
+	if (schemaVersion < 2 || needsMigration) {
+		if (needsMigration) migrateSqliteToV2(db);
 		setSqliteSchemaVersion(db, 2);
 		schemaVersion = 2;
 	}
@@ -204,9 +232,10 @@ function sqliteNeedsV2Migration(db: SQLiteDatabase, hasUserTable: boolean, hasLe
 
 	if (hasLevelRolesTable) {
 		const levelRoleColumns = db.prepare("PRAGMA table_info(\"simply-xp-levelroles\")").all() as { name: string }[];
+		const hasLevelRoleGuild = levelRoleColumns.some((column) => column.name === "guild");
 		const hasLevelRoleCreatedAt = levelRoleColumns.some((column) => column.name === "createdAt");
 		const hasLevelRole = levelRoleColumns.some((column) => column.name === "levelrole");
-		if (!hasLevelRoleCreatedAt || !hasLevelRole) return true;
+		if (!hasLevelRoleGuild || !hasLevelRoleCreatedAt || !hasLevelRole) return true;
 	}
 
 	return false;
@@ -219,8 +248,23 @@ function migrateSqliteToV2(db: SQLiteDatabase): void {
 	}
 
 	const levelRoleColumns = db.prepare("PRAGMA table_info(\"simply-xp-levelroles\")").all() as { name: string }[];
+	const hasGuild = levelRoleColumns.some((column) => column.name === "guild");
+	const hasGid = levelRoleColumns.some((column) => column.name === "gid");
 	const hasLevelRole = levelRoleColumns.some((column) => column.name === "levelrole");
 	const hasLvlRole = levelRoleColumns.some((column) => column.name === "lvlrole");
+
+	if (!hasGuild && hasGid) {
+		try {
+			db.exec("ALTER TABLE \"simply-xp-levelroles\" RENAME COLUMN gid TO guild;");
+		} catch {
+			db.exec("ALTER TABLE \"simply-xp-levelroles\" ADD COLUMN guild TEXT;");
+			try {
+				db.exec("UPDATE \"simply-xp-levelroles\" SET guild = gid WHERE guild IS NULL OR guild = '';");
+			} catch { }
+		}
+	} else if (!hasGuild && !hasGid) {
+		db.exec("ALTER TABLE \"simply-xp-levelroles\" ADD COLUMN guild TEXT;");
+	}
 
 	if (!levelRoleColumns.some((column) => column.name === "createdAt")) {
 		db.exec("ALTER TABLE \"simply-xp-levelroles\" ADD COLUMN createdAt DATE NOT NULL DEFAULT (datetime('now'));");
@@ -265,27 +309,13 @@ export async function ensureMongoSchemaVersion(client: MongoClient): Promise<num
 }
 
 /**
- * Returns the package manager used
+ * Supported major version range for each database adapter.
  * @private
- * @returns {Promise<"yarn" | "npm" | "pnpm">}
  */
-async function getPackageManager(): Promise<"yarn" | "npm" | "pnpm"> {
-	const lockfiles = {
-		"yarn.lock": "yarn",
-		"pnpm-lock.yaml": "pnpm",
-		"pnpm-lock.json": "pnpm",
-		"package-lock.json": "npm",
-	} as const;
-
-	for (const [file, manager] of Object.entries(lockfiles)) {
-		if (existsSync(file)) {
-			XpLog.debug("getPackageManager()", `Using ${manager.toUpperCase()}`);
-			return manager;
-		}
-	}
-	XpLog.debug("getPackageManager()", "No lockfile found, defaulting to NPM");
-	return "npm";
-}
+export const ADAPTER_VERSION_RANGES = {
+	"better-sqlite3": { min: 7, max: 13 },
+	mongodb: { min: 4, max: 7 },
+} as const;
 
 /**
  * Check database package versions
@@ -295,20 +325,213 @@ async function getPackageManager(): Promise<"yarn" | "npm" | "pnpm"> {
  * @param {number} max - Maximum Major Version Number (Optional)
  * @returns {Promise<"too_low" | "ok" | "too_high">} - Version Status
  * @throws {XpFatal} If the package version is not supported
+ * @throws {XpFatal} `SX_ADAPTER_MISSING` when the package is not installed.
  */
 export async function checkPackageVersion(type: string, min: number, max?: number): Promise<"too_low" | "ok" | "too_high"> {
-	try {
-		const chosenPackage = await import(`${type}/package.json`);
-		const majorVersion = parseInt(chosenPackage.version.split(".")[0], 10);
-
-		if (majorVersion < min) return "too_low";
-		if (max && majorVersion > max) return "too_high";
-		return "ok";
-	} catch (_) {
-		XpLog.info("checkPackageVersion()", `Installing ${type} [V${max || min}] | Please wait...`);
-
-		execSync(`${await getPackageManager()} add ${type}@${max || min}.x.x`);
-		XpLog.warn("checkPackageVersion()", `Installed ${type}. Please restart!`);
-		return process.exit(0);
+	const installedVersion = readInstalledPackageVersion(type);
+	if (!installedVersion) {
+		const installCommand = type === "mongodb" ? "npm install mongodb" : `npm install ${type}`;
+		const adapterName = type === "mongodb" ? "MongoDB" : type;
+		const message = `Missing required package "${type}". simply-xp needs it to connect to ${adapterName}. Install it with: ${installCommand}`;
+		throw new XpFatal({
+			code: "SX_ADAPTER_MISSING",
+			function: "checkPackageVersion()",
+			message,
+		});
 	}
+
+	const versionSegments = installedVersion.split(".");
+	const majorVersion = parseInt(versionSegments[0] ?? "", 10);
+	if (majorVersion < min) return "too_low";
+	if (max && majorVersion > max) return "too_high";
+	return "ok";
+}
+
+function ensureSqliteUniqueness(db: SQLiteDatabase): void {
+	remediateSqliteDuplicates(db);
+
+	try {
+		db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_simply_xps_guild_user ON \"simply-xps\" (guild, user)").run();
+		db.prepare("CREATE INDEX IF NOT EXISTS idx_simply_xps_guild_xp ON \"simply-xps\" (guild, xp DESC)").run();
+		db.prepare("CREATE INDEX IF NOT EXISTS idx_simply_xps_global_xp ON \"simply-xps\" (xp DESC)").run();
+		db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_simply_xp_levelroles_guild_level ON \"simply-xp-levelroles\" (guild, json_extract(levelrole, '$.level'))").run();
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown SQLite index creation failure";
+		throw new XpFatal({ function: "connect()", message: `Failed to enforce SQLite indexes after duplicate remediation. ${message}` });
+	}
+}
+
+async function ensureMongoIndexes(client: MongoClient): Promise<void> {
+	const database = client.db(xp.dbName);
+	await remediateMongoDuplicates(client);
+
+	try {
+		await database.collection("simply-xps").createIndex(
+			{ guild: 1, user: 1 },
+			{ unique: true, name: "idx_simply_xps_guild_user" }
+		);
+		await database.collection("simply-xps").createIndex(
+			{ guild: 1, xp: -1 },
+			{ name: "idx_simply_xps_guild_xp" }
+		);
+		await database.collection("simply-xps").createIndex(
+			{ xp: -1 },
+			{ name: "idx_simply_xps_global_xp" }
+		);
+		await database.collection("simply-xp-levelroles").createIndex(
+			{ guild: 1, "levelrole.level": 1 },
+			{ unique: true, name: "idx_simply_xp_levelroles_guild_level" }
+		);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown MongoDB index creation failure";
+		throw new XpFatal({ function: "connect()", message: `Failed to enforce MongoDB indexes after duplicate remediation. ${message}` });
+	}
+}
+
+function remediateSqliteDuplicates(db: SQLiteDatabase): void {
+	db.exec(`
+		DELETE FROM "simply-xps"
+		WHERE rowid IN (
+			SELECT rowid FROM (
+				SELECT rowid,
+				ROW_NUMBER() OVER (
+					PARTITION BY guild, user
+					ORDER BY COALESCE(lastUpdated, createdAt, '') DESC, rowid DESC
+				) AS rn
+				FROM "simply-xps"
+			)
+			WHERE rn > 1
+		);
+
+		DELETE FROM "simply-xp-levelroles"
+		WHERE rowid IN (
+			SELECT rowid FROM (
+				SELECT rowid,
+				ROW_NUMBER() OVER (
+					PARTITION BY guild, json_extract(levelrole, '$.level')
+					ORDER BY COALESCE(lastUpdated, createdAt, '') DESC, rowid DESC
+				) AS rn
+				FROM "simply-xp-levelroles"
+				WHERE json_extract(levelrole, '$.level') IS NOT NULL
+			)
+			WHERE rn > 1
+		);
+	`);
+}
+
+async function remediateMongoDuplicates(client: MongoClient): Promise<void> {
+	const database = client.db(xp.dbName);
+	await removeMongoDuplicateDocuments(database.collection("simply-xps"), {
+		groupId: {
+			guild: "$guild",
+			user: "$user",
+		},
+		sortTimestamp: { $ifNull: ["$lastUpdated", "$createdAt"] },
+	});
+
+	await removeMongoDuplicateDocuments(database.collection("simply-xp-levelroles"), {
+		groupId: {
+			guild: "$guild",
+			level: "$levelrole.level",
+		},
+		sortTimestamp: { $ifNull: ["$lastUpdated", "$createdAt"] },
+		match: { "levelrole.level": { $exists: true, $ne: null } },
+	});
+}
+
+async function removeMongoDuplicateDocuments(
+	collection: Collection<Document>,
+	options: {
+		groupId: Record<string, unknown>;
+		sortTimestamp: Record<string, unknown>;
+		match?: Record<string, unknown>;
+	}
+): Promise<void> {
+	const pipeline: Record<string, unknown>[] = [];
+	if (options.match) pipeline.push({ $match: options.match });
+	pipeline.push(
+		{ $addFields: { __sortTimestamp: options.sortTimestamp } },
+		{ $sort: { __sortTimestamp: -1, _id: -1 } },
+		{
+			$group: {
+				_id: options.groupId,
+				ids: { $push: "$_id" },
+				count: { $sum: 1 },
+			}
+		},
+		{ $match: { count: { $gt: 1 } } }
+	);
+
+	const duplicates = await collection.aggregate(pipeline).toArray() as Array<{ ids: unknown[] }>;
+	for (const duplicate of duplicates) {
+		const staleIds = duplicate.ids.slice(1);
+		if (staleIds.length > 0) {
+			await collection.deleteMany({ _id: { $in: staleIds as Document["_id"][] } });
+		}
+	}
+}
+
+export function resolveXpRate(functionName: string, rate: "slow" | "normal" | "fast" | number): number {
+	if (rate === "slow") return 0.05;
+	if (rate === "normal") return 0.1;
+	if (rate === "fast") return 0.5;
+
+	if (!Number.isFinite(rate) || rate <= 0) {
+		throw new XpFatal({ function: functionName, message: "xp_rate must be a finite number greater than 0" });
+	}
+
+	return rate;
+}
+
+export async function syncUsersXpRate(caller: string): Promise<void> {
+	if (!xp.database) return;
+	const now = new Date().toISOString();
+
+	switch (xp.dbType) {
+		case "mongodb":
+			await (xp.database as MongoClient)
+				.db(xp.dbName)
+				.collection("simply-xps")
+				.updateMany(
+					{
+						$or: [
+							{ xp_rate: { $exists: false } },
+							{ xp_rate: { $ne: xp.xp_rate } },
+						],
+					},
+					[{
+						$set: {
+							lastUpdated: now,
+							level: {
+								$floor: {
+									$multiply: [
+										xp.xp_rate,
+										{ $sqrt: { $max: [0, { $ifNull: ["$xp", 0] }] } }
+									]
+								}
+							},
+							xp_rate: xp.xp_rate,
+						}
+					}] as unknown as Document[]
+				);
+			break;
+
+		case "sqlite":
+			(xp.database as SQLiteDatabase)
+				.prepare(`
+					UPDATE "simply-xps"
+					SET
+						level = CAST(floor(? * sqrt(CASE WHEN COALESCE(xp, 0) < 0 THEN 0 ELSE COALESCE(xp, 0) END)) AS INTEGER),
+						xp_rate = ?,
+						lastUpdated = ?
+					WHERE xp_rate IS NULL OR xp_rate != ?
+				`)
+				.run(xp.xp_rate, xp.xp_rate, now, xp.xp_rate);
+			break;
+
+		default:
+			return;
+	}
+
+	XpLog.debug(caller, "UPDATED USERS WITH NEW XP RATE WHERE MISMATCHED");
 }

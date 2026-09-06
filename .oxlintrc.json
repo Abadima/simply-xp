@@ -1,0 +1,44 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": [
+		"typescript",
+		"unicorn",
+		"oxc",
+		"promise",
+		"import",
+		"node"
+	],
+	"categories": {
+		"correctness": "error",
+		"suspicious": "error",
+		"perf": "warn"
+	},
+	"env": {
+		"builtin": true,
+		"node": true,
+		"es2022": true
+	},
+	"ignorePatterns": [
+		"lib",
+		"node_modules",
+		"Tests/assets",
+		"Tests/Images"
+	],
+	"rules": {
+		// `Database`, `Migrate`, `LevelRoles`, `XpLog` and `XpEvents` are intentionally
+		// static-only classes. That is the documented public API shape (`Database.findOne()`,
+		// `LevelRoles.add()`, ...), not an accident.
+		"typescript/no-extraneous-class": "off",
+		// `_id` is MongoDB's document identifier. We do not get to rename it.
+		"no-underscore-dangle": "off",
+		// `Array#toSorted()` requires Node 20; simply-xp supports Node 14+.
+		// The arrays we sort are freshly built from query results, so in-place sort is safe.
+		"unicorn/no-array-sort": "off",
+		// Migrations and duplicate remediation await sequentially on purpose, to avoid
+		// firing an unbounded number of concurrent queries at a user's database.
+		"no-await-in-loop": "off",
+		// Flags `.then()` callbacks that do not return. In `registerFont()` the chain is
+		// awaited and the result intentionally discarded, so there is no broken chain.
+		"promise/always-return": "off"
+	}
+}

@@ -1,6 +1,3 @@
-# IDE/Editor files
-.idea
-
 # Dependencies
 lib
 node_modules
@@ -8,6 +5,10 @@ node_modules
 # Lock files
 pnpm-lock.yaml
 pnpm-workspace.yaml
+package-lock.json
 
 # Secrets
 secrets.cjs
+
+# Generated test databases
+Tests/*.sqlite

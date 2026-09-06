@@ -1,6 +1,6 @@
+import { requireDatabaseConnection, requireGuildId, requireUserId } from "./functions/guards";
 import { Database, UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
-import { xp } from "../xp";
 
 /**
  * Create a new user in the database
@@ -8,20 +8,24 @@ import { xp } from "../xp";
  * @param {string} userId
  * @param {string} guildId
  * @param {string} username
- * @link `Documentation:` https://simplyxp.js.org/docs/next/functions/create
+ * @link `Documentation:` https://simplyxp.js.org/docs/functions/create
  * @returns {Promise<UserResult>}
  * @throws {XpFatal} If invalid parameters are provided
  */
 export async function create(userId: string, guildId: string, username: string): Promise<UserResult> {
-	if (!userId) throw new XpFatal({ function: "create()", message: "User ID was not provided" });
-	if (!guildId) throw new XpFatal({ function: "create()", message: "Guild ID was not provided" });
+	requireUserId("create()", userId);
+	requireGuildId("create()", guildId);
+
 	if (!username) throw new XpFatal({ function: "create()", message: "Username was not provided" });
 
-	const user = await Database.findOne({ collection: "simply-xps", data: { user: userId, guild: guildId } }) as UserResult;
+	requireDatabaseConnection("create()");
 
-	if (user) return user;
-	return await Database.createOne({
+	return (await Database.createOne({
 		collection: "simply-xps",
-		data: { name: username, user: userId, guild: guildId, level: 0, xp: 0, xp_rate: xp.xp_rate }
-	}) as UserResult;
+		data: {
+			guild: guildId,
+			user: userId,
+			name: username,
+		},
+	})) as UserResult;
 }

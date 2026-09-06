@@ -11,84 +11,141 @@
 
 [![Downloads](https://img.shields.io/npm/dt/simply-xp?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
 [![Version](https://img.shields.io/npm/v/simply-xp.svg?style=for-the-badge)](https://www.npmjs.com/package/simply-xp)
-[![CodeFactor](https://www.codefactor.io/repository/github/abadima/simply-xp/badge/pre-release?style=for-the-badge)](https://www.codefactor.io/repository/github/abadima/simply-xp/overview/pre-release)
+[![CodeFactor](https://www.codefactor.io/repository/github/abadima/simply-xp/badge?style=for-the-badge)](https://www.codefactor.io/repository/github/abadima/simply-xp/overview)
 
-[![Documentation](https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge)](https://simplyxp.js.org/docs/next/intro/)
+[![Documentation](https://img.shields.io/badge/SimplyXP-Documentation-6b46d4?style=for-the-badge)](https://simplyxp.js.org/docs/intro/)
 [![Support](https://img.shields.io/badge/Discord-Support-5865F2?style=for-the-badge&logo=discord)](https://discord.gg/hjhnjYJNHX)
 
 </div>
 
 ---
 
-> CREDITS TO [RAHULETTO](https://github.com/rahuletto) FOR SIMPLY-XP **VERSION 1**
+> CREDITS TO ORIGINAL CREATOR [RAHULETTO](https://github.com/rahuletto) FOR SIMPLY-XP **VERSION 1**
 
 ---
 
 <br>
 
-## 🖥️ <b>[BETA] Installation</b>
+## 🖥️ <b>Installation</b>
 
 ```shell
-npm install simply-xp@beta
+npm install simply-xp@latest mongodb
 ```
 
-```shell
-pnpm install simply-xp@beta
-```
+(or)
 
 ```shell
-yarn add simply-xp@beta
+npm install simply-xp@latest better-sqlite3
+```
+
+Install only the adapter you actually use:
+
+- `mongodb` for the MongoDB adapter
+- `better-sqlite3` for the SQLite adapter
+
+simply-xp itself supports Node.js 14+, but the adapters set their own, higher floors:
+
+| Adapter             | Requires Node.js |
+| ------------------- | ---------------- |
+| `better-sqlite3@13` | `>=22`           |
+| `mongodb@7`         | `>=20.19`        |
+
+<br>
+
+## 🚀 Examples
+
+### Connect to a database
+
+```js
+const { connect } = require("simply-xp");
+
+// SQLite
+await connect("./xp.sqlite", { type: "sqlite" });
+
+// or MongoDB
+await connect(process.env.MONGO_URI, { type: "mongodb" });
+```
+
+### Add and fetch XP
+
+```js
+const { addXP, fetch } = require("simply-xp");
+
+const result = await addXP(userId, guildId, { min: 10, max: 25 }, username);
+if (result.levelDifference > 0)
+	console.log(`${username} levelled up to ${result.level}!`);
+
+const user = await fetch(userId, guildId);
+console.log(
+	`${user.name} is level ${user.level} with ${user.xp} XP (rank #${user.position})`,
+);
+```
+
+### Leaderboards
+
+```js
+const { leaderboard } = require("simply-xp");
+
+const top10 = await leaderboard(guildId, 10);
+for (const user of top10)
+	console.log(`#${user.position} ${user.name} - ${user.xp} XP`);
+```
+
+### Level roles and events
+
+```js
+const { LevelRoles, XpEvents } = require("simply-xp");
+
+await LevelRoles.add(guildId, { level: 5, roles: [roleId] });
+
+XpEvents.on({
+	levelUp: (user, newRoles) => {
+		console.log(`${user.name} reached level ${user.level}!`);
+		// newRoles are the role IDs LevelRoles has set for this level
+	},
+});
 ```
 
 <br>
 
-## ✅ V2 Additions
+## ⚡ Benchmarks
 
-- Add `auto_create`, `auto_clean`, `debug`, and `xp_rate` options to `connect()`.
-- Add `compareCard()`.
-- Add `convertFrom()`.
-- Add `db` class for extended database functionality.
-- Add `https()` function.
-- Add `leaderboardCard()`.
-- Add `Migrate` class with `Migrate.roleSetup()` for migrating old level roles.
-- Add `SQLite` support.
-- Add `LevelRoles` system (replaces old `roleSetup` functionality).
-- Add `registerPlugins()`.
-- Add `removeLevel()` and `removeXP()`.
-- Add `updateOptions()`.
-- Add `xp_rate` support for unique level rates.
-- Add `createdAt` property to `UserResult` and `LevelRoleResult`.
-- Add `levelRole` column to `simply-xp-levelroles` table in SQLite.
+> Benchmarks run for 50 iterations and report average/peak Node.js process memory as `heapUsed + external`, plus wall-clock execution time per iteration.
 
-## 🎉 V2 Changes
+| Database | Avg Total Memory | Avg Completion Time | Peak Total Memory |
+| -------- | ---------------- | ------------------- | ----------------- |
+| SQLite   | 9.5 MB           | 0.9 s               | 11.0 MB           |
+| MongoDB  | 34.5 MB          | 2.4 s               | 35.2 MB           |
 
-- All functions returning `UserResult` or `LevelRoleResult` now include `lastUpdated` and `createdAt` properties.
-- `lvlrole` column renamed to `levelRole`.
-- `connect()` now automatically creates missing `createdAt` and `levelRole` columns for SQLite tables.
-- Improved `updateOne()` for SQLite with upsert support.
-- Updated `registerPlugins()` to support major, minor, patch, and pre-release versions.
-- Better performance and reduced RAM usage.
-- Improved code quality (ESLint) and full TypeScript rewrite.
-- Renewed logging system (`XpLog`).
-- Reduced package size and new fonts.
-- `addLevel()`, `addXP()`, `setLevel()`, `setXP()` now accept `username` to auto-create users if they don’t exist.
-- `fetch()` now returns `position` and accepts `username`.
-- `leaderboard()` supports global leaderboards by omitting `guildId`.
-- `roleSetup` functions now replaced by `LevelRoles` class; old `roleSetup` arrays are migrated via `Migrate.roleSetup()`.
+**Test Environment (This Benchmark Run)**:
 
-## ⚠️ V2 Breaking Changes
+- **OS:** Ubuntu 26.04 (Linux 7.0.0-31-generic)
+- **CPU:** AMD Ryzen 9 9950X3D
+- **RAM:** 6400 MHz DDR5
 
-- Old `roleSetup` system removed; migrate to `LevelRoles`.
-- `lvlRole()` removed; use `LevelRoles` or `roleSetup.getRoles()`.
-- `create()` now requires `username`.
-- `charts()` arguments revamped.
-- `rank()` removed; use `rankCard()` with new arguments.
-- `client.on()` replaced with `XpEvents.on()`.
-- All functions lose `client` and `message` arguments where applicable.
-- `roleSetup.fetch()` replaced with `roleSetup.list()`.
+> Benchmarks include common operations like addXP(), setLevel(), rankCard(), compareCard(), charts(), and leaderboardCard(). Actual usage may vary depending on server load, GC timing, and configuration.
+>
+> SQLite memory reflects simply-xp's footprint with a local file-based adapter,
+> while MongoDB execution time is higher due to network latency and the nature of the database, but still performs well within typical expectations for a leveling system.
 
-## ❌ V2 Removals
+---
 
-- `lvlRole()` removed.
-- `migrate` and `db` classes will be removed in future; use `Migrate` and `Database` instead.
-- Old `roleSetup` methods no longer supported.
+## 🆕 What's new in V2
+
+This is a complete rewrite of simply-xp transitioning to TypeScript and a more modular architecture, with a focus on improved performance, better error handling, and more flexible database support. I've also removed `discord.js` as a dependency, making the library simply more flexible!
+
+### ✅ Additions
+
+- `SQLite` support (`better-sqlite3`) next to `MongoDB`, both optional peer dependencies, install only the one you use.
+- New: `LevelRoles`, `compareCard()`, `leaderboardCard()`, `XpEvents`, `registerPlugins()`, `setFlags()`, `removeXP()`/`removeLevel()`, and a `Migrate` class for moving data around.
+- Every XP/level mutation is now atomic, no more lost XP from concurrent updates hitting the same user.
+
+### ⚠️ Breaking Changes
+
+- Functions take plain IDs and strings now (`userId`, `guildId`, `username`), not a `message` or `client`.
+- `roleSetup` / `lvlRole()` => `LevelRoles`. `rank()` => `rankCard()`.
+- `fetch()` and `leaderboard()` return a different shape: `rank` is now `position`, and `reqxp`/`shortxp`/`shortreq` are gone.
+- `create()` now requires a `username`. `charts()` no longer takes a `message`.
+- Imports are named exports now: `const { connect, addXP } = require("simply-xp")` instead of `xp.addXP(...)`.
+
+Full migration details: [v2.0.0 release notes](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0).

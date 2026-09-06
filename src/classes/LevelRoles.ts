@@ -17,17 +17,17 @@ type GetRolesOptions = {
 /**
  * Role setup object
  * @property {number} level - The level number
- * @property {string[]} roles - The role(s) to add
+ * @property {string[]} [roles] - Role IDs. Omit when deleting an entire level entry.
  */
 export interface LevelRole {
 	level: number;
-	roles: string[];
+	roles?: string[];
 }
 
 /**
  * Setup roles for levels
  * @class LevelRoles
- * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/LevelRoles
+ * @link `Documentation:` https://simplyxp.js.org/docs/classes/LevelRoles
  */
 export class LevelRoles {
 	/**
@@ -35,9 +35,9 @@ export class LevelRoles {
 	 * @async
 	 * @param {string} guildId - The guild ID
 	 * @param {LevelRole} options - Level and role to add
-	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/LevelRoles#levelrolesadd
+	 * @link `Documentation:` https://simplyxp.js.org/docs/classes/LevelRoles#levelrolesadd
 	 * @returns {Promise<boolean>} - True if successful
-	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
+	 * @throws {XpFatal} If an invalid type is provided or value is not provided, or if the database operation fails.
 	 */
 	static async add(guildId: string, options: LevelRole): Promise<boolean> {
 		if (!guildId) throw new XpFatal({ function: "LevelRoles.add()", message: "Guild ID was not provided" });
@@ -78,7 +78,7 @@ export class LevelRoles {
 			{
 				upsert: true
 			}
-		).then(() => true).catch(() => false);
+		).then(() => true);
 	}
 
 	/**
@@ -86,9 +86,9 @@ export class LevelRoles {
 	 * @async
 	 * @param {string} guildId - The guild ID
 	 * @param {LevelRole} options - Level and/or roles to delete
-	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/LevelRoles#levelrolesdelete
-	 * @returns {Promise<boolean>} - True if successful
-	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
+	 * @link `Documentation:` https://simplyxp.js.org/docs/classes/LevelRoles#levelrolesdelete
+	 * @returns {Promise<boolean>} - True if successful. False if there was nothing to delete.
+	 * @throws {XpFatal} If an invalid type is provided or value is not provided, or if the database operation fails.
 	 */
 	static async delete(guildId: string, options: LevelRole): Promise<boolean> {
 		if (!guildId) throw new XpFatal({ function: "LevelRoles.delete()", message: "Guild ID was not provided" });
@@ -115,13 +115,13 @@ export class LevelRoles {
 
 		if (!existingRoles) return false;
 
-		let newRoles: string[] = options.roles ? (existingRoles.levelrole.roles || []).filter(role => !options.roles.includes(role)) : [];
+		const rolesToRemove = options.roles ?? [];
+		let newRoles: string[] = rolesToRemove.length > 0 ? (existingRoles.levelrole.roles || []).filter((role) => !rolesToRemove.includes(role)) : [];
 
 		if (newRoles.length === 0) return await Database.deleteOne({
 			collection: "simply-xp-levelroles",
 			data: { guild: guildId, levelrole: { level: options.level } }
-		}).then(() => true).catch(() => false);
-
+		});
 
 		return await Database.updateOne({
 			collection: "simply-xp-levelroles",
@@ -129,16 +129,16 @@ export class LevelRoles {
 		}, {
 			collection: "simply-xp-levelroles",
 			data: { guild: guildId, levelrole: { level: options.level, roles: newRoles } }
-		}).then(() => true).catch(() => false);
+		}).then((result) => Boolean(result));
 	}
 
 	/**
 	 * Delete all roles in a guild's role setup
 	 * @async
 	 * @param {string} guildId - The guild ID
-	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/LevelRoles#levelrolesdeleteall
-	 * @returns {Promise<boolean>} - True if successful
-	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
+	 * @link `Documentation:` https://simplyxp.js.org/docs/classes/LevelRoles#levelrolesdeleteall
+	 * @returns {Promise<boolean>} - True if any level roles were deleted. False if the guild had none.
+	 * @throws {XpFatal} If an invalid type is provided or value is not provided, or if the database operation fails.
 	 */
 	static async deleteAll(guildId: string): Promise<boolean> {
 		if (!guildId) throw new XpFatal({ function: "LevelRoles.deleteAll()", message: "Guild ID was not provided" });
@@ -146,14 +146,14 @@ export class LevelRoles {
 		return await Database.deleteMany({
 			collection: "simply-xp-levelroles",
 			data: { guild: guildId }
-		}).then(() => true).catch(() => false);
+		});
 	}
 
 	/**
 	 * Fetch all roles in a guild's role setup
 	 * @async
 	 * @param {string} guildId - The guild ID
-	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/LevelRoles#levelrolesfetchall
+	 * @link `Documentation:` https://simplyxp.js.org/docs/classes/LevelRoles#levelrolesfetchall
 	 * @returns {Promise<LevelRoleResult[]>} - The level role object
 	 * @throws {XpFatal} If there are no roles in the guild.
 	 */
@@ -169,7 +169,7 @@ export class LevelRoles {
 	 * @param {string} userId - The user ID
 	 * @param {string} guildId - The guild ID
 	 * @param {GetRolesOptions} options - Options
-	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/LevelRoles#getuserroles
+	 * @link `Documentation:` https://simplyxp.js.org/docs/classes/LevelRoles#getuserroles
 	 * @returns {Promise<string[]>} - Array of role IDs or empty array if none
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
 	 */
@@ -203,9 +203,9 @@ export class LevelRoles {
 	 * @async
 	 * @param {string} guildId - The guild ID
 	 * @param {LevelRole} options - Level and role to set
-	 * @link `Documentation:` https://simplyxp.js.org/docs/next/classes/LevelRoles#levelrolesset
+	 * @link `Documentation:` https://simplyxp.js.org/docs/classes/LevelRoles#levelrolesset
 	 * @returns {Promise<boolean>} - True if successful
-	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
+	 * @throws {XpFatal} If an invalid type is provided or value is not provided, or if the database operation fails.
 	 */
 	static async set(guildId: string, options: LevelRole): Promise<boolean> {
 		if (!guildId) throw new XpFatal({ function: "LevelRoles.set()", message: "Guild ID was not provided" });
@@ -234,6 +234,6 @@ export class LevelRoles {
 			data: { guild: guildId, levelrole: { level: options.level, roles: options.roles } }
 		}, {
 			upsert: true
-		}).then(() => true).catch(() => false);
+		}).then(() => true);
 	}
 }

@@ -1,34 +1,79 @@
-const xp = require("../lib/xp");
 const { XpLog } = require("../lib/src/functions/xplogs");
+const { Logena } = require("logena");
+const fs = require("node:fs");
+const xp = require("../lib/xp");
 
-async function test(dbType) {
+Logena.set({
+	appName: "S-XP TESTS",
+	colors: {
+		appName: "magenta"
+	},
+	useTimestamps: true
+})
+
+const BOX_WIDTH = 40;
+const TEST_FALLBACK_FONT = "Tests/assets/fonts/kiwi-maru-japanese-400-normal.woff";
+const ABADIMA_PFP = "Tests/assets/imgs/Abadima.png";
+const RANK_CARD_MODES = ["modern", "legacy"];
+const COMPARE_CARD_THEMES = ["dark", "light"];
+const LEADERBOARD_TYPES = ["leaderboard", "bar", "doughnut", "pie"];
+const CHART_THEMES = ["blue", "dark", "discord", "green", "light", "orange", "pink", "red", "space", "yellow"];
+
+let areXpEventsBound = false;
+
+function padCenter(str, width) {
+	const pad = width - str.length;
+	const left = Math.floor(pad / 2);
+	return " ".repeat(left) + str + " ".repeat(pad - left);
+}
+
+function printSep(tag, label) {
+	Logena.info(`[${tag}] ${"━".repeat(19)} ${label} ${"━".repeat(19)}`);
+}
+
+function formatMemory(memoryUsage) {
+	const total = memoryUsage.heapUsed + memoryUsage.external;
+	return `${bytesToMB(total)} MB total (heap: ${bytesToMB(memoryUsage.heapUsed)} MB, ext: ${bytesToMB(memoryUsage.external)} MB)`;
+}
+
+function printSuiteSummary(iterations, dbType, memoryReadings, durations) {
+	const totals = memoryReadings.map((reading) => reading.heapUsed + reading.external);
+	const avgTotal = totals.reduce((runningTotal, currentReading) => runningTotal + currentReading, 0) / totals.length;
+	const peakTotal = Math.max(...totals);
+	const avgMs = durations.reduce((totalDuration, currentDuration) => totalDuration + currentDuration, 0) / durations.length;
+
+	Logena.info(`[SUITE] ╔${"═".repeat(BOX_WIDTH)}╗`);
+	Logena.info(`[SUITE] ║${padCenter("SIMPLY-XP JS MEMORY TEST SUITE", BOX_WIDTH)}║`);
+	Logena.info(`[SUITE] ║${padCenter(`${iterations} iterations • ${dbType}`, BOX_WIDTH)}║`);
+	Logena.info(`[SUITE] ╠${"═".repeat(BOX_WIDTH)}╣`);
+
+	for (let index = 0; index < memoryReadings.length; index++) {
+		const total = memoryReadings[index].heapUsed + memoryReadings[index].external;
+		Logena.info(`[SUITE] ║${padCenter(`Run ${index + 1}: ${bytesToMB(total)} MB total • ${msToSec(durations[index])}s`, BOX_WIDTH)}║`);
+	}
+
+	Logena.info(`[SUITE] ╠${"═".repeat(BOX_WIDTH)}╣`);
+	Logena.info(`[SUITE] ║${padCenter(`Avg: ${bytesToMB(avgTotal)} MB • ${msToSec(avgMs)}s  Peak: ${bytesToMB(peakTotal)} MB`, BOX_WIDTH)}║`);
+	Logena.info(`[SUITE] ╚${"═".repeat(BOX_WIDTH)}╝`);
+}
+
+function bindXpEvents() {
+	if (areXpEventsBound) {
+		return;
+	}
+
+	areXpEventsBound = true;
 	xp.XpEvents.on({
 		levelDown: (data, lostRoles) => {
-			console.log(`[LEVEL DOWN] ${data.name} has leveled down to level ${data.level}! Lost roles: ${lostRoles.join(", ") || "None"}`);
+			XpLog.info("[LEVEL DOWN]", `${data.name} leveled down to ${data.level} • Lost: ${lostRoles.join(", ") || "None"}`);
 		},
 		levelUp: (data, newRoles) => {
-			console.log(`[LEVEL UP] ${data.name} has leveled up to level ${data.level}! New roles: ${newRoles.join(", ") || "None"}`);
+			XpLog.info("[LEVEL UP]", `${data.name} leveled up to ${data.level} • New: ${newRoles.join(", ") || "None"}`);
 		}
 	});
+}
 
-	// can't snoop on my database connection anymore :)
-	await xp.connect(dbType === "sqlite" ? "Tests/test.sqlite" : require("../secrets.cjs").MongoURI, {
-		auto_clean: false,
-		auto_create: true,
-		debug: true,
-		type: dbType
-	});
-
-	xp.registerPlugins([
-		{
-			name: "test",
-			initialize: async () => {
-				XpLog.info("test_plugin", "Initialized!");
-			},
-			requiredVersions: ["2"]
-		}
-	]);
-
+async function test() {
 	/*
 		await xp.create("1234567890", "0987654321", "Abadima")
 
@@ -55,13 +100,13 @@ async function test(dbType) {
 
 	await xp.addXP("1234567896", "0987654321", 13700, "Rahul");
 
-	await xp.setLevel("1234567895", "0987654321", 52, "Parker");
+	await xp.setLevel("1234567895", "0987654321", 52, "Jena");
 
-	await xp.setLevel("1234567894", "0987654321", 20, "Coby");
+	await xp.setLevel("1234567894", "0987654321", 25, "Parker");
 
-	await xp.setLevel("1234567893", "0987654321", 15, "Jena");
+	await xp.setLevel("1234567893", "0987654321", 15, "xun");
 
-	await xp.addLevel("1234567892", "0987654321", 10, "Jeremy");
+	await xp.addLevel("1234567892", "0987654321", 10, "Simply-XP");
 
 	await xp.LevelRoles.add("0987654321", { level: 1, roles: ["01"] })
 
@@ -69,29 +114,29 @@ async function test(dbType) {
 
 	await xp.LevelRoles.delete("0987654321", { level: 1 });
 
-	// log RAM usage
-	console.log(`Before Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100} MB`);
+	// log JavaScript process memory components
+	Logena.info(`[MEM] Before: ${formatMemory(process.memoryUsage())}`);
 
-	for (const mode of ["modern", "legacy"]) {
-		await xp.rankCard(
+	// ALL CARD TESTS
+	for (const mode of RANK_CARD_MODES) {
+		const rankResult = await xp.rankCard(
 			{ id: "0987654321", name: "SimplyTests" },
 			{
-				avatarURL: "https://i.ibb.co/WcfZPYL/Abadima.png",
+				avatarURL: ABADIMA_PFP,
 				id: "326815959358898189", username: "アバディマ"
 			},
 			{
-				fallbackFont: "https://cdn.jsdelivr.net/npm/@fontsource/kiwi-maru@5.2.8/files/kiwi-maru-japanese-400-normal.woff",
+				fallbackFont: TEST_FALLBACK_FONT,
 				light: true, legacy: mode === "legacy"
-			}).then(results => {
-				require("fs").writeFileSync(`Tests/Images/rankCard/${mode}.webp`, results.attachment);
 			});
+		fs.writeFileSync(`Tests/Images/rankCard/${mode}.webp`, rankResult.attachment);
 	}
 
-	for (const theme of ["dark", "light"]) {
-		await xp.compareCard(
+	for (const theme of COMPARE_CARD_THEMES) {
+		const compareResult = await xp.compareCard(
 			{ id: "0987654321", name: "SimplyTests" },
 			{
-				avatarURL: "https://i.ibb.co/WcfZPYL/Abadima.png",
+				avatarURL: ABADIMA_PFP,
 				id: "326815959358898189", username: "Abadima"
 			},
 			{
@@ -99,74 +144,118 @@ async function test(dbType) {
 				id: "1234567896", username: "Rahuletto"
 			},
 			{
-				fallbackFont: "https://cdn.jsdelivr.net/npm/@fontsource/kiwi-maru@5.2.8/files/kiwi-maru-japanese-400-normal.woff",
+				fallbackFont: TEST_FALLBACK_FONT,
 				light: theme === "light"
-			}).then(results => {
-				require("fs").writeFileSync(`Tests/Images/compareCard/${theme}.webp`, results.attachment);
 			});
+		fs.writeFileSync(`Tests/Images/compareCard/${theme}.webp`, compareResult.attachment);
 	}
 
-	for (const type of ["leaderboard", "bar", "doughnut", "pie"]) {
+	for (const type of LEADERBOARD_TYPES) {
 		if (type === "leaderboard") {
-			for (const theme of ["dark", "light"]) {
-				await xp.leaderboardCard(await xp.leaderboard(), {
+			for (const theme of COMPARE_CARD_THEMES) {
+				const leaderboardResult = await xp.leaderboardCard(await xp.leaderboard(), {
 					// artworkImage: "https://th.bing.com/th/id/R.8cd8594560bd9cf4b042833a4acefaa5?rik=A6B1qYN%2b5GQAcA&riu=http%3a%2f%2fwallpaperswide.com%2fdownload%2fdesert_sky-wallpaper-2560x720.jpg&ehk=rE5VYZy8njd5ZeNT2p4sP7C5psjSf%2bxLZmV%2bvlQCffs%3d&risl=&pid=ImgRaw&r=0",
 					//backgroundImage: new URL("https://static.vecteezy.com/system/resources/previews/000/962/809/original/abstract-gradient-background-with-colorful-and-modern-style-vector.jpg"),
-					fallbackFont: "https://cdn.jsdelivr.net/npm/@fontsource/kiwi-maru@5.2.8/files/kiwi-maru-japanese-400-normal.woff",
+					fallbackFont: TEST_FALLBACK_FONT,
 					light: theme === "light",
 					rowOpacity: 1
 				}, {
 					name: "Development Hub",
-					imageURL: "https://cdn.discordapp.com/icons/950190034852646912/5a800bf4caf28bfcaccc214446b461c4.webp",
-					//memberCount: 20
-				}, {}).then(results => {
-					require("fs").writeFileSync(`Tests/Images/Leaderboards/standard/${theme}.webp`, results.attachment);
-				});
+					imageURL: ABADIMA_PFP,
+					memberCount: 20
+				}, {});
+				fs.writeFileSync(`Tests/Images/Leaderboards/standard/${theme}.webp`, leaderboardResult.attachment);
 			}
 		} else {
-			for (const theme of ["blue", "dark", "discord", "green", "light", "orange", "pink", "red", "space", "yellow"]) {
-				await xp.charts("0987654321", {
-					fallbackFont: "https://cdn.jsdelivr.net/npm/@fontsource/kiwi-maru@5.2.8/files/kiwi-maru-japanese-400-normal.woff",
+			for (const theme of CHART_THEMES) {
+				const chartResult = await xp.charts("0987654321", {
+					fallbackFont: TEST_FALLBACK_FONT,
 					theme: theme, type: type
-				}).then(results => {
-					require("fs").writeFileSync(`Tests/Images/Leaderboards/${type}/${theme}.webp`, results.attachment);
 				});
+				fs.writeFileSync(`Tests/Images/Leaderboards/${type}/${theme}.webp`, chartResult.attachment);
 			}
 		}
 	}
 
-	// log RAM usage
-	console.log(`After Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100} MB`);
+	// log JavaScript process memory components (pre-cleanup peak)
+	Logena.info(`[MEM] After: ${formatMemory(process.memoryUsage())}`);
 
-
-	await xp.db.deleteMany({
+	await xp.Database.deleteMany({
 		collection: "simply-xps", data: {
 			guild: "0987654321"
 		}
 	});
 
-	await xp.db.deleteMany({
+	await xp.Database.deleteMany({
 		collection: "simply-xp-levelroles", data: {
 			guild: "0987654321"
 		}
 	});
 
-	console.log("Done!");
-	await new Promise(resolve => setTimeout(resolve, 3000));
+	Logena.info("[DONE] Test iteration complete.");
+	const { heapUsed, external } = process.memoryUsage();
+	return { heapUsed, external };
 }
 
-const dbType = "sqlite"; // "mongodb" or "sqlite"
+/**
+ * 
+ * @param {number} iterations 
+ * @param {"mongodb"|"sqlite"} dbType 
+ */
+async function runTests(iterations = 5, dbType = "sqlite") {
+	const memoryReadings = Array.from({ length: iterations });
+	const durations = Array.from({ length: iterations });
 
-test(dbType).then(() => {
-	console.log(`[TEST 1] Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100} MB`);
-	console.log("\n[RUNNING TEST 2]\n");
-	test(dbType).then(() => {
-		console.log(`[TEST 2] Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100} MB`);
-		console.log("\n[RUNNING TEST 3]\n")
-		test(dbType).then(() => {
-			console.log(`[TEST 3] Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100} MB`);
-			console.log("TESTS COMPLETE -- GOODBYE :)")
-			process.exit(0);
-		})
-	})
-});
+	await xp.connect(dbType === "sqlite" ? "Tests/test.sqlite" : require("../secrets.cjs").MongoURI, {
+		auto_create: true,
+		debug: false,
+		notify: false,
+		type: dbType
+	});
+
+	await xp.registerPlugins([
+		{
+			name: "test",
+			initialize: async () => {
+				XpLog.info("test_plugin", "Initialized!");
+			},
+			requiredVersions: ["2"]
+		}
+	]);
+
+	bindXpEvents();
+
+	for (let index = 0; index < iterations; index++) {
+		const runNumber = index + 1;
+		printSep("RUN", `RUN ${runNumber}/${iterations} START`);
+
+		const t0 = performance.now();
+		const memory = await test();
+		durations[index] = performance.now() - t0;
+		memoryReadings[index] = memory;
+		const total = memory.heapUsed + memory.external;
+
+		Logena.info(`[RUN] ${runNumber}/${iterations} complete • ${bytesToMB(total)} MB total (heap: ${bytesToMB(memory.heapUsed)} MB, ext: ${bytesToMB(memory.external)} MB) • ${msToSec(durations[index])}s`);
+
+		await new Promise(resolve => setTimeout(resolve, 1500));
+	}
+
+	printSep("SUITE", "ALL TESTS COMPLETE");
+	printSuiteSummary(iterations, dbType, memoryReadings, durations);
+	Logena.info("[SUITE] Goodbye :)");
+	process.exit(0);
+}
+
+const requestedDbType = process.argv[2] === "mongodb" ? "mongodb" : "sqlite";
+const requestedIterations = Number(process.argv[3]);
+const iterations = Number.isInteger(requestedIterations) && requestedIterations > 0 ? requestedIterations : 10;
+
+runTests(iterations, requestedDbType);
+
+function bytesToMB(bytes) {
+	return Math.round(bytes / 1024 / 1024 * 100) / 100;
+}
+
+function msToSec(ms) {
+	return Math.round(ms / 10) / 100;
+}
