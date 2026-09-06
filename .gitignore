@@ -4,6 +4,7 @@ node_modules
 
 # Lock files
 pnpm-lock.yaml
+pnpm-workspace.yaml
 package-lock.json
 
 # Secrets

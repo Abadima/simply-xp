@@ -17,9 +17,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "beta": "npx oxlint && npx tsc && node Tests/clean.mjs && pnpm update && npm publish --tag beta",
-    "dev": "npx oxlint && npx tsc && node Tests/clean.mjs && pnpm update && npm publish --tag dev",
-    "latest": "npx oxlint && npx tsc && node Tests/clean.mjs && pnpm update && npm publish",
+    "beta": "npx oxlint && npx tsc && node Tests/clean.mjs && npm update && npm publish --tag beta",
+    "dev": "npx oxlint && npx tsc && node Tests/clean.mjs && npm update && npm publish --tag dev",
+    "latest": "npx oxlint && npx tsc && node Tests/clean.mjs && npm update && npm publish",
     "lint": "npx oxlint",
     "lint:fix": "npx oxlint --fix",
     "performance": "npx tsc && node Tests/performance.test.cjs",

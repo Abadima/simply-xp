@@ -1,3 +1,0 @@
-# better-sqlite3 ships a native addon, so pnpm needs explicit permission to run its build script.
-onlyBuiltDependencies:
-  - better-sqlite3
