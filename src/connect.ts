@@ -1,9 +1,10 @@
 import type { Collection, Document, MongoClient } from "mongodb";
 import type { Database as SQLiteDatabase } from "better-sqlite3";
 import { XpFatal, XpLog } from "./functions/xplogs";
+import { clearAllCache } from "@napi-rs/canvas";
 import { existsSync, readFileSync } from "fs";
 import { dirname, join } from "path";
-import { clean, xp } from "../xp";
+import { xp } from "./client";
 
 export type ConnectionOptions = {
 	auto_create?: boolean;
@@ -21,6 +22,56 @@ export const ADAPTER_VERSION_RANGES = {
 	"better-sqlite3": { min: 7, max: 13 },
 	mongodb: { min: 4, max: 7 },
 } as const;
+
+/**
+ * Options for clean function.
+ * @property {boolean} [db=false] - Whether to clean the database or not.
+ * @link `Documentation:` https://simplyxp.js.org/docs/clean
+ */
+type CleanOptions = { db?: boolean };
+
+/**
+ * Helps to clean the database and cache, more in the future, maybe.
+ * @param {CleanOptions} [options={}] - The options.
+ * @param {boolean?} options.db - Whether to clean the database or not.
+ * @link `Documentation:` https://simplyxp.js.org/docs/clean
+ * @returns {void} - Nothing.
+ * @throws {XpFatal} If an error occurs.
+ */
+export function clean(options: CleanOptions & { db: true }): Promise<void>;
+export function clean(options?: CleanOptions): void;
+export function clean(options: CleanOptions = {}): Promise<void> | void {
+	clearAllCache();
+	XpLog.debug("clean()", "CLEARED CANVAS CACHE");
+
+	if (!options?.db || !xp?.database) return;
+
+	return cleanZeroedUsers();
+}
+
+async function cleanZeroedUsers(): Promise<void> {
+	try {
+		switch (xp.dbType) {
+			case "mongodb":
+				await (xp.database as MongoClient)
+					.db(xp.dbName)
+					.collection("simply-xps")
+					.deleteMany({ level: 0, xp: 0 });
+				break;
+
+			case "sqlite":
+				(xp.database as SQLiteDatabase)
+					.prepare("DELETE FROM \"simply-xps\" WHERE level = 0 AND xp = 0")
+					.run();
+				break;
+		}
+
+		XpLog.debug("clean()", "REMOVED ALL USERS WITHOUT XP");
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		XpLog.warn("clean()", `Database cleanup failed: ${message}`);
+	}
+}
 
 /**
  * Connect to a database (MongoDB, SQLite)

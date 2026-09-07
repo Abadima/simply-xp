@@ -1,5 +1,6 @@
 import { XpFatal, XpLog } from "./functions/xplogs";
-import { Database, xp } from "../xp";
+import { Database } from "./classes/Database";
+import { xp } from "./client";
 
 /**
  * Reset user levels to 0 in a guild

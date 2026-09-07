@@ -1,5 +1,6 @@
+import { Database } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
-import { Database, User } from "../xp";
+import type { User } from "./client";
 
 /**
  * Get array of all users in the leaderboard

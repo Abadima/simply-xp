@@ -1,4 +1,4 @@
-import { clean } from "../../xp";
+import { clean } from "../connect";
 import { XpLog } from "./xplogs";
 
 export function renderCleanup(caller: string, target: string): void {

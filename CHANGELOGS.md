@@ -7,6 +7,7 @@
 - Fix `addXP()`, `removeXP()`, `setXP()`, `addLevel()`, `removeLevel()`, `setLevel()`, and `reset()` auto-managing a `"modified"` flag on user records. Flags are developer-defined data; simply-xp no longer adds, removes, or interprets any flag value during XP/level operations.
 - Fix `Database.findOne()`, `find()`, `findAll()`, and `updateOne()` declaring variables directly inside `switch`/`case` blocks (found by CodeFactor).
 - Fix use-before-define declarations in `Database.ts`, `connect.ts`, and `xplogs.ts`, and a non-Unicode regex in the build script (both found by Codacy). No behavior change.
+- Fix circular imports across internal modules (found by Codacy). Public exports and behavior are unchanged.
 
 ## [V2.0.0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0) - V2 STABLE RELEASE
 

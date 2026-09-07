@@ -2,7 +2,7 @@ import { requireDatabaseConnection as requireConnected } from "../functions/guar
 import { Collection, Document, MongoClient } from "mongodb";
 import { Database as SQLite } from "better-sqlite3";
 import { XpFatal } from "../functions/xplogs";
-import { xp } from "../../xp";
+import { xp } from "../client";
 
 /**
  * Options for creating a user document.

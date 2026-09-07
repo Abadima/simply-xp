@@ -1,7 +1,10 @@
 import { createCanvas, Image, loadImage, SKRSContext2D } from "@napi-rs/canvas";
-import { create, convertFrom, Database, registerFont, User, xp } from "../xp";
+import { convertFrom, registerFont } from "./functions/utilities";
 import { renderCleanup } from "./functions/renderCleanup";
 import { XpFatal, XpLog } from "./functions/xplogs";
+import { Database } from "./classes/Database";
+import { xp, type User } from "./client";
+import { create } from "./create";
 import { join } from "path";
 
 export type CompareCardLocales = {

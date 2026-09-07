@@ -1,7 +1,7 @@
 import { requireGuildId, requireUserId } from "./functions/guards";
-import { UserResult } from "./classes/Database";
+import { Database, UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
-import { Database, xp } from "../xp";
+import { xp } from "./client";
 
 
 /**

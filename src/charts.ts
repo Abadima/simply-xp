@@ -1,7 +1,8 @@
 import { renderCleanup } from "./functions/renderCleanup";
 import { XpFatal, XpLog } from "./functions/xplogs";
-import { leaderboard, registerFont } from "../xp";
+import { registerFont } from "./functions/utilities";
 import { createCanvas } from "@napi-rs/canvas";
+import { leaderboard } from "./leaderboard";
 import { RoundedBox } from "./cards";
 import { join } from "path";
 

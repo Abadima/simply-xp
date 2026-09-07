@@ -3,7 +3,7 @@ import { requireFiniteNumber, requireGuildId, requireUserId } from "./functions/
 import { UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
 import { XPResult } from "./add";
-import { xp } from "../xp";
+import { xp } from "./client";
 
 /**
  * Set user level

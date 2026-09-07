@@ -1,5 +1,5 @@
-import { UserResult } from "../classes/Database";
-import { xp } from "../../xp";
+import type { UserResult } from "../classes/Database";
+import { xp } from "../client";
 
 type errOptions = {
 	code?: string;

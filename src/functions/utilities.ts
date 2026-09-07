@@ -1,16 +1,10 @@
-import { ADAPTER_VERSION_RANGES, checkPackageVersion, ensureMongoSchemaVersion, ensureSqliteSchemaVersion, resolveXpRate, syncUsersXpRate } from "../connect";
-import { clearAllCache, GlobalFonts } from "@napi-rs/canvas";
-import { https, Plugin, xp } from "../../xp";
+import { ADAPTER_VERSION_RANGES, checkPackageVersion, clean, ensureMongoSchemaVersion, ensureSqliteSchemaVersion, resolveXpRate, syncUsersXpRate } from "../connect";
+import { GlobalFonts } from "@napi-rs/canvas";
+import { xp, type Plugin } from "../client";
 import { XpFatal, XpLog } from "./xplogs";
 import { Database } from "better-sqlite3";
 import { MongoClient } from "mongodb";
-
-/**
- * Options for clean function.
- * @property {boolean} [db=false] - Whether to clean the database or not.
- * @link `Documentation:` https://simplyxp.js.org/docs/clean
- */
-type CleanOptions = { db?: boolean };
+import { https } from "./https";
 
 /**
  * Options for the XP client.
@@ -29,49 +23,6 @@ interface NewClientOptions {
 	debug?: boolean;
 	notify?: boolean;
 	xp_rate?: "slow" | "normal" | "fast" | number;
-}
-
-/**
- * Helps to clean the database and cache, more in the future, maybe.
- * @param {CleanOptions} [options={}] - The options.
- * @param {boolean?} options.db - Whether to clean the database or not.
- * @link `Documentation:` https://simplyxp.js.org/docs/clean
- * @returns {void} - Nothing.
- * @throws {XpFatal} If an error occurs.
- */
-export function clean(options: CleanOptions & { db: true }): Promise<void>;
-export function clean(options?: CleanOptions): void;
-export function clean(options: CleanOptions = {}): Promise<void> | void {
-	clearAllCache();
-	XpLog.debug("clean()", "CLEARED CANVAS CACHE");
-
-	if (!options?.db || !xp?.database) return;
-
-	return cleanZeroedUsers();
-}
-
-async function cleanZeroedUsers(): Promise<void> {
-	try {
-		switch (xp.dbType) {
-			case "mongodb":
-				await (xp.database as MongoClient)
-					.db(xp.dbName)
-					.collection("simply-xps")
-					.deleteMany({ level: 0, xp: 0 });
-				break;
-
-			case "sqlite":
-				(xp.database as Database)
-					.prepare("DELETE FROM \"simply-xps\" WHERE level = 0 AND xp = 0")
-					.run();
-				break;
-		}
-
-		XpLog.debug("clean()", "REMOVED ALL USERS WITHOUT XP");
-	} catch (error) {
-		const message = error instanceof Error ? error.message : String(error);
-		XpLog.warn("clean()", `Database cleanup failed: ${message}`);
-	}
 }
 
 /**

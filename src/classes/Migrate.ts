@@ -1,9 +1,10 @@
 import { ADAPTER_VERSION_RANGES, checkPackageVersion } from "../connect";
-import { convertFrom, Database as db, xp } from "../../xp";
+import { convertFrom } from "../functions/utilities";
 import { Database as SQLiteClient } from "better-sqlite3";
 import { XpFatal, XpLog } from "../functions/xplogs";
-import { Database, UserResult } from "./Database";
+import { Database, Database as db, UserResult } from "./Database";
 import { Document, MongoClient } from "mongodb";
+import { xp } from "../client";
 
 /**
  * Migration functions

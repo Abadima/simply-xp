@@ -1,6 +1,5 @@
 import { XpFatal } from "../functions/xplogs";
-import { LevelRoleResult } from "./Database";
-import { Database } from "../../xp";
+import { Database, LevelRoleResult } from "./Database";
 
 /**
  * Get Roles Object

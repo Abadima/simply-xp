@@ -1,8 +1,8 @@
 import { requireGuildId, requireUserId } from "./functions/guards";
 import { Database, UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
+import { xp, type User } from "./client";
 import { create } from "./create";
-import { User, xp } from "../xp";
 
 /**
  * Fetch user data

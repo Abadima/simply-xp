@@ -1,9 +1,11 @@
 import { requireDatabaseConnection, requireFiniteNumber } from "./guards";
 import { parseFlags, type UserResult } from "../classes/Database";
 import type { Database as SQLiteClient } from "better-sqlite3";
-import { LevelRoles, convertFrom, xp } from "../../xp";
 import type { Document, MongoClient } from "mongodb";
+import { LevelRoles } from "../classes/LevelRoles";
 import { XpEvents, XpFatal } from "./xplogs";
+import { convertFrom } from "./utilities";
+import { xp } from "../client";
 
 type MutateUserXpOptions = {
     createIfMissing: boolean;
