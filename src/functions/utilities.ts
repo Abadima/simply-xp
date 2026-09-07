@@ -119,7 +119,7 @@ export async function registerPlugins(plugins: Plugin[]): Promise<void> {
 			if (Array.isArray(plugin.requiredVersions) && plugin.requiredVersions.length > 0 && !plugin.requiredVersions.includes(xp.version)) {
 				let invalidVersioning = false;
 				const passedChecks = plugin.requiredVersions.some((version: string) => {
-					const match = version.match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([\w\d.-]+))?$/);
+					const match = version.match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([\w\d.-]+))?$/u);
 					if (!match) {
 						invalidVersioning = true;
 						return false;

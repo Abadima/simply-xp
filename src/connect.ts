@@ -2,7 +2,7 @@ import type { Collection, Document, MongoClient } from "mongodb";
 import type { Database as SQLiteDatabase } from "better-sqlite3";
 import { XpFatal, XpLog } from "./functions/xplogs";
 import { clearAllCache } from "@napi-rs/canvas";
-import { existsSync, readFileSync } from "fs";
+import { readFile } from "fs/promises";
 import { dirname, join } from "path";
 import { xp } from "./client";
 
@@ -99,7 +99,7 @@ export async function connect(uri: string, options: ConnectionOptions = {}): Pro
 
 	switch (resolvedType) {
 		case "mongodb": {
-			assertAdapterInstalled("mongodb", "MongoDB", "npm install mongodb");
+			await assertAdapterInstalled("mongodb", "MongoDB", "npm install mongodb");
 			switch (await checkPackageVersion("mongodb", ADAPTER_VERSION_RANGES.mongodb.min, ADAPTER_VERSION_RANGES.mongodb.max)) {
 				case "too_low":
 					throw new XpFatal({ function: "connect()", message: `MONGODB V${ADAPTER_VERSION_RANGES.mongodb.min} OR NEWER IS REQUIRED` });
@@ -129,7 +129,7 @@ export async function connect(uri: string, options: ConnectionOptions = {}): Pro
 			break;
 		case "sqlite":
 			try {
-				assertAdapterInstalled("better-sqlite3", "SQLite", "npm install better-sqlite3");
+				await assertAdapterInstalled("better-sqlite3", "SQLite", "npm install better-sqlite3");
 				switch (await checkPackageVersion("better-sqlite3", ADAPTER_VERSION_RANGES["better-sqlite3"].min, ADAPTER_VERSION_RANGES["better-sqlite3"].max)) {
 					case "too_low":
 						throw new XpFatal({ function: "connect()", message: `BETTER-SQLITE3 V${ADAPTER_VERSION_RANGES["better-sqlite3"].min} OR NEWER IS REQUIRED` });
@@ -189,8 +189,8 @@ export async function connect(uri: string, options: ConnectionOptions = {}): Pro
 	return true;
 }
 
-function assertAdapterInstalled(packageName: string, adapterName: string, installCommand: string): void {
-	if (!findInstalledPackageJsonPath(packageName)) {
+async function assertAdapterInstalled(packageName: string, adapterName: string, installCommand: string): Promise<void> {
+	if (!(await findInstalledPackageJsonPath(packageName))) {
 		const message = `Missing required package "${packageName}". simply-xp needs it to connect to ${adapterName}. Install it with: ${installCommand}`;
 		throw new XpFatal({
 			code: "SX_ADAPTER_MISSING",
@@ -200,7 +200,7 @@ function assertAdapterInstalled(packageName: string, adapterName: string, instal
 	}
 }
 
-function findInstalledPackageJsonPath(packageName: string): string | null {
+async function findInstalledPackageJsonPath(packageName: string): Promise<string | null> {
 	let currentDir: string;
 
 	try {
@@ -211,13 +211,11 @@ function findInstalledPackageJsonPath(packageName: string): string | null {
 
 	while (true) {
 		const packageJsonPath = join(currentDir, "package.json");
-		if (existsSync(packageJsonPath)) {
-			try {
-				const metadata = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { name?: string };
-				if (metadata.name === packageName) return packageJsonPath;
-			} catch {
-				return null;
-			}
+		try {
+			const metadata = JSON.parse(await readFile(packageJsonPath, "utf8")) as { name?: string };
+			if (metadata.name === packageName) return packageJsonPath;
+		} catch (error) {
+			if (!(error instanceof Error) || (error as NodeJS.ErrnoException).code !== "ENOENT") return null;
 		}
 
 		const parentDir = dirname(currentDir);
@@ -226,12 +224,12 @@ function findInstalledPackageJsonPath(packageName: string): string | null {
 	}
 }
 
-function readInstalledPackageVersion(packageName: string): string | null {
-	const packageJsonPath = findInstalledPackageJsonPath(packageName);
+async function readInstalledPackageVersion(packageName: string): Promise<string | null> {
+	const packageJsonPath = await findInstalledPackageJsonPath(packageName);
 	if (!packageJsonPath) return null;
 
 	try {
-		const metadata = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
+		const metadata = JSON.parse(await readFile(packageJsonPath, "utf8")) as { version?: string };
 		return typeof metadata.version === "string" ? metadata.version : null;
 	} catch {
 		return null;
@@ -379,7 +377,7 @@ export async function ensureMongoSchemaVersion(client: MongoClient): Promise<num
  * @throws {XpFatal} `SX_ADAPTER_MISSING` when the package is not installed.
  */
 export async function checkPackageVersion(type: string, min: number, max?: number): Promise<"too_low" | "ok" | "too_high"> {
-	const installedVersion = readInstalledPackageVersion(type);
+	const installedVersion = await readInstalledPackageVersion(type);
 	if (!installedVersion) {
 		const installCommand = type === "mongodb" ? "npm install mongodb" : `npm install ${type}`;
 		const adapterName = type === "mongodb" ? "MongoDB" : type;

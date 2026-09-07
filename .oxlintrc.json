@@ -44,7 +44,14 @@
 			}
 		],
 		// Type-only cycles are erased at compile time and carry no runtime risk.
-		"import/no-cycle": ["error", { "ignoreTypes": true }],
+		"import/no-cycle": [
+			"error",
+			{
+				"ignoreTypes": true
+			}
+		],
+		"require-unicode-regexp": "error",
+		"node/no-sync": "error",
 		// `Database`, `Migrate`, `LevelRoles`, `XpLog` and `XpEvents` are intentionally
 		// static-only classes. That is the documented public API shape (`Database.findOne()`,
 		// `LevelRoles.add()`, ...), not an accident.
