@@ -1,6 +1,6 @@
 const { XpLog } = require("../lib/src/functions/xplogs");
 const { Logena } = require("logena");
-const fs = require("node:fs");
+const fs = require("node:fs/promises");
 const xp = require("../lib/xp");
 
 Logena.set({
@@ -129,7 +129,7 @@ async function test() {
 				fallbackFont: TEST_FALLBACK_FONT,
 				light: true, legacy: mode === "legacy"
 			});
-		fs.writeFileSync(`Tests/Images/rankCard/${mode}.webp`, rankResult.attachment);
+		await fs.writeFile(`Tests/Images/rankCard/${mode}.webp`, rankResult.attachment);
 	}
 
 	for (const theme of COMPARE_CARD_THEMES) {
@@ -147,7 +147,7 @@ async function test() {
 				fallbackFont: TEST_FALLBACK_FONT,
 				light: theme === "light"
 			});
-		fs.writeFileSync(`Tests/Images/compareCard/${theme}.webp`, compareResult.attachment);
+		await fs.writeFile(`Tests/Images/compareCard/${theme}.webp`, compareResult.attachment);
 	}
 
 	for (const type of LEADERBOARD_TYPES) {
@@ -164,7 +164,7 @@ async function test() {
 					imageURL: ABADIMA_PFP,
 					memberCount: 20
 				}, {});
-				fs.writeFileSync(`Tests/Images/Leaderboards/standard/${theme}.webp`, leaderboardResult.attachment);
+				await fs.writeFile(`Tests/Images/Leaderboards/standard/${theme}.webp`, leaderboardResult.attachment);
 			}
 		} else {
 			for (const theme of CHART_THEMES) {
@@ -172,7 +172,7 @@ async function test() {
 					fallbackFont: TEST_FALLBACK_FONT,
 					theme: theme, type: type
 				});
-				fs.writeFileSync(`Tests/Images/Leaderboards/${type}/${theme}.webp`, chartResult.attachment);
+				await fs.writeFile(`Tests/Images/Leaderboards/${type}/${theme}.webp`, chartResult.attachment);
 			}
 		}
 	}
