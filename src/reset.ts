@@ -1,5 +1,6 @@
 import { XpFatal, XpLog } from "./functions/xplogs";
-import { Database, xp } from "../xp";
+import { Database } from "./classes/Database";
+import { xp } from "./client";
 
 /**
  * Reset user levels to 0 in a guild
@@ -48,16 +49,11 @@ export async function reset(userId: string, guildId: string, erase: boolean = fa
 		return true;
 	}
 
-	const normalizedFlags = Array.isArray((userData as { flags?: Array<number | string> }).flags)
-		? ((userData as { flags?: Array<number | string> }).flags || []).filter((flag) => flag !== "modified")
-		: [];
-
 	await Database.updateOne(
 		{ collection: "simply-xps", data: userFilter },
 		{
 			collection: "simply-xps",
 			data: {
-				flags: normalizedFlags,
 				guild: guildId,
 				level: 0,
 				name: username || (userData as { name?: string }).name || userId,

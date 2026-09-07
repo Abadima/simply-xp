@@ -1,5 +1,5 @@
 import { XpFatal } from "./xplogs";
-import { xp } from "../../xp";
+import { xp } from "../client";
 
 
 function requireValue(functionName: string, value: unknown, message: string): void {

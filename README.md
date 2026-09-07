@@ -147,5 +147,3 @@ This is a complete rewrite of simply-xp transitioning to TypeScript and a more m
 - `fetch()` and `leaderboard()` return a different shape: `rank` is now `position`, and `reqxp`/`shortxp`/`shortreq` are gone.
 - `create()` now requires a `username`. `charts()` no longer takes a `message`.
 - Imports are named exports now: `const { connect, addXP } = require("simply-xp")` instead of `xp.addXP(...)`.
-
-Full migration details: [v2.0.0 release notes](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0).

@@ -1,7 +1,10 @@
 import { createCanvas, Image, loadImage, SKRSContext2D } from "@napi-rs/canvas";
-import { create, convertFrom, Database, registerFont, User, xp } from "../xp";
+import { convertFrom, registerFont } from "./functions/utilities";
 import { renderCleanup } from "./functions/renderCleanup";
 import { XpFatal, XpLog } from "./functions/xplogs";
+import { Database } from "./classes/Database";
+import { xp, type User } from "./client";
+import { create } from "./create";
 import { join } from "path";
 
 export type CompareCardLocales = {
@@ -697,8 +700,8 @@ export async function rankCard(guild: {
 				: "rgba(255,255,255,0.6)";
 			context.fillText(
 				TextXpNeeded
-					.replace(/{needed}/g, shortener(nextLevelXP))
-					.replace(/{current}/g, shortener(dbUser.xp)),
+					.replace(/\{needed\}/gu, shortener(nextLevelXP))
+					.replace(/\{current\}/gu, shortener(dbUser.xp)),
 				540,
 				320
 			);
@@ -816,7 +819,7 @@ export async function rankCard(guild: {
 			context.font = "30px Baloo, FallbackFont";
 			context.fillStyle = "#474747";
 			context.globalAlpha = 1;
-			const textXPEdited = TextXpNeeded.replace(/{needed}/g, shortener(nextLevelXP)).replace(/{current}/g, shortener(dbUser.xp));
+			const textXPEdited = TextXpNeeded.replace(/\{needed\}/gu, shortener(nextLevelXP)).replace(/\{current\}/gu, shortener(dbUser.xp));
 			context.fillText(textXPEdited, 730, 180);
 		}
 

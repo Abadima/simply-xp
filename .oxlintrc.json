@@ -25,6 +25,35 @@
 		"Tests/Images"
 	],
 	"rules": {
+		"no-case-declarations": "error",
+		"no-fallthrough": "error",
+		"no-throw-literal": "error",
+		"no-self-compare": "error",
+		"typescript/no-misused-promises": "error",
+		"no-use-before-define": [
+			"error",
+			{
+				// Allowed: JS function declarations are hoisted.
+				"functions": false,
+				// Enforced: const/let/class have TDZ runtime risks.
+				"classes": true,
+				"variables": true,
+				"enums": true,
+				"typedefs": false,
+				"ignoreTypeReferences": true
+			}
+		],
+		// Type-only cycles are erased at compile time and carry no runtime risk.
+		"import/no-cycle": [
+			"error",
+			{
+				"ignoreTypes": true
+			}
+		],
+		"require-unicode-regexp": "error",
+		// `testXpRateBulkSync` is a test name (bulk xp_rate synchronization), not a call
+		// to a synchronous API; the rule otherwise matches any "...Sync"-suffixed callee.
+		"node/no-sync": ["error", { "ignores": ["testXpRateBulkSync"] }],
 		// `Database`, `Migrate`, `LevelRoles`, `XpLog` and `XpEvents` are intentionally
 		// static-only classes. That is the documented public API shape (`Database.findOne()`,
 		// `LevelRoles.add()`, ...), not an accident.

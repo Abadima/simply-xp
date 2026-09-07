@@ -1,11 +1,11 @@
 import { requireGuildId, requireUserId } from "./functions/guards";
-import { UserResult } from "./classes/Database";
+import { Database, UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
-import { Database, xp } from "../xp";
+import { xp } from "./client";
 
 
 /**
- * Flag a user, currently only supports "modified" and "illegal"
+ * Set a user's flags.
  * @param {string} userId
  * @param {string} guildId
  * @param {Array<number | string> | undefined} flags - "Undefined" will remove the flags

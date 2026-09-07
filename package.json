@@ -1,6 +1,6 @@
 {
   "name": "simply-xp",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The easiest way to implement an xp system",
   "main": "lib/xp.js",
   "types": "lib/xp.d.ts",
@@ -59,7 +59,7 @@
     "url": "git+https://github.com/Abadima/simply-xp.git"
   },
   "dependencies": {
-    "@napi-rs/canvas": "^1.0.8"
+    "@napi-rs/canvas": "^1.0.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

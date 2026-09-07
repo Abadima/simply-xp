@@ -2,7 +2,7 @@ import { mutateUserLevelAtomic, mutateUserXpAtomic, resolveXpInput, fireLevelEve
 import { requireFiniteNumber, requireGuildId, requireUserId } from "./functions/guards";
 import { UserResult } from "./classes/Database";
 import { XPResult } from "./add";
-import { xp } from "../xp";
+import { xp } from "./client";
 
 /**
  * Add XP to a user

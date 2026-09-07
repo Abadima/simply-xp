@@ -1,5 +1,5 @@
 const { checkPackageVersion } = require("../lib/src/connect");
-const { existsSync } = require("fs");
+const { access } = require("fs/promises");
 const assert = require("assert");
 const { EventEmitter } = require("events");
 const { performance } = require("perf_hooks");
@@ -48,8 +48,17 @@ function printSkip(name) {
     printWithIndent(`○ ${name} (skipped)`);
 }
 
-function loadMongoUri() {
-    if (!existsSync("secrets.cjs")) return null;
+async function fileExists(path) {
+    try {
+        await access(path);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function loadMongoUri() {
+    if (!(await fileExists("secrets.cjs"))) return null;
     return require("../secrets.cjs").MongoURI;
 }
 
@@ -64,7 +73,7 @@ async function connectAdapter(type) {
         return;
     }
 
-    const mongoUri = loadMongoUri();
+    const mongoUri = await loadMongoUri();
     assert.ok(mongoUri, "Expected secrets.cjs to contain MongoURI for MongoDB regression coverage");
     await xp.connect(mongoUri, {
         type: "mongodb",
@@ -112,7 +121,7 @@ async function testBundledFontIsPackaged() {
     const fontPath = require("path").join(__dirname, "..", "lib", "src", "fonts", "Baloo2-Regular.woff2");
 
     assert.ok(
-        existsSync(fontPath),
+        await fileExists(fontPath),
         "Expected the bundled Baloo font to exist in lib/ — tsc does not copy assets, so the build must copy it (see Tests/clean.mjs)"
     );
 
@@ -277,7 +286,7 @@ async function testConcurrentWrites(type) {
     await Promise.all(Array.from({ length: 10 }, () => xp.addXP(userId, guildId, 10, "ConcurrentUser")));
     let user = await xp.fetch(userId, guildId, "ConcurrentUser");
     assert.strictEqual(user.xp, 100, `Expected concurrent addXP() to preserve all writes for ${type}`);
-    assert.ok(user.flags.includes("modified"), `Expected concurrent addXP() to mark the user as modified for ${type}`);
+    assert.deepStrictEqual(user.flags, [], `Expected concurrent addXP() to leave flags untouched (opaque, developer-owned data) for ${type}`);
 
     await Promise.all(Array.from({ length: 4 }, () => xp.removeXP(userId, guildId, 5, "ConcurrentUser")));
     user = await xp.fetch(userId, guildId, "ConcurrentUser");
@@ -381,11 +390,11 @@ async function testXpRateBulkSync(type) {
 
 async function testSqliteGuildColumnMigration() {
     const BetterSqlite3 = require("better-sqlite3");
-    const fs = require("fs");
+    const fs = require("fs/promises");
     const dbPath = "Tests/regression-guild-column.sqlite";
     const guildId = "sqlite-migration-guild";
 
-    if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
+    await fs.rm(dbPath, { force: true });
 
     const legacyDb = new BetterSqlite3(dbPath);
     legacyDb.exec(`
@@ -467,28 +476,53 @@ async function testMigrateFromDbMongoPathIntoSqlite() {
     await clearGuild(guildId);
 }
 
-async function testResetAndFlagsInteraction(type) {
+async function testFlagsRemainOpaqueAcrossMutations(type) {
     const guildId = `${type}-flags-guild`;
     const userId = `${type}-flags-user`;
 
     await connectAdapter(type);
     await clearGuild(guildId);
 
-    await xp.setFlags(userId, guildId, ["illegal"], "FlagUser");
+    // Flags are developer-defined; XP/level mutations must not add, remove, or read them.
+    const customFlags = ["illegal", "vip"];
+
+    await xp.setFlags(userId, guildId, customFlags, "FlagUser");
     let user = await xp.fetch(userId, guildId, "FlagUser");
-    assert.deepStrictEqual([...(user.flags || [])].sort(), ["illegal"], `Expected initial manual flags to persist for ${type}`);
+    assert.deepStrictEqual([...(user.flags || [])].sort(), [...customFlags].sort(), `Expected initial manual flags to persist for ${type}`);
 
     await xp.addXP(userId, guildId, 25, "FlagUser");
     user = await xp.fetch(userId, guildId, "FlagUser");
-    assert.deepStrictEqual([...(user.flags || [])].sort(), ["illegal", "modified"], `Expected addXP() to set and persist the modified flag for ${type}`);
+    assert.deepStrictEqual([...(user.flags || [])].sort(), [...customFlags].sort(), `Expected addXP() to leave developer-set flags untouched for ${type}`);
+    assert.ok(!user.flags.includes("modified"), `Expected addXP() to not introduce a "modified" flag for ${type}`);
+
+    await xp.removeXP(userId, guildId, 5, "FlagUser");
+    user = await xp.fetch(userId, guildId, "FlagUser");
+    assert.deepStrictEqual([...(user.flags || [])].sort(), [...customFlags].sort(), `Expected removeXP() to leave developer-set flags untouched for ${type}`);
+    assert.ok(!user.flags.includes("modified"), `Expected removeXP() to not introduce a "modified" flag for ${type}`);
+
+    await xp.setXP(userId, guildId, 100, "FlagUser");
+    user = await xp.fetch(userId, guildId, "FlagUser");
+    assert.deepStrictEqual([...(user.flags || [])].sort(), [...customFlags].sort(), `Expected setXP() to leave developer-set flags untouched for ${type}`);
+    assert.ok(!user.flags.includes("modified"), `Expected setXP() to not introduce a "modified" flag for ${type}`);
+
+    await xp.addLevel(userId, guildId, 1, "FlagUser");
+    user = await xp.fetch(userId, guildId, "FlagUser");
+    assert.deepStrictEqual([...(user.flags || [])].sort(), [...customFlags].sort(), `Expected addLevel() to leave developer-set flags untouched for ${type}`);
+    assert.ok(!user.flags.includes("modified"), `Expected addLevel() to not introduce a "modified" flag for ${type}`);
+
+    await xp.removeLevel(userId, guildId, 1, "FlagUser");
+    user = await xp.fetch(userId, guildId, "FlagUser");
+    assert.deepStrictEqual([...(user.flags || [])].sort(), [...customFlags].sort(), `Expected removeLevel() to leave developer-set flags untouched for ${type}`);
+    assert.ok(!user.flags.includes("modified"), `Expected removeLevel() to not introduce a "modified" flag for ${type}`);
 
     await xp.setLevel(userId, guildId, 5, "FlagUser");
     user = await xp.fetch(userId, guildId, "FlagUser");
-    assert.deepStrictEqual([...(user.flags || [])].sort(), ["illegal", "modified"], `Expected setLevel() to keep the modified flag for ${type}`);
+    assert.deepStrictEqual([...(user.flags || [])].sort(), [...customFlags].sort(), `Expected setLevel() to leave developer-set flags untouched for ${type}`);
+    assert.ok(!user.flags.includes("modified"), `Expected setLevel() to not introduce a "modified" flag for ${type}`);
 
     await xp.reset(userId, guildId, false, "FlagUser");
     user = await xp.fetch(userId, guildId, "FlagUser");
-    assert.deepStrictEqual([...(user.flags || [])].sort(), ["illegal"], `Expected reset() to clear only the modified flag for ${type}`);
+    assert.deepStrictEqual([...(user.flags || [])].sort(), [...customFlags].sort(), `Expected reset() to leave developer-set flags untouched for ${type}, since flags are not xp/level state`);
 
     await clearGuild(guildId);
 }
@@ -606,7 +640,7 @@ async function withBrokenDatabaseMethod(name, operation) {
     const original = xp.Database[name];
     xp.Database[name] = failWith;
     try {
-        await assert.rejects(operation(), /boom/, `Expected the call to propagate the underlying ${name}() failure instead of swallowing it`);
+        await assert.rejects(operation(), /boom/u, `Expected the call to propagate the underlying ${name}() failure instead of swallowing it`);
     } finally {
         xp.Database[name] = original;
     }
@@ -675,7 +709,7 @@ async function runParityScenario(type) {
 }
 
 async function testAdapterParity() {
-    const mongoUri = loadMongoUri();
+    const mongoUri = await loadMongoUri();
     if (!mongoUri) {
         return false;
     }
@@ -723,17 +757,17 @@ async function run() {
         await runCase("keeps create() idempotent on an existing user", () => testCreateIsIdempotentOnExistingUser("sqlite"));
         await runCase("keeps tie ranking parity", () => testTieRankingParity("sqlite"));
         await runCase("bulk syncs xp_rate and levels", () => testXpRateBulkSync("sqlite"));
-        await runCase("keeps flags stable through reset flow", () => testResetAndFlagsInteraction("sqlite"));
+        await runCase("keeps developer-set flags opaque across all XP/level mutations", () => testFlagsRemainOpaqueAcrossMutations("sqlite"));
         await runCase("normalizes setFlags(undefined) to []", () => testSetFlagsUndefinedNormalization("sqlite"));
     });
 
-    if (loadMongoUri()) {
+    if (await loadMongoUri()) {
         await runGroup("MongoDB adapter behavior", async () => {
             await runCase("preserves concurrent write correctness", () => testConcurrentWrites("mongodb"));
             await runCase("keeps create() idempotent on an existing user", () => testCreateIsIdempotentOnExistingUser("mongodb"));
             await runCase("keeps tie ranking parity", () => testTieRankingParity("mongodb"));
             await runCase("bulk syncs xp_rate and levels", () => testXpRateBulkSync("mongodb"));
-            await runCase("keeps flags stable through reset flow", () => testResetAndFlagsInteraction("mongodb"));
+            await runCase("keeps developer-set flags opaque across all XP/level mutations", () => testFlagsRemainOpaqueAcrossMutations("mongodb"));
             await runCase("normalizes setFlags(undefined) to []", () => testSetFlagsUndefinedNormalization("mongodb"));
             await runCase("supports additive XpEvents.add() listeners", () => testAdditiveEventListeners("mongodb"));
             await runCase("gives plugins isolated namespace storage", () => testPluginNamespaceStore("mongodb"));

@@ -1,9 +1,10 @@
 import type { Collection, Document, MongoClient } from "mongodb";
 import type { Database as SQLiteDatabase } from "better-sqlite3";
 import { XpFatal, XpLog } from "./functions/xplogs";
-import { existsSync, readFileSync } from "fs";
+import { clearAllCache } from "@napi-rs/canvas";
+import { readFile } from "fs/promises";
 import { dirname, join } from "path";
-import { clean, xp } from "../xp";
+import { xp } from "./client";
 
 export type ConnectionOptions = {
 	auto_create?: boolean;
@@ -11,6 +12,65 @@ export type ConnectionOptions = {
 	notify?: boolean;
 	type?: "mongodb" | "sqlite";
 	xp_rate?: "slow" | "normal" | "fast" | number;
+}
+
+/**
+ * Supported major version range for each database adapter.
+ * @private
+ */
+export const ADAPTER_VERSION_RANGES = {
+	"better-sqlite3": { min: 7, max: 13 },
+	mongodb: { min: 4, max: 7 },
+} as const;
+
+/**
+ * Options for clean function.
+ * @property {boolean} [db=false] - Whether to clean the database or not.
+ * @link `Documentation:` https://simplyxp.js.org/docs/clean
+ */
+type CleanOptions = { db?: boolean };
+
+/**
+ * Helps to clean the database and cache, more in the future, maybe.
+ * @param {CleanOptions} [options={}] - The options.
+ * @param {boolean?} options.db - Whether to clean the database or not.
+ * @link `Documentation:` https://simplyxp.js.org/docs/clean
+ * @returns {void} - Nothing.
+ * @throws {XpFatal} If an error occurs.
+ */
+export function clean(options: CleanOptions & { db: true }): Promise<void>;
+export function clean(options?: CleanOptions): void;
+export function clean(options: CleanOptions = {}): Promise<void> | void {
+	clearAllCache();
+	XpLog.debug("clean()", "CLEARED CANVAS CACHE");
+
+	if (!options?.db || !xp?.database) return;
+
+	return cleanZeroedUsers();
+}
+
+async function cleanZeroedUsers(): Promise<void> {
+	try {
+		switch (xp.dbType) {
+			case "mongodb":
+				await (xp.database as MongoClient)
+					.db(xp.dbName)
+					.collection("simply-xps")
+					.deleteMany({ level: 0, xp: 0 });
+				break;
+
+			case "sqlite":
+				(xp.database as SQLiteDatabase)
+					.prepare("DELETE FROM \"simply-xps\" WHERE level = 0 AND xp = 0")
+					.run();
+				break;
+		}
+
+		XpLog.debug("clean()", "REMOVED ALL USERS WITHOUT XP");
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		XpLog.warn("clean()", `Database cleanup failed: ${message}`);
+	}
 }
 
 /**
@@ -39,7 +99,7 @@ export async function connect(uri: string, options: ConnectionOptions = {}): Pro
 
 	switch (resolvedType) {
 		case "mongodb": {
-			assertAdapterInstalled("mongodb", "MongoDB", "npm install mongodb");
+			await assertAdapterInstalled("mongodb", "MongoDB", "npm install mongodb");
 			switch (await checkPackageVersion("mongodb", ADAPTER_VERSION_RANGES.mongodb.min, ADAPTER_VERSION_RANGES.mongodb.max)) {
 				case "too_low":
 					throw new XpFatal({ function: "connect()", message: `MONGODB V${ADAPTER_VERSION_RANGES.mongodb.min} OR NEWER IS REQUIRED` });
@@ -69,7 +129,7 @@ export async function connect(uri: string, options: ConnectionOptions = {}): Pro
 			break;
 		case "sqlite":
 			try {
-				assertAdapterInstalled("better-sqlite3", "SQLite", "npm install better-sqlite3");
+				await assertAdapterInstalled("better-sqlite3", "SQLite", "npm install better-sqlite3");
 				switch (await checkPackageVersion("better-sqlite3", ADAPTER_VERSION_RANGES["better-sqlite3"].min, ADAPTER_VERSION_RANGES["better-sqlite3"].max)) {
 					case "too_low":
 						throw new XpFatal({ function: "connect()", message: `BETTER-SQLITE3 V${ADAPTER_VERSION_RANGES["better-sqlite3"].min} OR NEWER IS REQUIRED` });
@@ -129,8 +189,8 @@ export async function connect(uri: string, options: ConnectionOptions = {}): Pro
 	return true;
 }
 
-function assertAdapterInstalled(packageName: string, adapterName: string, installCommand: string): void {
-	if (!findInstalledPackageJsonPath(packageName)) {
+async function assertAdapterInstalled(packageName: string, adapterName: string, installCommand: string): Promise<void> {
+	if (!(await findInstalledPackageJsonPath(packageName))) {
 		const message = `Missing required package "${packageName}". simply-xp needs it to connect to ${adapterName}. Install it with: ${installCommand}`;
 		throw new XpFatal({
 			code: "SX_ADAPTER_MISSING",
@@ -140,7 +200,7 @@ function assertAdapterInstalled(packageName: string, adapterName: string, instal
 	}
 }
 
-function findInstalledPackageJsonPath(packageName: string): string | null {
+async function findInstalledPackageJsonPath(packageName: string): Promise<string | null> {
 	let currentDir: string;
 
 	try {
@@ -151,13 +211,11 @@ function findInstalledPackageJsonPath(packageName: string): string | null {
 
 	while (true) {
 		const packageJsonPath = join(currentDir, "package.json");
-		if (existsSync(packageJsonPath)) {
-			try {
-				const metadata = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { name?: string };
-				if (metadata.name === packageName) return packageJsonPath;
-			} catch {
-				return null;
-			}
+		try {
+			const metadata = JSON.parse(await readFile(packageJsonPath, "utf8")) as { name?: string };
+			if (metadata.name === packageName) return packageJsonPath;
+		} catch (error) {
+			if (!(error instanceof Error) || (error as NodeJS.ErrnoException).code !== "ENOENT") return null;
 		}
 
 		const parentDir = dirname(currentDir);
@@ -166,12 +224,12 @@ function findInstalledPackageJsonPath(packageName: string): string | null {
 	}
 }
 
-function readInstalledPackageVersion(packageName: string): string | null {
-	const packageJsonPath = findInstalledPackageJsonPath(packageName);
+async function readInstalledPackageVersion(packageName: string): Promise<string | null> {
+	const packageJsonPath = await findInstalledPackageJsonPath(packageName);
 	if (!packageJsonPath) return null;
 
 	try {
-		const metadata = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
+		const metadata = JSON.parse(await readFile(packageJsonPath, "utf8")) as { version?: string };
 		return typeof metadata.version === "string" ? metadata.version : null;
 	} catch {
 		return null;
@@ -309,15 +367,6 @@ export async function ensureMongoSchemaVersion(client: MongoClient): Promise<num
 }
 
 /**
- * Supported major version range for each database adapter.
- * @private
- */
-export const ADAPTER_VERSION_RANGES = {
-	"better-sqlite3": { min: 7, max: 13 },
-	mongodb: { min: 4, max: 7 },
-} as const;
-
-/**
  * Check database package versions
  * @private
  * @param {string} type - NPM Package Name (lowercase)
@@ -328,7 +377,7 @@ export const ADAPTER_VERSION_RANGES = {
  * @throws {XpFatal} `SX_ADAPTER_MISSING` when the package is not installed.
  */
 export async function checkPackageVersion(type: string, min: number, max?: number): Promise<"too_low" | "ok" | "too_high"> {
-	const installedVersion = readInstalledPackageVersion(type);
+	const installedVersion = await readInstalledPackageVersion(type);
 	if (!installedVersion) {
 		const installCommand = type === "mongodb" ? "npm install mongodb" : `npm install ${type}`;
 		const adapterName = type === "mongodb" ? "MongoDB" : type;
