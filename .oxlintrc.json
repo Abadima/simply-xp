@@ -51,7 +51,9 @@
 			}
 		],
 		"require-unicode-regexp": "error",
-		"node/no-sync": "error",
+		// `testXpRateBulkSync` is a test name (bulk xp_rate synchronization), not a call
+		// to a synchronous API; the rule otherwise matches any "...Sync"-suffixed callee.
+		"node/no-sync": ["error", { "ignores": ["testXpRateBulkSync"] }],
 		// `Database`, `Migrate`, `LevelRoles`, `XpLog` and `XpEvents` are intentionally
 		// static-only classes. That is the documented public API shape (`Database.findOne()`,
 		// `LevelRoles.add()`, ...), not an accident.

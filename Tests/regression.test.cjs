@@ -1,5 +1,5 @@
 const { checkPackageVersion } = require("../lib/src/connect");
-const { existsSync } = require("fs");
+const { access } = require("fs/promises");
 const assert = require("assert");
 const { EventEmitter } = require("events");
 const { performance } = require("perf_hooks");
@@ -48,8 +48,17 @@ function printSkip(name) {
     printWithIndent(`○ ${name} (skipped)`);
 }
 
-function loadMongoUri() {
-    if (!existsSync("secrets.cjs")) return null;
+async function fileExists(path) {
+    try {
+        await access(path);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function loadMongoUri() {
+    if (!(await fileExists("secrets.cjs"))) return null;
     return require("../secrets.cjs").MongoURI;
 }
 
@@ -64,7 +73,7 @@ async function connectAdapter(type) {
         return;
     }
 
-    const mongoUri = loadMongoUri();
+    const mongoUri = await loadMongoUri();
     assert.ok(mongoUri, "Expected secrets.cjs to contain MongoURI for MongoDB regression coverage");
     await xp.connect(mongoUri, {
         type: "mongodb",
@@ -112,7 +121,7 @@ async function testBundledFontIsPackaged() {
     const fontPath = require("path").join(__dirname, "..", "lib", "src", "fonts", "Baloo2-Regular.woff2");
 
     assert.ok(
-        existsSync(fontPath),
+        await fileExists(fontPath),
         "Expected the bundled Baloo font to exist in lib/ — tsc does not copy assets, so the build must copy it (see Tests/clean.mjs)"
     );
 
@@ -381,11 +390,11 @@ async function testXpRateBulkSync(type) {
 
 async function testSqliteGuildColumnMigration() {
     const BetterSqlite3 = require("better-sqlite3");
-    const fs = require("fs");
+    const fs = require("fs/promises");
     const dbPath = "Tests/regression-guild-column.sqlite";
     const guildId = "sqlite-migration-guild";
 
-    if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
+    await fs.rm(dbPath, { force: true });
 
     const legacyDb = new BetterSqlite3(dbPath);
     legacyDb.exec(`
@@ -631,7 +640,7 @@ async function withBrokenDatabaseMethod(name, operation) {
     const original = xp.Database[name];
     xp.Database[name] = failWith;
     try {
-        await assert.rejects(operation(), /boom/, `Expected the call to propagate the underlying ${name}() failure instead of swallowing it`);
+        await assert.rejects(operation(), /boom/u, `Expected the call to propagate the underlying ${name}() failure instead of swallowing it`);
     } finally {
         xp.Database[name] = original;
     }
@@ -700,7 +709,7 @@ async function runParityScenario(type) {
 }
 
 async function testAdapterParity() {
-    const mongoUri = loadMongoUri();
+    const mongoUri = await loadMongoUri();
     if (!mongoUri) {
         return false;
     }
@@ -752,7 +761,7 @@ async function run() {
         await runCase("normalizes setFlags(undefined) to []", () => testSetFlagsUndefinedNormalization("sqlite"));
     });
 
-    if (loadMongoUri()) {
+    if (await loadMongoUri()) {
         await runGroup("MongoDB adapter behavior", async () => {
             await runCase("preserves concurrent write correctness", () => testConcurrentWrites("mongodb"));
             await runCase("keeps create() idempotent on an existing user", () => testCreateIsIdempotentOnExistingUser("mongodb"));
