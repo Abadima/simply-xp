@@ -45,12 +45,6 @@ export async function mutateUserXpAtomic(options: MutateUserXpOptions): Promise<
                     [{
                         $set: {
                             createdAt: { $ifNull: ["$createdAt", now] },
-                            flags: {
-                                $setUnion: [
-                                    { $cond: [{ $isArray: "$flags" }, "$flags", []] },
-                                    ["modified"]
-                                ]
-                            },
                             guild: options.guildId,
                             lastUpdated: now,
                             level: {
@@ -80,7 +74,7 @@ export async function mutateUserXpAtomic(options: MutateUserXpOptions): Promise<
                 const current: UserResult = {
                     _id: previous?._id,
                     createdAt: previous?.createdAt || now,
-                    flags: ensureModifiedFlag(previous?.flags),
+                    flags: previous?.flags ?? [],
                     guild: options.guildId,
                     lastUpdated: now,
                     level: convertFrom(currentXp, "xp"),
@@ -116,12 +110,6 @@ export async function mutateUserXpAtomic(options: MutateUserXpOptions): Promise<
                 [{
                     $set: {
                         createdAt: { $ifNull: ["$createdAt", now] },
-                        flags: {
-                            $setUnion: [
-                                { $cond: [{ $isArray: "$flags" }, "$flags", []] },
-                                ["modified"]
-                            ]
-                        },
                         guild: options.guildId,
                         lastUpdated: now,
                         level: nextLevelExpr,
@@ -187,8 +175,8 @@ export async function mutateUserXpAtomic(options: MutateUserXpOptions): Promise<
                     .get(options.guildId, options.userId) as UserResult | undefined;
                 if (!row) return null;
 
-                db.prepare("UPDATE \"simply-xps\" SET flags = ?, level = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
-                    .run(JSON.stringify(ensureModifiedFlag(row.flags)), convertFrom(Number(row.xp || 0), "xp"), now, options.guildId, options.userId);
+                db.prepare("UPDATE \"simply-xps\" SET level = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
+                    .run(convertFrom(Number(row.xp || 0), "xp"), now, options.guildId, options.userId);
 
                 const updated = db.prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?")
                     .get(options.guildId, options.userId) as UserResult | undefined;
@@ -233,12 +221,6 @@ export async function mutateUserLevelAtomic(options: MutateUserLevelOptions): Pr
                     [{
                         $set: {
                             createdAt: { $ifNull: ["$createdAt", now] },
-                            flags: {
-                                $setUnion: [
-                                    { $cond: [{ $isArray: "$flags" }, "$flags", []] },
-                                    ["modified"]
-                                ]
-                            },
                             guild: options.guildId,
                             lastUpdated: now,
                             level: deltaLevelExpr,
@@ -266,7 +248,7 @@ export async function mutateUserLevelAtomic(options: MutateUserLevelOptions): Pr
                 const current: UserResult = {
                     _id: previous?._id,
                     createdAt: previous?.createdAt || now,
-                    flags: ensureModifiedFlag(previous?.flags),
+                    flags: previous?.flags ?? [],
                     guild: options.guildId,
                     lastUpdated: now,
                     level: currentLevel,
@@ -300,12 +282,6 @@ export async function mutateUserLevelAtomic(options: MutateUserLevelOptions): Pr
                 [{
                     $set: {
                         createdAt: { $ifNull: ["$createdAt", now] },
-                        flags: {
-                            $setUnion: [
-                                { $cond: [{ $isArray: "$flags" }, "$flags", []] },
-                                ["modified"]
-                            ]
-                        },
                         guild: options.guildId,
                         lastUpdated: now,
                         level: nextLevelExpr,
@@ -371,8 +347,8 @@ export async function mutateUserLevelAtomic(options: MutateUserLevelOptions): Pr
                     .get(options.guildId, options.userId) as UserResult | undefined;
                 if (!row) return null;
 
-                db.prepare("UPDATE \"simply-xps\" SET flags = ?, xp = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
-                    .run(JSON.stringify(ensureModifiedFlag(row.flags)), convertFrom(Number(row.level || 0)), now, options.guildId, options.userId);
+                db.prepare("UPDATE \"simply-xps\" SET xp = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
+                    .run(convertFrom(Number(row.level || 0)), now, options.guildId, options.userId);
 
                 const updated = db.prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?")
                     .get(options.guildId, options.userId) as UserResult | undefined;
@@ -393,21 +369,6 @@ export async function mutateUserLevelAtomic(options: MutateUserLevelOptions): Pr
         default:
             throw new XpFatal({ function: "mutateUserLevelAtomic()", message: "Unsupported database type" });
     }
-}
-
-function ensureModifiedFlag(flags: UserResult["flags"] | string | undefined): Array<number | string> {
-    let normalized: Array<number | string> = [];
-    if (Array.isArray(flags)) normalized = [...flags];
-    else if (typeof flags === "string") {
-        try {
-            const parsed = JSON.parse(flags) as Array<number | string>;
-            if (Array.isArray(parsed)) normalized = parsed;
-        } catch {
-            normalized = [];
-        }
-    }
-
-    return normalized.includes("modified") ? normalized : [...normalized, "modified"];
 }
 
 function normalizeInteger(value: number): number {

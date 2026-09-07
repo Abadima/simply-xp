@@ -1,5 +1,12 @@
 # VERSION 2
 
+## [V2.0.1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.1) - V2 PATCH
+
+### ⚒️ Bug Fixes
+
+- Fix `addXP()`, `removeXP()`, `setXP()`, `addLevel()`, `removeLevel()`, `setLevel()`, and `reset()` auto-managing a `"modified"` flag on user records. Flags are developer-defined data; simply-xp no longer adds, removes, or interprets any flag value during XP/level operations.
+- Fix `Database.findOne()`, `find()`, `findAll()`, and `updateOne()` declaring variables directly inside `switch`/`case` blocks (found by CodeFactor).
+
 ## [V2.0.0](https://github.com/Abadima/simply-xp/releases/tag/v2.0.0) - V2 STABLE RELEASE
 
 ### ✅ Additions

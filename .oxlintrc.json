@@ -25,6 +25,11 @@
 		"Tests/Images"
 	],
 	"rules": {
+		"no-case-declarations": "error",
+		"no-fallthrough": "error",
+		"no-throw-literal": "error",
+		"no-self-compare": "error",
+		"typescript/no-misused-promises": "error",
 		// `Database`, `Migrate`, `LevelRoles`, `XpLog` and `XpEvents` are intentionally
 		// static-only classes. That is the documented public API shape (`Database.findOne()`,
 		// `LevelRoles.add()`, ...), not an accident.

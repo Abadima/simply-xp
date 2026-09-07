@@ -261,11 +261,12 @@ export class Database {
 		this.requireDatabaseConnection("findOne()");
 
 		switch (xp.dbType) {
-			case "mongodb":
+			case "mongodb": {
 				const mongoResult = await this.getCollection(query.collection).findOne(normalizeCollectionFilter(query)).catch(error => handleError(error, "findOne()")) as Document;
 				if (!mongoResult) return null;
 				if (query.collection === "simply-xps") return parseFlags(mongoResult as UserResult);
 				return parseLevelRoleRow(mongoResult as LevelRoleResult) as LevelRoleResult;
+			}
 
 			case "sqlite":
 				if (query.collection === "simply-xps") {
@@ -299,7 +300,7 @@ export class Database {
 		this.requireDatabaseConnection("find()");
 
 		switch (xp.dbType) {
-			case "mongodb":
+			case "mongodb": {
 				const mongoCursor = (xp.database as MongoClient).db(xp.dbName).collection(collection).find({ guild });
 				if (limit && limit > 0 && collection === "simply-xps") {
 					mongoCursor.sort({ xp: -1 }).limit(limit);
@@ -307,6 +308,7 @@ export class Database {
 				const mongoRows = await mongoCursor.toArray().catch(error => handleError(error, "find()")) as Document[];
 				if (collection === "simply-xps") return mongoRows.map((row) => parseFlags(row as UserResult)) as UserResult[];
 				return mongoRows.map((row) => parseLevelRoleRow(row as LevelRoleResult)).filter(Boolean) as LevelRoleResult[];
+			}
 
 			case "sqlite":
 				if (collection === "simply-xps") {
@@ -338,7 +340,7 @@ export class Database {
 		this.requireDatabaseConnection("findAll()");
 
 		switch (xp.dbType) {
-			case "mongodb":
+			case "mongodb": {
 				const mongoCursor = (xp.database as MongoClient).db(xp.dbName).collection(collection).find();
 				if (limit && limit > 0 && collection === "simply-xps") {
 					mongoCursor.sort({ xp: -1 }).limit(limit);
@@ -346,6 +348,7 @@ export class Database {
 				const mongoRows = await mongoCursor.toArray().catch(error => handleError(error, "findAll()")) as Document[];
 				if (collection === "simply-xps") return mongoRows.map((row) => parseFlags(row as UserResult)) as UserResult[];
 				return mongoRows.map((row) => parseLevelRoleRow(row as LevelRoleResult)).filter(Boolean) as LevelRoleResult[];
+			}
 
 			case "sqlite":
 				if (collection === "simply-xps") {
@@ -474,7 +477,7 @@ export class Database {
 		const now = new Date().toISOString();
 
 		switch (xp.dbType) {
-			case "mongodb":
+			case "mongodb": {
 				let mongoResult: Document;
 				const normalizedUpdateData = update.collection === "simply-xps"
 					? normalizeUserWriteData(update.data as UserOptions["data"])
@@ -494,8 +497,9 @@ export class Database {
 				}
 
 				break;
+			}
 
-			case "sqlite":
+			case "sqlite": {
 				if (filter.collection !== update.collection) throw new XpFatal({
 					function: "updateOne()",
 					message: "Collection mismatch, expected same collection on both filter and update."
@@ -589,6 +593,7 @@ export class Database {
 
 				if (shouldReturnNull) return null;
 				break;
+			}
 		}
 
 		if (update.collection === "simply-xps") {

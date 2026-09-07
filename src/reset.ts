@@ -48,16 +48,11 @@ export async function reset(userId: string, guildId: string, erase: boolean = fa
 		return true;
 	}
 
-	const normalizedFlags = Array.isArray((userData as { flags?: Array<number | string> }).flags)
-		? ((userData as { flags?: Array<number | string> }).flags || []).filter((flag) => flag !== "modified")
-		: [];
-
 	await Database.updateOne(
 		{ collection: "simply-xps", data: userFilter },
 		{
 			collection: "simply-xps",
 			data: {
-				flags: normalizedFlags,
 				guild: guildId,
 				level: 0,
 				name: username || (userData as { name?: string }).name || userId,

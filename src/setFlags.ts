@@ -5,7 +5,7 @@ import { Database, xp } from "../xp";
 
 
 /**
- * Flag a user, currently only supports "modified" and "illegal"
+ * Set a user's flags.
  * @param {string} userId
  * @param {string} guildId
  * @param {Array<number | string> | undefined} flags - "Undefined" will remove the flags
