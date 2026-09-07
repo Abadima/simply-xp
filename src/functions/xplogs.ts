@@ -30,6 +30,79 @@ Object.defineProperty(XpFatal.prototype, "name", {
 	value: "SimplyXpFatal",
 });
 
+export type XpEventCallback = {
+	custom?: (message: string) => void | Promise<void>;
+	debug?: (xpFunction: string, message: string) => void | Promise<void>;
+	error?: (xpFunction: string, message: string) => void | Promise<void>;
+	info?: (xpFunction: string, message: string) => void | Promise<void>;
+	levelDown?: (data: UserResult, lostRoles: string[]) => void | Promise<void>;
+	levelUp?: (data: UserResult, newRoles: string[]) => void | Promise<void>;
+	warn?: (xpFunction: string, message: string) => void | Promise<void>;
+};
+
+/**
+ * Event handler for XP events
+ * @class XpEvents
+ * @public
+ */
+export class XpEvents {
+	static eventCallback: XpEventCallback;
+	private static extraListeners: XpEventCallback[] = [];
+
+	/**
+	 * Set the primary event callbacks, replacing any previously set with `on()`.
+	 *
+	 * Only one `on()` callback object exists at a time. If you are writing a plugin, or anything
+	 * that has to coexist with other listeners, use {@link XpEvents.add} instead.
+	 * @param {XpEventCallback} callbacks - The callbacks to set.
+	 * @link `Documentation:` https://simplyxp.js.org/docs/Classes/XpEvents#xpeventson
+	 * @returns {void}
+	 */
+	static on(callbacks: XpEventCallback): void {
+		XpEvents.eventCallback = callbacks;
+	}
+
+	/**
+	 * Add event callbacks without replacing existing ones.
+	 *
+	 * Unlike `on()`, any number of listeners can be added, so plugins and bot code can subscribe
+	 * to the same events side by side.
+	 * @param {XpEventCallback} callbacks - The callbacks to add.
+	 * @link `Documentation:` https://simplyxp.js.org/docs/Classes/XpEvents#xpeventsadd
+	 * @returns {() => void} Call the returned function to remove these callbacks again.
+	 * @throws {XpFatal} If callbacks is not an object.
+	 */
+	static add(callbacks: XpEventCallback): () => void {
+		if (!callbacks || typeof callbacks !== "object") throw new XpFatal({
+			function: "XpEvents.add()", message: "Callbacks must be an object"
+		});
+
+		XpEvents.extraListeners.push(callbacks);
+
+		return (): void => {
+			const index = XpEvents.extraListeners.indexOf(callbacks);
+			if (index !== -1) XpEvents.extraListeners.splice(index, 1);
+		};
+	}
+
+	/**
+	 * Collects every handler registered for an event, from `on()` first and then `add()`.
+	 * @private
+	 */
+	static handlers<K extends keyof XpEventCallback>(event: K): NonNullable<XpEventCallback[K]>[] {
+		const collected: NonNullable<XpEventCallback[K]>[] = [];
+		const primary = XpEvents.eventCallback?.[event];
+		if (typeof primary === "function") collected.push(primary as NonNullable<XpEventCallback[K]>);
+
+		for (const listener of XpEvents.extraListeners) {
+			const handler = listener[event];
+			if (typeof handler === "function") collected.push(handler as NonNullable<XpEventCallback[K]>);
+		}
+
+		return collected;
+	}
+}
+
 /**
  * Emits a log message
  * @class XpLog
@@ -106,78 +179,5 @@ export class XpLog {
 	 */
 	static warn(xpFunction: string, message: string) {
 		XpLog.log("warn", xpFunction, message);
-	}
-}
-
-export type XpEventCallback = {
-	custom?: (message: string) => void | Promise<void>;
-	debug?: (xpFunction: string, message: string) => void | Promise<void>;
-	error?: (xpFunction: string, message: string) => void | Promise<void>;
-	info?: (xpFunction: string, message: string) => void | Promise<void>;
-	levelDown?: (data: UserResult, lostRoles: string[]) => void | Promise<void>;
-	levelUp?: (data: UserResult, newRoles: string[]) => void | Promise<void>;
-	warn?: (xpFunction: string, message: string) => void | Promise<void>;
-};
-
-/**
- * Event handler for XP events
- * @class XpEvents
- * @public
- */
-export class XpEvents {
-	static eventCallback: XpEventCallback;
-	private static extraListeners: XpEventCallback[] = [];
-
-	/**
-	 * Set the primary event callbacks, replacing any previously set with `on()`.
-	 *
-	 * Only one `on()` callback object exists at a time. If you are writing a plugin, or anything
-	 * that has to coexist with other listeners, use {@link XpEvents.add} instead.
-	 * @param {XpEventCallback} callbacks - The callbacks to set.
-	 * @link `Documentation:` https://simplyxp.js.org/docs/Classes/XpEvents#xpeventson
-	 * @returns {void}
-	 */
-	static on(callbacks: XpEventCallback): void {
-		XpEvents.eventCallback = callbacks;
-	}
-
-	/**
-	 * Add event callbacks without replacing existing ones.
-	 *
-	 * Unlike `on()`, any number of listeners can be added, so plugins and bot code can subscribe
-	 * to the same events side by side.
-	 * @param {XpEventCallback} callbacks - The callbacks to add.
-	 * @link `Documentation:` https://simplyxp.js.org/docs/Classes/XpEvents#xpeventsadd
-	 * @returns {() => void} Call the returned function to remove these callbacks again.
-	 * @throws {XpFatal} If callbacks is not an object.
-	 */
-	static add(callbacks: XpEventCallback): () => void {
-		if (!callbacks || typeof callbacks !== "object") throw new XpFatal({
-			function: "XpEvents.add()", message: "Callbacks must be an object"
-		});
-
-		XpEvents.extraListeners.push(callbacks);
-
-		return (): void => {
-			const index = XpEvents.extraListeners.indexOf(callbacks);
-			if (index !== -1) XpEvents.extraListeners.splice(index, 1);
-		};
-	}
-
-	/**
-	 * Collects every handler registered for an event, from `on()` first and then `add()`.
-	 * @private
-	 */
-	static handlers<K extends keyof XpEventCallback>(event: K): NonNullable<XpEventCallback[K]>[] {
-		const collected: NonNullable<XpEventCallback[K]>[] = [];
-		const primary = XpEvents.eventCallback?.[event];
-		if (typeof primary === "function") collected.push(primary as NonNullable<XpEventCallback[K]>);
-
-		for (const listener of XpEvents.extraListeners) {
-			const handler = listener[event];
-			if (typeof handler === "function") collected.push(handler as NonNullable<XpEventCallback[K]>);
-		}
-
-		return collected;
 	}
 }

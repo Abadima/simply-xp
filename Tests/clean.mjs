@@ -37,7 +37,7 @@ async function processDirectory(directory) {
 				reduce_funcs: true,
 				reduce_vars: true
 			},
-			output: { comments: /^!|@returns/ },
+			output: { comments: /^!|@returns/u },
 			keep_fargs: false
 		});
 

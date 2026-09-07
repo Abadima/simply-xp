@@ -30,6 +30,19 @@
 		"no-throw-literal": "error",
 		"no-self-compare": "error",
 		"typescript/no-misused-promises": "error",
+		"no-use-before-define": [
+			"error",
+			{
+				// Allowed: JS function declarations are hoisted.
+				"functions": false,
+				// Enforced: const/let/class have TDZ runtime risks.
+				"classes": true,
+				"variables": true,
+				"enums": true,
+				"typedefs": false,
+				"ignoreTypeReferences": true
+			}
+		],
 		// `Database`, `Migrate`, `LevelRoles`, `XpLog` and `XpEvents` are intentionally
 		// static-only classes. That is the documented public API shape (`Database.findOne()`,
 		// `LevelRoles.add()`, ...), not an accident.

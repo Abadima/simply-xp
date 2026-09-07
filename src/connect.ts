@@ -14,6 +14,15 @@ export type ConnectionOptions = {
 }
 
 /**
+ * Supported major version range for each database adapter.
+ * @private
+ */
+export const ADAPTER_VERSION_RANGES = {
+	"better-sqlite3": { min: 7, max: 13 },
+	mongodb: { min: 4, max: 7 },
+} as const;
+
+/**
  * Connect to a database (MongoDB, SQLite)
  *
  * @async
@@ -307,15 +316,6 @@ export async function ensureMongoSchemaVersion(client: MongoClient): Promise<num
 
 	return typeof metaDoc.schemaVersion === "number" ? metaDoc.schemaVersion : 1;
 }
-
-/**
- * Supported major version range for each database adapter.
- * @private
- */
-export const ADAPTER_VERSION_RANGES = {
-	"better-sqlite3": { min: 7, max: 13 },
-	mongodb: { min: 4, max: 7 },
-} as const;
 
 /**
  * Check database package versions

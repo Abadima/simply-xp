@@ -173,7 +173,7 @@ export class Database {
 		}
 
 		if (query.collection === "simply-xps") {
-			const createdUser = await db.findOne({
+			const createdUser = await this.findOne({
 				collection: "simply-xps",
 				data: { guild: normalizedUserCreateData?.guild as string, user: normalizedUserCreateData?.user }
 			}) as UserResult | null;
@@ -185,7 +185,7 @@ export class Database {
 		const level = getLevelRoleLevel(query.data);
 		if (level === null) throw new XpFatal({ function: "createOne()", message: "Level role level was not provided" });
 
-		const createdLevelRole = await db.findOne({
+		const createdLevelRole = await this.findOne({
 			collection: "simply-xp-levelroles",
 			data: { guild: query.data.guild, levelrole: { level } }
 		}) as LevelRoleResult | null;
@@ -597,7 +597,7 @@ export class Database {
 		}
 
 		if (update.collection === "simply-xps") {
-			return db.findOne({
+			return this.findOne({
 				collection: "simply-xps",
 				data: {
 					guild: (filter.data as UserOptions["data"]).guild,
@@ -609,7 +609,7 @@ export class Database {
 		const level = getLevelRoleLevel((filter.data as LevelRoleOptions["data"])) ?? getLevelRoleLevel((update.data as LevelRoleOptions["data"]));
 		if (level === null) return null;
 
-		return db.findOne({
+		return this.findOne({
 			collection: "simply-xp-levelroles",
 			data: {
 				guild: (filter.data as LevelRoleOptions["data"]).guild,
