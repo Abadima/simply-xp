@@ -2,24 +2,26 @@
 
 Creates a user in Database. | `create`
 
-### Usage
+## Usage
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.create(userID, guildID)
+xp.create(userID, guildID);
 ```
 
-### Example
+## Example
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.create(message.author.id, message.guild.id)
+xp.create(message.author.id, message.guild.id);
 ```
 
 - ## Returns `<Boolean>`
 
-### Options
+`true` when the user was created, `undefined` when they already existed.
+
+## Options
 
 - no options ;(

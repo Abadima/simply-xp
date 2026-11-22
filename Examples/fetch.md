@@ -2,12 +2,12 @@
 
 Fetch User Data from Database | `fetch`
 
-### Usage
+## Usage
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.fetch(userID, guildID)
+xp.fetch(userID, guildID);
 ```
 
 - ## Returns `<Object>`
@@ -15,14 +15,14 @@ xp.fetch(userID, guildID)
 ```
 {
    level: 1,
-   xp: 1000,
-   reqxp: 10000,
+   xp: 150,
+   reqxp: 400,
    rank: 1,
-   shortxp: 1k,
-   shortreq: 10k
+   shortxp: '150',
+   shortreq: '400'
 }
 ```
 
-### Options
+## Options
 
 - no options ;(

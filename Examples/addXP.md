@@ -2,38 +2,38 @@
 
 Add XP to a user | `addXP`
 
-### Usage
+## Usage
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.addXP(message, userID, guildID, xp)
+xp.addXP(message, userID, guildID, xp);
 ```
 
-### Example
+## Example
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.addXP(message, message.author.id, message.guild.id, 10)
+xp.addXP(message, message.author.id, message.guild.id, 10);
 ```
 
-- **_Tip:_** It has built in randomizer.. Use it by
+- **_Tip:_** It has built in randomizer (`max` is not included).. Use it by
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
 xp.addXP(message, message.author.id, message.guild.id, {
   min: 10,
   max: 25
-})
+});
 ```
 
 - ## Returns `<Object>`
 
 ```
 {
-  level: 1,
+  level: 0,
   xp: 10
 }
 ```
@@ -41,7 +41,7 @@ xp.addXP(message, message.author.id, message.guild.id, {
 - ## Fires `levelUp` event
 
 ```js
-client.on('levelUp', async (message, data) => {})
+client.on("levelUp", async (message, data, role) => {});
 ```
 
 - - ### data Returns `<Object>`
@@ -54,3 +54,5 @@ client.on('levelUp', async (message, data) => {})
   guildID
 }
 ```
+
+- - ### role Returns `<Array>` of the level roles set for the new level (`{ lvl, role }`), or `undefined` when no roles are set up

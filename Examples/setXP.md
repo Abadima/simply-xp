@@ -2,27 +2,28 @@
 
 Set XP to a user | `setXP`
 
-### Usage
+## Usage
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.setXP(userID, guildID, xp)
+xp.setXP(userID, guildID, xp);
 ```
 
-### Example
+## Example
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.setXP(message.author.id, message.guild.id, 100)
+xp.setXP(message.author.id, message.guild.id, 100);
 ```
 
 - ## Returns `<Object>`
 
 ```
 {
-  xp: 100
+  xp: 100,
+  level: 1
 }
 ```
 

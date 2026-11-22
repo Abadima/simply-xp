@@ -2,23 +2,23 @@
 
 Have Level Roles without killing brain cells | `lvlRole`
 
-### Usage
+## Usage
 
 It Checks and gives the role if the user has the level..
 **_Required ! `roleSetup`_**
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.lvlRole(message, userID, guildID)
+xp.lvlRole(message, userID, guildID);
 ```
 
-### Example
+## Example
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.lvlRole(message, message.author.id, message.guild.id)
+xp.lvlRole(message, message.author.id, message.guild.id);
 ```
 
 - ## Returns `<void>`

@@ -2,35 +2,35 @@
 
 Add Level to a user | `addLevel`
 
-### Usage
+## Usage
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.addLevel(message, userID, guildID, level)
+xp.addLevel(message, userID, guildID, level);
 ```
 
-### Example
+## Example
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.addLevel(message, message.author.id, message.guild.id, 10)
+xp.addLevel(message, message.author.id, message.guild.id, 10);
 ```
 
 - ## Returns `<Object>`
 
 ```
 {
-  level: 1,
-  xp: 10
+  level: 10,
+  xp: 10000
 }
 ```
 
 - ## Fires `levelUp` event
 
 ```js
-client.on('levelUp', async (message, data, role) => {})
+client.on("levelUp", async (message, data, role) => {});
 ```
 
 - - ### data Returns `<Object>`
@@ -43,3 +43,5 @@ client.on('levelUp', async (message, data, role) => {})
   guildID
 }
 ```
+
+- - ### role Returns `<Array>` of the level roles set for the new level (`{ lvl, role }`), or `undefined` when no roles are set up

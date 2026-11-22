@@ -2,20 +2,29 @@
 
 Resets user data | `reset`
 
-### Usage
+## Usage
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.reset(userID, guildID)
+xp.reset(userID, guildID);
 ```
 
-### Example
+## Example
 
 ```js
-let xp = require('simply-xp')
+let xp = require("simply-xp");
 
-xp.reset(message.author.id, message.guild.id)
+xp.reset(message.author.id, message.guild.id);
 ```
 
 - ## Returns `<Object>`
+
+```
+{
+  user: userID,
+  guild: guildID,
+  xp: 0,
+  level: 0
+}
+```
