@@ -7,6 +7,7 @@ pnpm-workspace.yaml
 
 # Version control / CI
 .codacy
+.codacy.yaml
 .github
 .gitignore
 
