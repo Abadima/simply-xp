@@ -1,4 +1,4 @@
-const { checkPackageVersion } = require("../lib/src/connect");
+const { checkPackageVersion } = require("../lib/src/functions/adapters");
 const { access } = require("fs/promises");
 const assert = require("assert");
 const { EventEmitter } = require("events");
@@ -58,6 +58,7 @@ async function fileExists(path) {
 }
 
 async function loadMongoUri() {
+    if (process.env.MONGO_URI) return process.env.MONGO_URI;
     if (!(await fileExists("secrets.cjs"))) return null;
     return require("../secrets.cjs").MongoURI;
 }
@@ -101,7 +102,7 @@ function normalizeUser(user) {
 }
 
 function normalizeLeaderboard(users) {
-    return users.map((user) => ({
+    return [...users].sort((a, b) => b.xp - a.xp || a.user.localeCompare(b.user)).map((user) => ({
         flags: [...(user.flags || [])].sort(),
         level: user.level,
         name: user.name,
@@ -175,44 +176,29 @@ async function testAsyncCallbacksAreAwaited() {
     await clearGuild(guildId);
 }
 
-async function testMongoDbNameThreadingViaUpdateOptions() {
-    const requestedDbName = "regression-db-name";
-    let capturedDbNames = [];
+async function testUpdateOptionsRequiresMongoDbName() {
+    await assert.rejects(
+        () => xp.updateOptions({ dbOptions: { type: "mongodb", database: { db: () => ({}) } } }),
+        { name: "SimplyXpFatal", message: /dbOptions\.name/u }
+    );
+}
 
-    const fakeCollection = {
-        deleteMany: async () => ({ deletedCount: 0 }),
-        findOne: async () => ({ _id: "schema", schemaVersion: 2 }),
-        updateMany: async () => ({ matchedCount: 0, modifiedCount: 0 }),
-        updateOne: async () => ({}),
-        find: () => ({ toArray: async () => [] })
-    };
+async function testMongoDbNameThreading() {
+    const { MongoClient } = require("mongodb");
+    const client = await MongoClient.connect(await loadMongoUri());
+    const dbName = "regression-db-name";
+    const guildId = "db-name-guild";
 
-    const fakeMongoClient = {
-        db: (name) => {
-            capturedDbNames.push(name);
-            return {
-                command: async () => ({ ok: 1 }),
-                collection: () => fakeCollection,
-                listCollections: () => ({ hasNext: async () => false })
-            };
-        }
-    };
+    try {
+        await xp.updateOptions({ auto_create: true, debug: false, notify: false, dbOptions: { type: "mongodb", database: client, name: dbName } });
+        await xp.addXP("db-name-user", guildId, 5, "DbNameUser");
 
-    xp.updateOptions({
-        auto_create: false,
-        debug: false,
-        notify: false,
-        dbOptions: {
-            type: "mongodb",
-            database: fakeMongoClient,
-            name: requestedDbName
-        }
-    });
-
-    await wait(50);
-
-    assert.strictEqual(xp.xp.dbName, requestedDbName, "Expected xp.dbName to use dbOptions.name");
-    assert.ok(capturedDbNames.includes(requestedDbName), "Expected internal MongoDB calls to use dbOptions.name");
+        const stored = await client.db(dbName).collection("simply-xps").findOne({ guild: guildId, user: "db-name-user" });
+        assert.ok(stored, "Expected data to be written to the database named in dbOptions.name");
+    } finally {
+        await client.db(dbName).collection("simply-xps").deleteMany({ guild: guildId });
+        await client.close();
+    }
 }
 
 async function testHttpsHelperBehavior() {
@@ -311,9 +297,7 @@ async function testCreateIsIdempotentOnExistingUser(type) {
     assert.strictEqual(first.name, "FirstName", `Expected the first create() to use the provided name for ${type}`);
     assert.strictEqual(first.xp, 0, `Expected a freshly created user to start at 0 xp for ${type}`);
 
-    // create() on an existing user must be a safe no-op on both adapters, not an error and
-    // not a silent overwrite. SQLite enforces this with INSERT OR IGNORE; MongoDB needs the
-    // matching upsert-with-$setOnInsert behavior in Database.createOne() to agree.
+    // create() on an existing user is a safe no-op on both adapters: no error, no overwrite.
     const second = await xp.create(userId, guildId, "SecondName");
     assert.strictEqual(second.name, "FirstName", `Expected create() on an existing user to keep the original name for ${type}, not overwrite it`);
     assert.strictEqual(second.user, first.user, `Expected create() on an existing user to return the same user for ${type}`);
@@ -372,20 +356,23 @@ async function testXpRateBulkSync(type) {
             .updateMany({ guild: guildId }, { $set: { xp_rate: 0.1, level: 0 } });
     }
 
-    await xp.updateOptions({ xp_rate: 0.5 });
+    try {
+        await xp.updateOptions({ xp_rate: 0.5 });
 
-    const rows = await xp.Database.find("simply-xps", guildId);
-    for (const row of rows) {
-        assert.strictEqual(row.xp_rate, 0.5, `Expected xp_rate mismatch rows to be bulk-updated for ${type}`);
-        assert.strictEqual(
-            row.level,
-            Math.floor(0.5 * Math.sqrt(row.xp)),
-            `Expected level to be recalculated during bulk xp_rate sync for ${type}`
-        );
+        const rows = await xp.Database.find("simply-xps", guildId);
+        assert.strictEqual(rows.length, 2, `Expected both users to be re-synced for ${type}`);
+        for (const row of rows) {
+            assert.strictEqual(row.xp_rate, 0.5, `Expected xp_rate mismatch rows to be bulk-updated for ${type}`);
+            assert.strictEqual(
+                row.level,
+                Math.floor(0.5 * Math.sqrt(row.xp)),
+                `Expected level to be recalculated during bulk xp_rate sync for ${type}`
+            );
+        }
+    } finally {
+        await xp.updateOptions({ xp_rate: 0.1 });
+        await clearGuild(guildId);
     }
-
-    await xp.updateOptions({ xp_rate: 0.1 });
-    await clearGuild(guildId);
 }
 
 async function testSqliteGuildColumnMigration() {
@@ -469,7 +456,8 @@ async function testMigrateFromDbMongoPathIntoSqlite() {
     const migrated = await xp.Migrate.fromDB("mongodb", fakeMongoConnection);
     assert.strictEqual(migrated, true, "Expected Migrate.fromDB() to succeed for mongodb input path");
 
-    const user = await xp.fetch(userId, guildId, "MigratedUser");
+    const user = await xp.fetch(userId, guildId);
+    assert.strictEqual(user.name, "MigratedUser", "Expected migrated user name to match source name");
     assert.strictEqual(user.level, 4, "Expected migrated user level to match source level");
     assert.deepStrictEqual(user.flags, [], "Expected migrated users to expose normalized empty flags array");
 
@@ -559,8 +547,7 @@ async function testAdditiveEventListeners(type) {
     let pluginSeen = 0;
     let ownerSeen = 0;
 
-    // A plugin subscribes first, then the bot owner registers its own handler.
-    // Before XpEvents.add() existed, the second call silently destroyed the first.
+    // A plugin subscribes first, then the bot owner registers its own handler: both must keep firing.
     const unsubscribe = xp.XpEvents.add({ levelUp: () => { pluginSeen++; } });
     xp.XpEvents.on({ levelUp: () => { ownerSeen++; } });
 
@@ -709,16 +696,149 @@ async function runParityScenario(type) {
 }
 
 async function testAdapterParity() {
-    const mongoUri = await loadMongoUri();
-    if (!mongoUri) {
-        return false;
-    }
-
     const sqliteState = await runParityScenario("sqlite");
     const mongoState = await runParityScenario("mongodb");
 
     assert.deepStrictEqual(mongoState, sqliteState, "Expected MongoDB and SQLite to return identical results for the same operation sequence");
-    return true;
+}
+
+async function testPluginRequiredVersions() {
+    const [major, minor, patch] = xp.xp.version.split("-")[0].split(".").map(Number);
+    const warnings = [];
+    const initialized = [];
+    const plugin = (name, requiredVersions) => ({ name, requiredVersions, initialize: () => { initialized.push(name); } });
+
+    xp.XpEvents.on({ info: () => { }, warn: (_caller, message) => { warnings.push(message); } });
+
+    try {
+        await xp.registerPlugins([
+            plugin("major", [`${major}`]),
+            plugin("minor", [`${major}.${minor}`]),
+            plugin("exact", [`${major}.${minor}.${patch}`]),
+            plugin("any-of", [`${major - 1}`, `${major}`]),
+            plugin("other-major", [`${major + 1}`]),
+            plugin("other-minor", [`${major}.${minor + 1}`]),
+            plugin("prerelease", [`${major}.${minor}.${patch}-beta.4`]),
+            plugin("bad-pattern", ["two"])
+        ]);
+    } finally {
+        await xp.unregisterPlugins();
+        xp.XpEvents.on({});
+    }
+
+    assert.deepStrictEqual(
+        initialized.sort(),
+        ["any-of", "exact", "major", "minor"],
+        `Expected only the plugins whose requiredVersions match v${xp.xp.version} to initialize`
+    );
+    assert.ok(
+        warnings.some((message) => message.startsWith("BAD-PATTERN PLUGIN PROVIDED INVALID VERSION PATTERN")),
+        "Expected an unparseable requiredVersions entry to be reported"
+    );
+}
+
+async function testCallerObjectsAreNotModified() {
+    const guildId = "no-mutation-guild";
+    const image = "Tests/assets/imgs/Abadima.png";
+
+    await connectAdapter("sqlite");
+    await clearGuild(guildId);
+    await xp.addXP("first", guildId, 500, "First");
+    await xp.addXP("second", guildId, 300, "Second");
+
+    xp.XpEvents.on({ warn: () => { } });
+
+    try {
+        // Assigning to a frozen object throws in strict mode, so any write to what the caller passed fails the call.
+        const guild = Object.freeze({ id: guildId, name: "No Mutation" });
+        const first = Object.freeze({ id: "first", username: "First", avatarURL: image });
+        const second = Object.freeze({ id: "second", username: "Second", avatarURL: image });
+        const options = Object.freeze({ background: image });
+
+        const rank = await xp.rankCard(guild, first, options, Object.freeze({}));
+        const compare = await xp.compareCard(guild, first, second, options, Object.freeze({}));
+        const board = await xp.leaderboardCard(Object.freeze(await xp.leaderboard(guildId)), Object.freeze({}), undefined, Object.freeze({}));
+        const chart = await xp.charts(guildId, Object.freeze({ theme: "unknown", type: "unknown" }));
+        await xp.LevelRoles.add(guildId, Object.freeze({ level: 3, roles: Object.freeze(["role"]) }));
+
+        assert.deepStrictEqual(
+            [rank.name, compare.name, board.name, chart.name],
+            ["rank.webp", "compareCard.webp", "leaderboard.webp", "chart.webp"]
+        );
+    } finally {
+        xp.XpEvents.on({});
+        await clearGuild(guildId);
+    }
+}
+
+const fatal = (message) => ({ name: "SimplyXpFatal", code: "SX_FATAL", message });
+
+async function testCardsRejectMissingInputs() {
+    const user = { id: "u", username: "U", avatarURL: "Tests/assets/imgs/Abadima.png" };
+    const guild = { id: "g", name: "G" };
+
+    await assert.rejects(() => xp.rankCard(null, user), fatal(/^rankCard\(\): No Guild Provided$/u));
+    await assert.rejects(() => xp.rankCard(guild, { id: "u" }), fatal(/^rankCard\(\): Invalid User Provided/u));
+    await assert.rejects(() => xp.compareCard({ id: "g" }, user, user), fatal(/^compareCard\(\): Please provide a guild$/u));
+    await assert.rejects(() => xp.compareCard(guild, user, { id: "x" }), fatal(/^compareCard\(\): Please provide two valid users!$/u));
+    await assert.rejects(() => xp.leaderboardCard([]), fatal(/^leaderboardCard\(\): There must be at least 1 user/u));
+    await assert.rejects(() => xp.charts(""), fatal(/^charts\(\): No Guild ID Provided$/u));
+}
+
+const mustBeString = (name, what) => fatal(new RegExp(`^${name}\\(\\): ${what} ID must be a string$`, "u"));
+
+async function testIdsMustNotBeObjects() {
+    const operator = { $ne: "" };
+    const user = { id: "u", username: "U", avatarURL: "Tests/assets/imgs/Abadima.png" };
+
+    await assert.rejects(() => xp.fetch(operator, "g"), mustBeString("fetch", "User"));
+    await assert.rejects(() => xp.fetch("u", operator), mustBeString("fetch", "Guild"));
+    await assert.rejects(() => xp.addXP(operator, "g", 5), mustBeString("addXP", "User"));
+    await assert.rejects(() => xp.setXP("u", operator, 5), mustBeString("setXP", "Guild"));
+    await assert.rejects(() => xp.removeLevel(operator, "g", 1), mustBeString("removeLevel", "User"));
+    await assert.rejects(() => xp.create(operator, "g", "name"), mustBeString("create", "User"));
+    await assert.rejects(() => xp.leaderboard(operator), mustBeString("leaderboard", "Guild"));
+    await assert.rejects(() => xp.charts(operator), mustBeString("charts", "Guild"));
+    await assert.rejects(() => xp.rankCard({ id: operator, name: "G" }, user), mustBeString("rankCard", "Guild"));
+    await assert.rejects(() => xp.rankCard({ id: "g", name: "G" }, { ...user, id: operator }), mustBeString("rankCard", "User"));
+    await assert.rejects(() => xp.LevelRoles.getUserRoles(operator, "g"), mustBeString("LevelRoles.getUserRoles", "User"));
+}
+
+async function testCanvasLoadsOnFirstUse() {
+    const { execFile } = require("node:child_process");
+    const probe = `
+        const xp = require(${JSON.stringify(require.resolve("../lib/xp"))});
+        const loaded = () => Object.keys(require.cache).some((file) => file.includes("@napi-rs"));
+        const before = loaded();
+        xp.clean();
+        const afterClean = loaded();
+        xp.registerFont(${JSON.stringify(require.resolve("./assets/fonts/kiwi-maru-japanese-400-normal.woff"))}, "Probe").then(() => {
+            process.stdout.write(JSON.stringify({ before, afterClean, afterFont: loaded() }));
+        });
+    `;
+    const stdout = await new Promise((resolve, reject) => {
+        execFile(process.execPath, ["-e", probe], { encoding: "utf8" }, (error, output) => (error ? reject(error) : resolve(output)));
+    });
+    const seen = JSON.parse(stdout);
+
+    assert.deepStrictEqual(seen, { before: false, afterClean: false, afterFont: true },
+        "Expected the canvas to load when a font, card or chart needs it, not when simply-xp is required");
+}
+
+async function testVersionsStayInStep() {
+    const pkg = require("../package.json");
+    const { ADAPTER_VERSION_RANGES } = require("../lib/src/functions/adapters");
+
+    assert.strictEqual(xp.xp.version, pkg.version, "Expected the version baked into the client to match package.json");
+
+    for (const [name, range] of Object.entries(ADAPTER_VERSION_RANGES)) {
+        const majors = pkg.peerDependencies[name].split("||").map((part) => parseInt(part.replace("^", ""), 10));
+        assert.deepStrictEqual(
+            { min: Math.min(...majors), max: Math.max(...majors) },
+            { min: range.min, max: range.max },
+            `Expected the supported ${name} majors to match peerDependencies`
+        );
+    }
 }
 
 async function run() {
@@ -728,12 +848,21 @@ async function run() {
         await runCase("removes deprecated top-level aliases", testDeprecatedAliasesRemoved);
         await runCase("ships the bundled default font in lib/", testBundledFontIsPackaged);
         await runCase("throws catchable fatal on missing adapter", testMissingAdapterThrowsCatchableFatal);
+        await runCase("keeps the version and the supported adapter majors in step with package.json", testVersionsStayInStep);
+        await runCase("loads the canvas when a font, card or chart needs it, not on require()", testCanvasLoadsOnFirstUse);
     });
 
     await runGroup("Events and helper behavior", async () => {
         await runCase("awaits async level callbacks", testAsyncCallbacksAreAwaited);
-        await runCase("threads mongodb dbOptions.name through internals", testMongoDbNameThreadingViaUpdateOptions);
+        await runCase("requires dbOptions.name for mongodb", testUpdateOptionsRequiresMongoDbName);
         await runCase("handles https helper endpoint override and timeout cleanup", testHttpsHelperBehavior);
+        await runCase("matches plugin requiredVersions against the installed version", testPluginRequiredVersions);
+    });
+
+    await runGroup("Caller input handling", async () => {
+        await runCase("leaves the options, locales and roles the caller passed untouched", testCallerObjectsAreNotModified);
+        await runCase("rejects missing cards and charts inputs with a catchable SimplyXpFatal", testCardsRejectMissingInputs);
+        await runCase("refuses user and guild IDs that are objects (they would be MongoDB query operators)", testIdsMustNotBeObjects);
     });
 
     await runGroup("Migration coverage", async () => {
@@ -771,12 +900,10 @@ async function run() {
             await runCase("normalizes setFlags(undefined) to []", () => testSetFlagsUndefinedNormalization("mongodb"));
             await runCase("supports additive XpEvents.add() listeners", () => testAdditiveEventListeners("mongodb"));
             await runCase("gives plugins isolated namespace storage", () => testPluginNamespaceStore("mongodb"));
+            await runCase("writes to the database named in dbOptions.name", testMongoDbNameThreading);
         });
 
-        await runCase("keeps sqlite and mongodb parity for same scenario", async () => {
-            const parityCovered = await testAdapterParity();
-            assert.strictEqual(parityCovered, true, "Expected adapter parity test to run when Mongo URI is available");
-        });
+        await runCase("keeps sqlite and mongodb parity for same scenario", testAdapterParity);
     } else {
         printSkip("MongoDB adapter behavior");
         printSkip("cross-adapter parity scenario");

@@ -6,7 +6,7 @@ import { minify } from "uglify-js";
 const directories = ["lib/src/", "lib/src/classes/", "lib/src/functions/"];
 
 // tsc only emits .js/.d.ts, so non-code assets have to be copied into lib/ ourselves.
-// cards.ts/charts.ts resolve these at runtime via join(__dirname, "fonts", ...).
+// registerCardFonts() in src/functions/utilities.ts resolves this one at runtime via join(__dirname, "..", "fonts", ...).
 const assets = [["src/fonts/Baloo2-Regular.woff2", "lib/src/fonts/Baloo2-Regular.woff2"]];
 
 async function processDirectory(directory) {
