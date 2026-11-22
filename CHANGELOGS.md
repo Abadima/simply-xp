@@ -1,4 +1,35 @@
+<!-- markdownlint-disable MD024 MD025 -->
+
 # VERSION 2
+
+## [V2.1.0](https://github.com/Abadima/simply-xp/releases/tag/v2.1.0) - V2 MINOR
+
+### ⭐ Improvements
+
+- Refactor `addXP()`, `removeXP()`, `setXP()`, `addLevel()`, `removeLevel()` and `setLevel()` to share one update path.
+- Refactor adapter version checks, schema setup, user lookup and card drawing into their own modules instead of copies.
+- Define the level formula once for JavaScript, MongoDB and SQLite.
+- Load `@napi-rs/canvas` on first use, so `require("simply-xp")` is about 60 ms and 55 MB lighter.
+- Encode cards and charts off the main thread, and free each canvas straight after, so rendering no longer piles up memory until the next garbage collection.
+- Stop `https()` from reading responses larger than 25 MiB (set `maxBytes` to change it).
+- Add regression tests for plugin `requiredVersions`, card and chart inputs, untouched option objects, object IDs and lazy canvas loading.
+- Correct the JSDoc of `compareCard()`, `charts()`, `LevelRoles.getGuildRoles()`, `Migrate` and `https()`.
+
+### 🔀 Changes
+
+- `https()` now rejects with an `Error` (still with `error` and `status`) instead of a plain object.
+- Card background and avatar images that take longer than 10 seconds to load now fail with the usual "Unable to load" error instead of waiting forever.
+
+### ⚒️ Bug Fixes
+
+- Fix user and guild IDs passed as objects (like `{ $ne: "" }`) reaching MongoDB as query operators, so `fetch()` could return another user. They now throw `SX_FATAL`.
+- Fix `Migrate.fromDB()` not keeping user names.
+- Fix `rankCard()`, `compareCard()`, `leaderboardCard()`, `charts()` and `LevelRoles.add()` changing the objects passed in.
+- Fix SQLite `connect()` hiding the `SX_ADAPTER_MISSING` error for a missing or outdated `better-sqlite3`.
+- Fix `convertFrom()`, `LevelRoles.getGuildRoles()` and `Migrate.fromDB()` reporting the wrong function in errors.
+- Fix `src/Fonts` duplicating `src/fonts`, which breaks checkouts on Windows and macOS.
+- Fix `npm run performance` not copying the font into `lib/`.
+- Fix remaining Codacy findings in the code, README and GitHub templates.
 
 ## [V2.0.1](https://github.com/Abadima/simply-xp/releases/tag/v2.0.1) - V2 PATCH
 
@@ -442,6 +473,49 @@
 - `roleSetup()` functions loses `client` argument.
 
 # VERSION 1
+
+## [1.4.0](https://github.com/Abadima/simply-xp/releases/tag/v1.4.0)
+
+### ⚠️ Behavior Changes
+
+- Failed database writes now reject instead of only being logged, and `connect()` rejects if it fails.
+- XP no longer goes below `0`, and fractional levels are rounded down.
+- `levelUp` now also fires for new users who start above level 0.
+- `lvlRole()` now throws when the user ID or server ID is missing.
+
+### ✅ Additions
+
+- Add typings for `roleSetup`, `options`, `addXP({ min, max })`, `lvlbar`, `lvlbarBg` and the `pie` chart.
+- Accept any `Message` or `Client`-shaped object in the typings, fixing TypeScript errors in ESM projects.
+
+### ⚒️ Bug Fixes
+
+- Fix a user only being able to have XP in one server. `connect()` replaces the old index, so it needs permission to manage indexes.
+- Fix `addXP()`, `addLevel()` and `setXP()` for users with no record, and simultaneous calls losing XP.
+- Fix `levelUp` firing incorrectly, and `0` or negative values being mishandled.
+- Fix `charts()` throwing when called without options.
+- Fix `leaderboard()` with `auto_purge` deleting members whose lookup only failed.
+- Fix a billion showing as `1T` in `fetch()` and `leaderboard()`.
+- Fix smaller issues in `reset()`, `create()` and `roleSetup.remove()`.
+
+### ⬆️ Dependencies
+
+- Replace `mongoose` with the official `mongodb` driver (`^6.22.0`). Install `mongoose` yourself if you used it through simply-xp.
+- Remove `chart.js`; `charts()` now draws its own charts.
+- Bump `@napi-rs/canvas` from `v0.1.88` to `v1.1.1`.
+- Limit the `discord.js` peer dependency to `^13.12.0 || ^14.19.0`.
+- Require Node.js `16.20.1` and MongoDB `4.2` or newer (Bun `1.1.39` also works).
+
+### ⭐ Improvements
+
+- Install size drops from 28 packages / 70 MB to 15 packages / 44 MB.
+- Load about 40% faster, with 40–70% faster database calls and about 35% less peak memory. `connect()` takes about 10 ms longer, once.
+- `setXP()` now returns `{ xp, level }`.
+- Rewrite the internals, add `npm test` and replace `eslint` with `oxlint` and `oxfmt`.
+
+### 💎 Design Changes
+
+- Redraw `charts()` with readable text on any background, the bundled font and rotating labels.
 
 ## [1.3.8](https://github.com/Abadima/simply-xp/commit/b52848a7dee22428aab7fdfc56cd9a0a063f82d4)
 
