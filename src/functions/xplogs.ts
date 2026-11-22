@@ -1,4 +1,5 @@
 import type { UserResult } from "../classes/Database";
+import { isRecord } from "./predicates";
 import { xp } from "../client";
 
 type errOptions = {
@@ -8,20 +9,18 @@ type errOptions = {
 }
 
 /**
- * Emits a fatal error message
+ * The error simply-xp throws: its message starts with the function that failed.
  * @class XpFatal
  */
 export class XpFatal extends Error {
 	readonly code: string;
 
 	/**
-	 * Emits a simple error message
-	 * @param {errOptions} options
+	 * @param {errOptions} options - The failing function, a message and an optional error code
 	 * @private
 	 */
-
 	constructor(options: errOptions) {
-		super(`${options.function}: ${options.message}`);
+		super(`${options.function}: ${String(options.message)}`);
 		this.code = options.code || "SX_FATAL";
 	}
 }
@@ -40,13 +39,24 @@ export type XpEventCallback = {
 	warn?: (xpFunction: string, message: string) => void | Promise<void>;
 };
 
+/** Reads one event's handler off a callbacks object, with literal property names so no caller-supplied key is ever looked up. */
+const HANDLER_OF = new Map<keyof XpEventCallback, (callbacks: XpEventCallback) => unknown>([
+	["custom", (callbacks) => callbacks.custom],
+	["debug", (callbacks) => callbacks.debug],
+	["error", (callbacks) => callbacks.error],
+	["info", (callbacks) => callbacks.info],
+	["levelDown", (callbacks) => callbacks.levelDown],
+	["levelUp", (callbacks) => callbacks.levelUp],
+	["warn", (callbacks) => callbacks.warn]
+]);
+
 /**
  * Event handler for XP events
  * @class XpEvents
  * @public
  */
 export class XpEvents {
-	static eventCallback: XpEventCallback;
+	static eventCallback: XpEventCallback | undefined;
 	private static extraListeners: XpEventCallback[] = [];
 
 	/**
@@ -73,7 +83,7 @@ export class XpEvents {
 	 * @throws {XpFatal} If callbacks is not an object.
 	 */
 	static add(callbacks: XpEventCallback): () => void {
-		if (!callbacks || typeof callbacks !== "object") throw new XpFatal({
+		if (!isRecord(callbacks)) throw new XpFatal({
 			function: "XpEvents.add()", message: "Callbacks must be an object"
 		});
 
@@ -90,18 +100,25 @@ export class XpEvents {
 	 * @private
 	 */
 	static handlers<K extends keyof XpEventCallback>(event: K): NonNullable<XpEventCallback[K]>[] {
+		const handlerOf = HANDLER_OF.get(event);
 		const collected: NonNullable<XpEventCallback[K]>[] = [];
-		const primary = XpEvents.eventCallback?.[event];
-		if (typeof primary === "function") collected.push(primary as NonNullable<XpEventCallback[K]>);
+		if (!handlerOf) return collected;
 
-		for (const listener of XpEvents.extraListeners) {
-			const handler = listener[event];
+		for (const listener of XpEvents.eventCallback ? [XpEvents.eventCallback, ...XpEvents.extraListeners] : XpEvents.extraListeners) {
+			const handler = handlerOf(listener);
 			if (typeof handler === "function") collected.push(handler as NonNullable<XpEventCallback[K]>);
 		}
 
 		return collected;
 	}
 }
+
+const LOG_COLORS = new Map([
+	["debug", "\x1b[36m"], // Cyan
+	["info", "\x1b[34m"], // Blue
+	["error", "\x1b[31m"], // Red
+	["warn", "\x1b[33m"] // Yellow
+]);
 
 /**
  * Emits a log message
@@ -117,13 +134,6 @@ export class XpLog {
 	 * @private
 	 */
 	static log(level: ("debug" | "error" | "info" | "warn"), xpFunction: string, message: string) {
-		const logColor = {
-			debug: "\x1b[36m", // Cyan
-			info: "\x1b[34m", // Blue
-			error: "\x1b[31m", // Red
-			warn: "\x1b[33m" // Yellow
-		};
-
 		const callbacks = XpEvents.handlers(level),
 			logLevel = level.toUpperCase(), logCommand = xpFunction.toUpperCase();
 		if (callbacks.length > 0) {
@@ -133,7 +143,7 @@ export class XpLog {
 				});
 			}
 		} else {
-			console.log(`\x1b[35m[SIMPLY XP]\x1b[0m ${logColor[level]}(${logLevel})\x1b[0m ${logCommand}: ${message}`);
+			console.log(`\x1b[35m[SIMPLY XP]\x1b[0m ${LOG_COLORS.get(level) ?? ""}(${logLevel})\x1b[0m ${logCommand}: ${message}`);
 		}
 	}
 

@@ -1,11 +1,14 @@
-import { createCanvas, Image, loadImage, SKRSContext2D } from "@napi-rs/canvas";
-import { convertFrom, registerFont } from "./functions/utilities";
+import { registerCardFonts, registerFont } from "./functions/utilities";
+import { convertFrom } from "./functions/curve";
+import type { Image, SKRSContext2D } from "@napi-rs/canvas";
+import { encodeWebp, loadCanvas, loadImage } from "./functions/canvas";
+import { findOrCreateUser, positionOf } from "./functions/users";
+import { CARD_FONT, dynamicFont, FALLBACK_FONT, RoundedBox, SECONDARY_FONT, strokedText } from "./functions/draw";
+import { hasFields, optionsOf, requireIds, requireValue } from "./functions/guards";
 import { renderCleanup } from "./functions/renderCleanup";
 import { XpFatal, XpLog } from "./functions/xplogs";
-import { Database } from "./classes/Database";
-import { xp, type User } from "./client";
-import { create } from "./create";
-import { join } from "path";
+import type { UserResult } from "./classes/Database";
+import type { User } from "./client";
 
 export type CompareCardLocales = {
 	level?: string;
@@ -100,8 +103,8 @@ export type CardUserOptions = {
  * @param {{id: string, name: string}} guild - (id, name)
  * @param {CardUserOptions} user1 - User 1
  * @param {CardUserOptions} user2 - User 2
- * @param {CompareCardOptions?} options - (background, color, legacy, lvlbar, lvlbarBg, font)
- * @param {CompareCardLocales?} locales - [BETA] Translate the rank card
+ * @param {CompareCardOptions?} options - (background, color, centerBar, centerBarBg, light, font, fallbackFont)
+ * @param {CompareCardLocales?} locales - [BETA] Translate the comparison card (level, versus)
  * @link `Documentation` https://simplyxp.js.org/docs/functions/compareCard
  * @returns {Promise<{attachment: Buffer, description: string, name: string}>}
  * @throws {XpFatal} - If parameters are not provided correctly or if the user is not found in the database
@@ -114,56 +117,51 @@ export async function compareCard(guild: {
 	description: string;
 	name: string;
 }> {
-	if (!guild?.id || !guild?.name) throw new XpFatal({ function: "compareCard()", message: "Please provide a guild" });
-	if (!user1?.id || !user1?.username || !user2?.id || !user2?.username) throw new XpFatal({
+	if (!hasFields(guild, "id", "name")) throw new XpFatal({ function: "compareCard()", message: "Please provide a guild" });
+	if (!hasFields(user1, "id", "username") || !hasFields(user2, "id", "username")) throw new XpFatal({
 		function: "compareCard()",
 		message: "Please provide two valid users!"
 	});
+	requireIds("compareCard()", user1.id, guild.id);
+	requireIds("compareCard()", user2.id, guild.id);
+
+	const opts = optionsOf(options);
+	const labels = { level: optionsOf(locales).level || "Level", versus: optionsOf(locales).versus || "vs" };
 
 	try {
-		await registerFont(options?.font || join(__dirname, "fonts", "Baloo2-Regular.woff2"), "Baloo");
-		if (options?.fallbackFont) await registerFont(options.fallbackFont, "FallbackFont");
+		await registerCardFonts(opts.font, opts.fallbackFont);
 
-		if (!locales?.level) locales.level = "Level";
-		if (!locales?.versus) locales.versus = "vs";
-
-		const compareImage = await loadImage(options?.background || "https://i.ibb.co/WnfXZjc/clouds.jpg").catch(() => {
+		const compareImage = await loadImage(opts.background || "https://i.ibb.co/WnfXZjc/clouds.jpg").catch(() => {
 			throw new XpFatal({
 				function: "compareCard()", message: "Unable to load background image, is it valid and reachable?"
 			});
 		});
 
-		const avatarURL1 = await loadImage(user1.avatarURL).catch(() => {
+		const avatar1 = await loadImage(user1.avatarURL).catch(() => {
 			throw new XpFatal({
 				function: "compareCard()", message: "[USER 1] Unable to load user's AvatarURL, is it valid and reachable?"
 			});
 		});
 
-		const avatarURL2 = await loadImage(user2.avatarURL).catch(() => {
+		const avatar2 = await loadImage(user2.avatarURL).catch(() => {
 			throw new XpFatal({
 				function: "compareCard()", message: "[USER 2] Unable to load user's AvatarURL, is it valid and reachable?"
 			});
 		});
 
-		let dbUser1 = await Database.findOne({ collection: "simply-xps", data: { guild: guild.id, user: user1.id } }) as User;
-		if (!dbUser1) {
-			if (xp.auto_create && user1?.username) dbUser1 = await create(user1.id, guild.id, user1.username) as User;
-			else throw new XpFatal({ function: "compareCard()", message: "[USER 1] User not found in database" });
-		}
+		const dbUser1 = await findOrCreateUser(guild.id, user1.id, user1.username);
+		if (!dbUser1) throw new XpFatal({ function: "compareCard()", message: "[USER 1] User not found in database" });
 
-		let dbUser2 = await Database.findOne({ collection: "simply-xps", data: { guild: guild.id, user: user2.id } }) as User;
-		if (!dbUser2) {
-			if (xp.auto_create && user2?.username) dbUser2 = await create(user2.id, guild.id, user2.username) as User;
-			else throw new XpFatal({ function: "compareCard()", message: "[USER 2] User not found in database" });
-		}
+		const dbUser2 = await findOrCreateUser(guild.id, user2.id, user2.username);
+		if (!dbUser2) throw new XpFatal({ function: "compareCard()", message: "[USER 2] User not found in database" });
 
-		const canvas = createCanvas(1080, 400);
+		const canvas = (await loadCanvas()).createCanvas(1080, 400);
 		const context = canvas.getContext("2d");
 
 		RoundedBox(context, 0, 0, canvas.width, canvas.height, 25);
 		context.clip();
 
-		context.fillStyle = (options?.light ? "#ffffff" : "#000000");
+		context.fillStyle = (opts.light ? "#ffffff" : "#000000");
 		context.fill();
 		context.globalAlpha = 0.6;
 
@@ -172,131 +170,21 @@ export async function compareCard(guild: {
 
 		context.globalAlpha = 1;
 
-		const cardBoxColor = options?.color || (options?.light ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)"),
-			barFill = options?.centerBar || (options?.light ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.65)"),
-			barBg = options?.centerBarBg || (options?.light ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)"),
+		const cardBoxColor = opts.color || (opts.light ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)"),
+			barFill = opts.centerBar || (opts.light ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.65)"),
+			barBg = opts.centerBarBg || (opts.light ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)"),
 			softStroke = "rgba(0,0,0,0.5)",
-			textColor = "#ffffff",
-			LvlText1 = locales.level + ` ${shortener(dbUser1.level, true)}`,
-			LvlText2 = locales.level + ` ${shortener(dbUser2.level, true)}`;
+			textColor = "#ffffff";
 
-		// User 1 name
-		context.save();
-		context.textAlign = "center";
-		context.font = "32px Baloo, FallbackFont";
-		context.lineJoin = "round";
-		context.lineWidth = 5;
-		context.strokeStyle = softStroke;
-		context.strokeText(user1.username, 160, 50, 280);
-		context.fillStyle = textColor;
-		context.fillText(user1.username, 160, 50, 280);
-		context.restore();
+		drawCompareUser(context, 160, {
+			avatar: avatar1, levelText: labels.level + ` ${shortener(dbUser1.level, true)}`, name: user1.username, xpText: `${shortener(dbUser1.xp)} XP`
+		}, { boxColor: cardBoxColor, light: Boolean(opts.light) });
+		drawCompareUser(context, 920, {
+			avatar: avatar2, levelText: labels.level + ` ${shortener(dbUser2.level, true)}`, name: user2.username, xpText: `${shortener(dbUser2.xp)} XP`
+		}, { boxColor: cardBoxColor, light: Boolean(opts.light) });
 
-		// User 1 Avatar
-		context.save();
-		context.beginPath();
-		context.arc(160, 195, 100, 0, Math.PI * 2);
-		context.closePath();
-		context.clip();
-		context.fillStyle = cardBoxColor;
-		context.fill();
-		context.drawImage(avatarURL1, 50, 85, 220, 220);
-		context.restore();
+		strokedText(context, labels.versus, 540, 208, { font: `64px ${CARD_FONT}`, lineWidth: 5, stroke: softStroke });
 
-		context.save();
-		context.beginPath();
-		context.arc(160, 195, 105, 0, Math.PI * 2);
-		context.closePath();
-		context.strokeStyle = cardBoxColor;
-		context.lineWidth = 5;
-		context.stroke();
-		context.restore();
-
-		// User 1 Level
-		context.save();
-		context.textAlign = "center";
-		context.font = "25px Baloo, FallbackFont";
-		context.lineJoin = "round";
-		context.lineWidth = 5;
-		context.strokeStyle = softStroke;
-		context.strokeText(LvlText1, 160, 342);
-		context.fillStyle = textColor;
-		context.fillText(LvlText1, 160, 342);
-		context.restore();
-
-		// User 1 XP
-		context.save();
-		context.textAlign = "center";
-		context.font = "18px Baloo, FallbackFont";
-		context.fillStyle = options?.light ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.55)";
-		context.fillText(`${shortener(dbUser1.xp)} XP`, 160, 366);
-		context.restore();
-
-		// User 2 name
-		context.save();
-		context.textAlign = "center";
-		context.font = "32px Baloo, FallbackFont";
-		context.lineJoin = "round";
-		context.lineWidth = 5;
-		context.strokeStyle = softStroke;
-		context.strokeText(user2.username, 920, 50, 280);
-		context.fillStyle = textColor;
-		context.fillText(user2.username, 920, 50, 280);
-		context.restore();
-
-		// User 2 Avatar
-		context.save();
-		context.beginPath();
-		context.arc(920, 195, 100, 0, Math.PI * 2);
-		context.closePath();
-		context.clip();
-		context.fillStyle = cardBoxColor;
-		context.fill();
-		context.drawImage(avatarURL2, 810, 85, 220, 220);
-		context.restore();
-
-		context.save();
-		context.beginPath();
-		context.arc(920, 195, 105, 0, Math.PI * 2);
-		context.closePath();
-		context.strokeStyle = cardBoxColor;
-		context.lineWidth = 5;
-		context.stroke();
-		context.restore();
-
-		// User 2 Level
-		context.save();
-		context.textAlign = "center";
-		context.font = "25px Baloo, FallbackFont";
-		context.lineJoin = "round";
-		context.lineWidth = 5;
-		context.strokeStyle = softStroke;
-		context.strokeText(LvlText2, 920, 342);
-		context.fillStyle = textColor;
-		context.fillText(LvlText2, 920, 342);
-		context.restore();
-
-		// User 2 XP
-		context.save();
-		context.textAlign = "center";
-		context.font = "18px Baloo, FallbackFont";
-		context.fillStyle = options?.light ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.55)";
-		context.fillText(`${shortener(dbUser2.xp)} XP`, 920, 366);
-		context.restore();
-
-		// VS badge
-		context.save();
-		context.textAlign = "center";
-		context.font = "64px Baloo, FallbackFont";
-		context.lineJoin = "round";
-		context.lineWidth = 5;
-		context.strokeStyle = softStroke;
-		context.strokeText(locales.versus, 540, 208);
-		context.fillStyle = "#ffffff";
-		context.fillText(locales.versus, 540, 208);
-		context.restore();
-
-		// Tug-of-war XP bar with level diff inside
 		const barX = 290, barY = 350, barW = 500, barH = 22;
 		const totalXP = dbUser1.xp + dbUser2.xp;
 		const user1Fill = totalXP > 0 ? Math.round((dbUser1.xp / totalXP) * barW) : Math.round(barW / 2);
@@ -314,25 +202,53 @@ export async function compareCard(guild: {
 		const levelDiff = dbUser1.level - dbUser2.level;
 		const diffText = levelDiff > 0 ? `+${levelDiff}` : levelDiff < 0 ? `${levelDiff}` : "=";
 
-		context.save();
-		context.textAlign = "center";
-		context.font = "16px Baloo, FallbackFont";
-		context.lineJoin = "round";
-		context.lineWidth = 4;
-		context.strokeStyle = softStroke;
-		context.strokeText(diffText, 540, barY + 15);
-		context.fillStyle = textColor;
-		context.fillText(diffText, 540, barY + 15);
-		context.restore();
+		strokedText(context, diffText, 540, barY + 15, { fill: textColor, font: `16px ${CARD_FONT}`, lineWidth: 4, stroke: softStroke });
 
 		return {
-			attachment: canvas.toBuffer("image/webp"),
+			attachment: await encodeWebp(canvas),
 			description: `${user1.username} (Lvl ${dbUser1.level}) vs ${user2.username} (Lvl ${dbUser2.level}) in ${guild.name}`.slice(0, 200),
 			name: "compareCard.webp"
 		};
 	} finally {
 		renderCleanup("compareCard()", "card rendering");
 	}
+}
+
+function drawCompareUser(
+	context: SKRSContext2D,
+	x: number,
+	user: { avatar: Image; levelText: string; name: string; xpText: string },
+	style: { boxColor: string; light: boolean }
+): void {
+	strokedText(context, user.name, x, 50, { font: `32px ${CARD_FONT}`, lineWidth: 5, maxWidth: 280, stroke: "rgba(0,0,0,0.5)" });
+
+	context.save();
+	context.beginPath();
+	context.arc(x, 195, 100, 0, Math.PI * 2);
+	context.closePath();
+	context.clip();
+	context.fillStyle = style.boxColor;
+	context.fill();
+	context.drawImage(user.avatar, x - 110, 85, 220, 220);
+	context.restore();
+
+	context.save();
+	context.beginPath();
+	context.arc(x, 195, 105, 0, Math.PI * 2);
+	context.closePath();
+	context.strokeStyle = style.boxColor;
+	context.lineWidth = 5;
+	context.stroke();
+	context.restore();
+
+	strokedText(context, user.levelText, x, 342, { font: `25px ${CARD_FONT}`, lineWidth: 5, stroke: "rgba(0,0,0,0.5)" });
+
+	context.save();
+	context.textAlign = "center";
+	context.font = `18px ${CARD_FONT}`;
+	context.fillStyle = style.light ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.55)";
+	context.fillText(user.xpText, x, 366);
+	context.restore();
 }
 
 /**
@@ -349,60 +265,57 @@ export async function compareCard(guild: {
 export async function leaderboardCard(data: Array<User>, options: LeaderboardCardOptions = {}, guildInfo?: {
 	name: string, imageURL: string, memberCount?: number
 }, locales: LeaderboardCardLocales = {}): Promise<{ attachment: Buffer; description: string; name: string; }> {
-	if (!data || data.length < 1) throw new XpFatal({
+	if (!Array.isArray(data) || data.length < 1) throw new XpFatal({
 		function: "leaderboardCard()", message: "There must be at least 1 user in the data array"
 	});
+
+	const opts = optionsOf(options);
+	const labels = { level: optionsOf(locales).level || "LEVEL", members: optionsOf(locales).members || "Members" };
 
 	try {
 		let artworkImage: Image | undefined = undefined, backgroundImage: Image | undefined = undefined, colors;
 
-		if (options?.artworkImage) artworkImage = await loadImage(options.artworkImage).catch(() => {
+		if (opts.artworkImage) artworkImage = await loadImage(opts.artworkImage).catch(() => {
 			throw new XpFatal({
 				function: "leaderboardCard()", message: "Unable to load artwork image, is it valid?"
 			});
 		});
 
-		if (options?.backgroundImage) backgroundImage = await loadImage(options.backgroundImage).catch(() => {
+		if (opts.backgroundImage) backgroundImage = await loadImage(opts.backgroundImage).catch(() => {
 			throw new XpFatal({
 				function: "leaderboardCard()", message: "Unable to load background image, is it valid?"
 			});
 		});
 
-		await registerFont(options?.primaryFont || join(__dirname, "fonts", "Baloo2-Regular.woff2"), "Baloo");
-		if (options?.secondaryFont) await registerFont(options.secondaryFont, "SecondaryFont");
-		if (options?.fallbackFont) await registerFont(options.fallbackFont, "FallbackFont");
+		await registerCardFonts(opts.primaryFont, opts.fallbackFont);
+		if (opts.secondaryFont) await registerFont(opts.secondaryFont, SECONDARY_FONT);
 
-		if (!locales.level) locales.level = "LEVEL";
-		if (!locales.members) locales.members = "Members";
+		const rows = data.slice(0, 8);
+		const font = opts.secondaryFont ? `${SECONDARY_FONT}, ${FALLBACK_FONT}` : CARD_FONT;
 
-		data = data.slice(0, 8);
-		const font = options?.secondaryFont ? "SecondaryFont, FallbackFont" : "Baloo, FallbackFont";
-
-		// make a colour object containing colours for both dark and light mode
-		if (options?.light) {
+		if (opts.light) {
 			colors = {
-				artworkColors: options?.artworkColors || ["#997fe1", "#616bff"],
+				artworkColors: opts.artworkColors || ["#997fe1", "#616bff"],
 				backgroundColor: "#FFFFFF",
-				borderColors: options?.borderColors || ["#e0d440", "#fffa6b"],
-				evenColor: options?.rowColors?.[0] || "#f0f0f0",
-				oddColor: options?.rowColors?.[1] || "#dcdcdc",
+				borderColors: opts.borderColors || ["#e0d440", "#fffa6b"],
+				evenColor: opts.rowColors?.[0] || "#f0f0f0",
+				oddColor: opts.rowColors?.[1] || "#dcdcdc",
 				primaryTextColor: "#000000",
 				secondaryTextColor: "rgba(0,0,0,0.5)"
 			};
 		} else colors = {
-			artworkColors: options?.artworkColors || ["#6B46D4", "#2e3cff"],
+			artworkColors: opts.artworkColors || ["#6B46D4", "#2e3cff"],
 			backgroundColor: "#141414",
-			borderColors: options?.borderColors || ["#e0d440", "#fffa6b"],
-			evenColor: options?.rowColors?.[0] || "#1e1e1e",
-			oddColor: options?.rowColors?.[1] || "#282828",
+			borderColors: opts.borderColors || ["#e0d440", "#fffa6b"],
+			evenColor: opts.rowColors?.[0] || "#1e1e1e",
+			oddColor: opts.rowColors?.[1] || "#282828",
 			primaryTextColor: "#ffffff",
 			secondaryTextColor: "rgba(255,255,255,0.5)"
 		};
 
-		const canvas = createCanvas(1350, 1080);
+		const canvas = (await loadCanvas()).createCanvas(1350, 1080);
 		const context = canvas.getContext("2d");
 
-		// make entire canvas rounded
 		RoundedBox(context, 0, 0, canvas.width, canvas.height, 20, { clip: true });
 
 
@@ -420,7 +333,7 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardCar
 			context.globalAlpha = 1;
 		}
 
-		context.fillStyle = options.backgroundColor || colors.backgroundColor;
+		context.fillStyle = opts.backgroundColor || colors.backgroundColor;
 		context.fillRect(0, 220, canvas.width, 1080);
 
 		if (backgroundImage) {
@@ -429,7 +342,7 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardCar
 			context.globalAlpha = 1;
 		}
 
-		if (guildInfo && guildInfo?.imageURL && guildInfo?.name) {
+		if (guildInfo?.imageURL && guildInfo.name) {
 			const guildIcon = await loadImage(guildInfo.imageURL).catch(() => null);
 			if (guildIcon) {
 				context.save();
@@ -451,36 +364,36 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardCar
 			}
 
 			context.fillStyle = colors.primaryTextColor;
-			context.font = "60px Baloo, FallbackFont";
+			context.font = `60px ${CARD_FONT}`;
 
-			if (!guildInfo?.memberCount) {
+			if (!guildInfo.memberCount) {
 				context.fillText(guildInfo.name, 270, 130);
 			} else {
 				context.fillText(guildInfo.name, 270, 110);
 
 				context.fillStyle = colors.secondaryTextColor;
-				context.font = "40px Baloo, FallbackFont";
-				context.fillText(`${guildInfo.memberCount} ${locales.members}`, 270, 160);
+				context.font = `40px ${CARD_FONT}`;
+				context.fillText(`${guildInfo.memberCount} ${labels.members}`, 270, 160);
 			}
 		}
 
 		let currentCardColor = colors.evenColor;
 		const defaultRowOpacity = backgroundImage ? 0.5 : 1;
-		const configuredOpacity = typeof options?.rowOpacity === "number" && Number.isFinite(options.rowOpacity) ? options.rowOpacity : defaultRowOpacity;
+		const configuredOpacity = typeof opts.rowOpacity === "number" && Number.isFinite(opts.rowOpacity) ? opts.rowOpacity : defaultRowOpacity;
 		const rowOpacity = Math.min(1, Math.max(0, configuredOpacity));
-		for (let i = 0; i < data.length; i++) {
+		for (const [i, row] of rows.entries()) {
 			const cardY = 300 + (i * 90);
 			context.globalAlpha = rowOpacity;
 
 			context.save();
-			if (data.length === 1) {
+			if (rows.length === 1) {
 				RoundedBox(context, 30, cardY, 1290, 90, 20, { clip: true, fill: { color: currentCardColor } });
 			} else {
 				if (i === 0) {
 					RoundedBox(context, 30, cardY, 1290, 90, 20, {
 						clip: true, fill: { color: currentCardColor }, roundCorners: { top: true, bottom: false }
 					});
-				} else if (i === data.length - 1) {
+				} else if (i === rows.length - 1) {
 					RoundedBox(context, 30, cardY, 1290, 90, 20, {
 						clip: true, fill: { color: currentCardColor }, roundCorners: { top: false, bottom: true }
 					});
@@ -497,25 +410,25 @@ export async function leaderboardCard(data: Array<User>, options: LeaderboardCar
 			context.fillStyle = colors.secondaryTextColor;
 			context.fillText(`${i + 1}.`, 60, cardY + 55);
 
-			// add username after position's width + 20 pixels
 			context.textAlign = "left";
 			context.font = `40px ${font}`;
 			context.fillStyle = colors.primaryTextColor;
-			context.fillText(data[i]?.name || data[i]?.user || "???", 120, cardY + 60);
+			context.fillText(row.name || row.user || "???", 120, cardY + 60);
 
 			context.textAlign = "right";
 			context.font = `30px ${font}`;
 			context.fillStyle = colors.primaryTextColor;
-			context.fillText(shortener(data[i]?.level) || "???", 1270, cardY + 55);
+			const levelText = shortener(row.level);
+			context.fillText(levelText, 1270, cardY + 55);
 			context.fillStyle = colors.secondaryTextColor;
-			context.fillText(locales.level, 1270 - context.measureText(shortener(data[i]?.level) || "???").width - 15, cardY + 55);
+			context.fillText(labels.level, 1270 - context.measureText(levelText).width - 15, cardY + 55);
 
 			currentCardColor = currentCardColor === colors.evenColor ? colors.oddColor : colors.evenColor;
 		}
 
 		return {
-			attachment: canvas.toBuffer("image/webp"),
-			description: `${guildInfo?.name ? `${guildInfo.name} leaderboard` : "Leaderboard"} — Top ${data.length} user${data.length !== 1 ? "s" : ""}`.slice(0, 200),
+			attachment: await encodeWebp(canvas),
+			description: `${guildInfo?.name ? `${guildInfo.name} leaderboard` : "Leaderboard"} — Top ${rows.length} user${rows.length !== 1 ? "s" : ""}`.slice(0, 200),
 			name: "leaderboard.webp"
 		};
 	} finally {
@@ -542,26 +455,30 @@ export async function rankCard(guild: {
 	description: string;
 	name: string;
 }> {
-	if (!guild) throw new XpFatal({ function: "rankCard()", message: "No Guild Provided" });
-	if (!user) throw new XpFatal({ function: "rankCard()", message: "No User Provided" });
+	requireValue("rankCard()", guild, "No Guild Provided");
+	requireValue("rankCard()", user, "No User Provided");
 
-	if (!locales?.level) locales.level = "Level";
-	if (!locales?.next_level) locales.next_level = "Next Level";
-	if (!locales?.xp) locales.xp = "XP";
+	const opts = optionsOf(options);
+	const translations = optionsOf(locales);
+	const labels = {
+		level: translations.level || "Level",
+		next_level: translations.next_level || "Next Level",
+		xp: translations.xp || "XP"
+	};
 
-	XpLog.debug("rankCard()", `${options?.legacy ? "LEGACY" : "MODERN"} ENABLED`);
+	XpLog.debug("rankCard()", `${opts.legacy ? "LEGACY" : "MODERN"} ENABLED`);
 
-	if (!user || !user.id || !user.username) {
+	if (!hasFields(user, "id", "username")) {
 		throw new XpFatal({
 			function: "rankCard()", message: "Invalid User Provided, user must contain id, username, and avatarURL."
 		});
 	}
+	requireIds("rankCard()", user.id, guild.id);
 
 	try {
-		await registerFont(options?.font || join(__dirname, "fonts", "Baloo2-Regular.woff2"), "Baloo");
-		if (options?.fallbackFont) await registerFont(options.fallbackFont, "FallbackFont");
+		await registerCardFonts(opts.font, opts.fallbackFont);
 
-		const rankImage = await loadImage(options?.background || (options?.legacy ? "https://i.ibb.co/dck2Tnt/rank-card.webp" : "https://i.ibb.co/WnfXZjc/clouds.jpg")).catch(() => {
+		const rankImage = await loadImage(opts.background || (opts.legacy ? "https://i.ibb.co/dck2Tnt/rank-card.webp" : "https://i.ibb.co/WnfXZjc/clouds.jpg")).catch(() => {
 			throw new XpFatal({
 				function: "rankCard()", message: "Unable to load background image, is it valid and reachable?"
 			});
@@ -573,59 +490,44 @@ export async function rankCard(guild: {
 			});
 		});
 
-		let dbUser = await Database.findOne({ collection: "simply-xps", data: { guild: guild.id, user: user.id } }) as User;
-		if (!dbUser) {
-			if (xp.auto_create) dbUser = await create(user.id, guild.id, user.username) as User;
-			else throw new XpFatal({ function: "rankCard()", message: "User not found in database" });
-		}
+		const dbUser: UserResult | null = await findOrCreateUser(guild.id, user.id, user.username);
+		if (!dbUser) throw new XpFatal({ function: "rankCard()", message: "User not found in database" });
 
-		dbUser.position = 1 + await Database.countUsersWithMoreXp(guild.id, dbUser.xp);
+		const position = await positionOf(guild.id, dbUser.xp);
 
-		const canvas = createCanvas(1080, 400);
+		const canvas = (await loadCanvas()).createCanvas(1080, 400);
 		const context = canvas.getContext("2d");
 
 		context.save();
 		RoundedBox(context, 0, 0, canvas.width, canvas.height, 25);
 		context.clip();
 
-		context.fillStyle = (options?.light ? "#ffffff" : "#000000");
+		context.fillStyle = (opts.light ? "#ffffff" : "#000000");
 		context.fill();
-		context.globalAlpha = (options?.legacy ? 0.8 : 0.6);
+		context.globalAlpha = (opts.legacy ? 0.8 : 0.6);
 
 		context.drawImage(rankImage, -5, 0, 1090, 400);
 		context.restore();
 
 
-		const rankBoxColor = options?.color || (options?.legacy ? "#9900ff" : (options?.light ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)")),
-			LevelBarFill = options?.lvlbar || "#ffffff",
-			LevelBarBackground = options?.lvlbarBg || (options?.legacy ? "#FFFFFF" : (options?.light ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)")),
-			TextEXP = shortener(dbUser.xp) + ` ${locales.xp}`,
-			LvlText = locales.level + ` ${shortener(dbUser.level)}`,
-			TextXpNeeded = "{current} / {needed}",
+		const rankBoxColor = opts.color || (opts.legacy ? "#9900ff" : (opts.light ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)")),
+			LevelBarFill = opts.lvlbar || "#ffffff",
+			LevelBarBackground = opts.lvlbarBg || (opts.legacy ? "#FFFFFF" : (opts.light ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.2)")),
+			TextEXP = shortener(dbUser.xp) + ` ${labels.xp}`,
+			LvlText = labels.level + ` ${shortener(dbUser.level)}`,
 			nextLevelXP = convertFrom(dbUser.level + 1),
 			currentLevelXP = convertFrom(dbUser.level),
 			progressDenominator = Math.max(1, nextLevelXP - currentLevelXP),
 			progressRatio = Math.min(1, Math.max(0, (dbUser.xp - currentLevelXP) / progressDenominator)),
-			progressWidth = options?.legacy ? 660 : 530,
-			progress = Math.min(progressWidth, Math.max(0, progressRatio * progressWidth)),
-			positionColour = resolvePositionColor(dbUser.position, dbUser.user);
+			progressWidth = opts.legacy ? 660 : 530,
+			progress = progressRatio * progressWidth,
+			positionColour = resolvePositionColor(position, dbUser.user);
 
 
-		if (!options?.legacy) {
+		if (!opts.legacy) {
 
-			// Username
-			context.save();
-			context.textAlign = "center";
-			context.font = "40px Baloo, FallbackFont";
-			context.lineJoin = "round";
-			context.lineWidth = 7;
-			context.strokeStyle = "rgba(0,0,0,0.35)";
-			context.strokeText(user.username, 540, 80);
-			context.fillStyle = "#ffffff";
-			context.fillText(user.username, 540, 80);
-			context.restore();
+			strokedText(context, user.username, 540, 80, { font: `40px ${CARD_FONT}`, lineWidth: 7, stroke: "rgba(0,0,0,0.35)" });
 
-			// Avatar
 
 			context.save();
 			context.beginPath();
@@ -646,7 +548,6 @@ export async function rankCard(guild: {
 			context.stroke();
 			context.restore();
 
-			// Position Badge
 			context.save();
 			context.beginPath();
 			context.arc(230, 130, 28, 0, Math.PI * 2);
@@ -655,9 +556,8 @@ export async function rankCard(guild: {
 			context.fillStyle = positionColour;
 			context.fill();
 
-			// Position Text
 			context.fillStyle = "#000000";
-			dynamicFont(context, shortener(dbUser.position, true), 230, 138, 45, 30);
+			dynamicFont(context, shortener(position, true), 230, 138, 45, 30);
 			context.restore();
 
 			context.save();
@@ -669,19 +569,8 @@ export async function rankCard(guild: {
 			context.stroke();
 			context.restore();
 
-			// Level Text
-			context.save();
-			context.textAlign = "center";
-			context.font = "25px Baloo, FallbackFont";
-			context.lineJoin = "round";
-			context.lineWidth = 5;
-			context.strokeStyle = "rgba(0,0,0,0.35)";
-			context.strokeText(LvlText, 160, 350);
-			context.fillStyle = "#ffffff";
-			context.fillText(LvlText, 160, 350);
-			context.restore();
+			strokedText(context, LvlText, 160, 350, { font: `25px ${CARD_FONT}`, lineWidth: 5, stroke: "rgba(0,0,0,0.35)" });
 
-			// Progress Bar
 			context.save();
 			RoundedBox(context, 265, 330, 540, 25, 10, {
 				clip: true, fill: { color: LevelBarBackground }
@@ -691,52 +580,37 @@ export async function rankCard(guild: {
 			});
 			context.restore();
 
-			// XP Text
 			context.save();
 			context.textAlign = "center";
-			context.font = "22px Baloo, FallbackFont";
-			context.fillStyle = options?.light
+			context.font = `22px ${CARD_FONT}`;
+			context.fillStyle = opts.light
 				? "rgba(0,0,0,0.6)"
 				: "rgba(255,255,255,0.6)";
 			context.fillText(
-				TextXpNeeded
-					.replace(/\{needed\}/gu, shortener(nextLevelXP))
-					.replace(/\{current\}/gu, shortener(dbUser.xp)),
+				`${shortener(dbUser.xp)} / ${shortener(nextLevelXP)}`,
 				540,
 				320
 			);
 			context.restore();
 
-			// Next Level
-			context.save();
-			context.textAlign = "center";
-			context.font = "25px Baloo, FallbackFont";
-			const nextLvlText = `${locales.level} ` + shortener(dbUser.level + 1);
-			context.lineJoin = "round";
-			context.lineWidth = 5;
-			context.strokeStyle = "rgba(0,0,0,0.35)";
-			context.strokeText(nextLvlText, 920, 350);
-			context.fillStyle = "#ffffff";
-			context.fillText(nextLvlText, 920, 350);
-			context.restore();
+			strokedText(context, `${labels.level} ` + shortener(dbUser.level + 1), 920, 350, {
+				font: `25px ${CARD_FONT}`, lineWidth: 5, stroke: "rgba(0,0,0,0.35)"
+			});
 
 		} else {
 
-			// Vertical Bar
 			context.save();
 			context.globalAlpha = 0.4;
-			context.fillStyle = options?.light ? "#ffffff" : "#000000";
+			context.fillStyle = opts.light ? "#ffffff" : "#000000";
 			context.fillRect(40, 0, 240, canvas.height);
 			context.restore();
 
-			// User Avatar
 			context.save();
 			RoundedBox(context, 70, 30, 180, 180, 50, { clip: true, fill: { color: rankBoxColor } });
 			RoundedBox(context, 75, 35, 170, 170, 50, { clip: true });
 			context.drawImage(avatarURL, 70, 30, 180, 180);
 			context.restore();
 
-			// EXP Text
 			context.save();
 			RoundedBox(context, 70, 320, 180, 50, 20, { clip: true });
 			context.fillStyle = rankBoxColor;
@@ -745,7 +619,6 @@ export async function rankCard(guild: {
 			dynamicFont(context, TextEXP, 160, 355, 160, 32);
 			context.restore();
 
-			// Level Text
 			context.save();
 			RoundedBox(context, 70, 240, 180, 50, 20, { clip: true });
 			context.fillStyle = rankBoxColor;
@@ -755,31 +628,12 @@ export async function rankCard(guild: {
 			dynamicFont(context, LvlText, 160, 275, 160, 32);
 			context.restore();
 
-			// Username
-			context.save();
-			context.textAlign = "left";
-			context.font = "39px Baloo, FallbackFont";
-			context.fillStyle = "#ffffff";
-			context.lineJoin = "round";
-			context.lineWidth = 5;
-			context.strokeStyle = "rgba(0,0,0,0.35)";
-			context.strokeText(user.username, 395, 80);
-			context.fillText(user.username, 395, 80);
-			context.restore();
+			strokedText(context, user.username, 395, 80, { align: "left", font: `39px ${CARD_FONT}`, lineWidth: 5, stroke: "rgba(0,0,0,0.35)" });
 
-			// Position Number
-			context.save();
-			context.textAlign = "right";
-			context.font = "55px Baloo, FallbackFont";
-			context.fillStyle = "#ffffff";
-			context.lineJoin = "round";
-			context.lineWidth = 7;
-			context.strokeStyle = "rgba(0,0,0,0.35)";
-			context.strokeText("#" + dbUser.position, canvas.width - 55, 80);
-			context.fillText("#" + dbUser.position, canvas.width - 55, 80);
-			context.restore();
+			strokedText(context, "#" + position, canvas.width - 55, 80, {
+				align: "right", font: `55px ${CARD_FONT}`, lineWidth: 7, stroke: "rgba(0,0,0,0.35)"
+			});
 
-			// Guild Name Background + Text
 			context.save();
 			RoundedBox(context, 390, 305, 660, 70, 20, { clip: true });
 			context.globalAlpha = 0.2;
@@ -789,7 +643,6 @@ export async function rankCard(guild: {
 			dynamicFont(context, guild.name, 720, 355, 700, 45);
 			context.restore();
 
-			// Level Bar Background
 			context.save();
 			RoundedBox(context, 390, 145, 660, 50, 20, { clip: true });
 			context.globalAlpha = 0.2;
@@ -797,7 +650,6 @@ export async function rankCard(guild: {
 			context.fillRect(390, 145, 660, 50);
 			context.restore();
 
-			// Level Bar Fill
 			context.save();
 			RoundedBox(context, 390, 145, progress, 50, 20, { clip: true });
 			context.globalAlpha = 0.5;
@@ -805,27 +657,25 @@ export async function rankCard(guild: {
 			context.fillRect(390, 145, progress, 50);
 			context.restore();
 
-			// Next Level XP Text
 			context.save();
 			context.textAlign = "left";
-			context.font = "30px Baloo, FallbackFont";
+			context.font = `30px ${CARD_FONT}`;
 			context.fillStyle = "#ffffff";
 			context.globalAlpha = 0.8;
-			context.fillText(`${locales.next_level}: ${shortener(nextLevelXP)} ${locales.xp}`, 390, 230);
+			context.fillText(`${labels.next_level}: ${shortener(nextLevelXP)} ${labels.xp}`, 390, 230);
 			context.restore();
 
-			// XP Needed Text
 			context.textAlign = "center";
-			context.font = "30px Baloo, FallbackFont";
+			context.font = `30px ${CARD_FONT}`;
 			context.fillStyle = "#474747";
 			context.globalAlpha = 1;
-			const textXPEdited = TextXpNeeded.replace(/\{needed\}/gu, shortener(nextLevelXP)).replace(/\{current\}/gu, shortener(dbUser.xp));
+			const textXPEdited = `${shortener(dbUser.xp)} / ${shortener(nextLevelXP)}`;
 			context.fillText(textXPEdited, 730, 180);
 		}
 
 		return {
-			attachment: canvas.toBuffer("image/webp"),
-			description: `${user.username}'s rank card — Lvl ${dbUser.level} | ${shortener(dbUser.xp)} XP | #${dbUser.position} in ${guild.name}`.slice(0, 200),
+			attachment: await encodeWebp(canvas),
+			description: `${user.username}'s rank card — Lvl ${dbUser.level} | ${shortener(dbUser.xp)} XP | #${position} in ${guild.name}`.slice(0, 200),
 			name: "rank.webp"
 		};
 	} finally {
@@ -841,130 +691,16 @@ function resolvePositionColor(position: number, userId: string): string {
 	return "#ffffff";
 }
 
-/**
- * Draw a rounded rectangle with optional fill and stroke, can be used for clipping as well
- * @private
- */
-export function RoundedBox(
-	ctx: SKRSContext2D,
-	x: number,
-	y: number,
-	width: number,
-	height: number,
-	radius: number,
-	options?: {
-		clip?: boolean;
-		fill?: {
-			color: string,
-			alpha?: number
-		}
-		roundCorners?: {
-			top?: boolean,
-			bottom?: boolean
-		};
-		stroke?: {
-			color: string,
-			width: number
-		};
-	}) {
-
-	const roundCorners = options?.roundCorners || { top: true, bottom: true };
-
-	ctx.beginPath();
-	ctx.moveTo(x + (roundCorners.top ? radius : 0), y);
-	ctx.lineTo(x + width - (roundCorners.top ? radius : 0), y);
-	if (roundCorners.top) {
-		ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-	}
-	ctx.lineTo(x + width, y + height - (roundCorners.bottom ? radius : 0));
-	if (roundCorners.bottom) {
-		ctx.quadraticCurveTo(
-			x + width,
-			y + height,
-			x + width - radius,
-			y + height
-		);
-	}
-	ctx.lineTo(x + (roundCorners.bottom ? radius : 0), y + height);
-	if (roundCorners.bottom) {
-		ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-	}
-	ctx.lineTo(x, y + (roundCorners.top ? radius : 0));
-	if (roundCorners.top) {
-		ctx.quadraticCurveTo(x, y, x + radius, y);
-	}
-	ctx.closePath();
-
-	if (options?.fill) {
-		if (options?.clip) ctx.clip();
-		if (options.fill?.color) ctx.fillStyle = options.fill.color;
-		if (options.fill?.alpha) ctx.globalAlpha = options.fill.alpha;
-		ctx.fillRect(x, y, width, height);
-	}
-
-	if (options?.stroke) {
-		if (options.stroke?.color) ctx.strokeStyle = options.stroke.color;
-		if (options.stroke?.width) ctx.lineWidth = options.stroke.width;
-		ctx.stroke();
-	}
-
-	if (options?.clip) ctx.clip();
-}
+const SUFFIXES = ["", "K", "M", "B", "T", "Qa"];
 
 function shortener(count: number | undefined, roundedNumber?: boolean): string {
-	let abbreviation = "", i = 0;
-	const base = 1000;
+	if (!count || count > Number.MAX_SAFE_INTEGER) return count ? "∞" : "0";
 
-	if (!count || count === 0) return "0";
-	if (count > Number.MAX_SAFE_INTEGER) return "∞";
-
-	while (count >= base && i < 8) {
-		count /= base;
-		i++;
+	let value = count;
+	for (const [i, suffix] of SUFFIXES.entries()) {
+		if (value < 1000) return `${value.toFixed(i === 0 || roundedNumber ? 0 : 2)}${suffix}`;
+		value /= 1000;
 	}
 
-	switch (i) {
-		case 0:
-			abbreviation = ""; // Hundreds
-			break;
-		case 1:
-			abbreviation = "K"; // Thousands
-			break;
-		case 2:
-			abbreviation = "M"; // Millions
-			break;
-		case 3:
-			abbreviation = "B"; // Billions
-			break;
-		case 4:
-			abbreviation = "T"; // Trillions
-			break;
-		case 5:
-			abbreviation = "Qa"; // Quadrillions
-			break;
-		case 6:
-			abbreviation = "Qi"; // Quintillions
-			break;
-		default:
-			abbreviation = "S+"; // Quadrillions and more
-			break;
-	}
-
-	return `${count.toFixed(i === 0 ? 0 : (roundedNumber ? 0 : 2))}${abbreviation}`;
-}
-
-
-function dynamicFont(context: SKRSContext2D, text: string, x: number, y: number, maxWidth: number, maxSize: number) {
-	let fontSize = maxSize;
-
-	while (fontSize > 0) {
-		context.font = `${fontSize}px Baloo, FallbackFont`;
-		if (context.measureText(text).width < maxWidth) {
-			break;
-		}
-		fontSize--;
-	}
-
-	context.textAlign = "center";
-	context.fillText(text, x, y);
+	return "∞";
 }

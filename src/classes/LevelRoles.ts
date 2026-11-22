@@ -1,5 +1,7 @@
+import { Database, LevelRoleOptions, LevelRoleResult } from "./Database";
+import { requireGuildId, requireUserId, requireValue } from "../functions/guards";
+import { findUser } from "../functions/users";
 import { XpFatal } from "../functions/xplogs";
-import { Database, LevelRoleResult } from "./Database";
 
 /**
  * Get Roles Object
@@ -23,6 +25,28 @@ export interface LevelRole {
 	roles?: string[];
 }
 
+const levelRoleQuery = (guildId: string, level: number, roles?: string[]): LevelRoleOptions => ({
+	collection: "simply-xp-levelroles",
+	data: { guild: guildId, levelrole: roles ? { level, roles } : { level } }
+});
+
+const findLevelRole = (guildId: string, level: number): Promise<LevelRoleResult | null> =>
+	Database.findOne(levelRoleQuery(guildId, level)) as Promise<LevelRoleResult | null>;
+
+/** The checks `add()`, `delete()` and `set()` share. `delete()` takes `roles` only optionally. */
+function requireLevelRole(functionName: string, guildId: string, options: LevelRole, rolesRequired: boolean): void {
+	requireGuildId(functionName, guildId);
+	requireValue(functionName, options, "Options were not provided");
+
+	if (isNaN(options.level)) throw new XpFatal({ function: functionName, message: "Level must be a number" });
+
+	const { roles } = options;
+	const invalid = !Array.isArray(roles) || roles.length === 0;
+	if (rolesRequired ? invalid : roles !== undefined && invalid) {
+		throw new XpFatal({ function: functionName, message: "Roles must be a non-empty array of strings" });
+	}
+}
+
 /**
  * Setup roles for levels
  * @class LevelRoles
@@ -39,45 +63,14 @@ export class LevelRoles {
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided, or if the database operation fails.
 	 */
 	static async add(guildId: string, options: LevelRole): Promise<boolean> {
-		if (!guildId) throw new XpFatal({ function: "LevelRoles.add()", message: "Guild ID was not provided" });
-		if (!options) throw new XpFatal({ function: "LevelRoles.add()", message: "Options were not provided" });
+		requireLevelRole("LevelRoles.add()", guildId, options, true);
 
-		if (isNaN(options?.level)) {
-			throw new XpFatal({
-				function: "LevelRoles.add()",
-				message: "Level must be a number"
-			});
-		}
+		const existing = await findLevelRole(guildId, options.level);
+		const roles = Array.from(new Set([...(existing?.levelrole.roles ?? []), ...(options.roles ?? [])]));
 
-		if (!options?.roles || !Array.isArray(options?.roles) || options?.roles.length === 0) {
-			throw new XpFatal({
-				function: "LevelRoles.add()",
-				message: "Roles must be a non-empty array of strings"
-			});
-		}
-
-		const existingRoles = await Database.findOne({
-			collection: "simply-xp-levelroles",
-			data: { guild: guildId, levelrole: { level: options.level } }
-		}) as LevelRoleResult;
-
-		if (existingRoles) {
-			options.roles = Array.from(new Set([...(existingRoles.levelrole.roles ? existingRoles.levelrole.roles : []), ...options.roles]));
-		}
-
-		return await Database.updateOne(
-			{
-				collection: "simply-xp-levelroles",
-				data: { guild: guildId, levelrole: { level: options.level } }
-			},
-			{
-				collection: "simply-xp-levelroles",
-				data: { guild: guildId, levelrole: { level: options.level, roles: options.roles } }
-			},
-			{
-				upsert: true
-			}
-		).then(() => true);
+		return await Database.updateOne(levelRoleQuery(guildId, options.level), levelRoleQuery(guildId, options.level, roles), {
+			upsert: true
+		}).then(() => true);
 	}
 
 	/**
@@ -90,45 +83,18 @@ export class LevelRoles {
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided, or if the database operation fails.
 	 */
 	static async delete(guildId: string, options: LevelRole): Promise<boolean> {
-		if (!guildId) throw new XpFatal({ function: "LevelRoles.delete()", message: "Guild ID was not provided" });
-		if (!options) throw new XpFatal({ function: "LevelRoles.delete()", message: "Options were not provided" });
+		requireLevelRole("LevelRoles.delete()", guildId, options, false);
 
-		if (isNaN(options?.level)) {
-			throw new XpFatal({
-				function: "LevelRoles.delete()",
-				message: "Level must be a number"
-			});
-		}
-
-		if (options?.roles && (!Array.isArray(options?.roles) || options?.roles.length === 0)) {
-			throw new XpFatal({
-				function: "LevelRoles.delete()",
-				message: "Roles must be a non-empty array of strings"
-			});
-		}
-
-		const existingRoles = await Database.findOne({
-			collection: "simply-xp-levelroles",
-			data: { guild: guildId, levelrole: { level: options.level } }
-		}) as LevelRoleResult;
-
-		if (!existingRoles) return false;
+		const existing = await findLevelRole(guildId, options.level);
+		if (!existing) return false;
 
 		const rolesToRemove = options.roles ?? [];
-		const newRoles: string[] = rolesToRemove.length > 0 ? (existingRoles.levelrole.roles || []).filter((role) => !rolesToRemove.includes(role)) : [];
+		const remaining = rolesToRemove.length > 0 ? (existing.levelrole.roles || []).filter((role) => !rolesToRemove.includes(role)) : [];
 
-		if (newRoles.length === 0) return await Database.deleteOne({
-			collection: "simply-xp-levelroles",
-			data: { guild: guildId, levelrole: { level: options.level } }
-		});
+		if (remaining.length === 0) return await Database.deleteOne(levelRoleQuery(guildId, options.level));
 
-		return await Database.updateOne({
-			collection: "simply-xp-levelroles",
-			data: { guild: guildId, levelrole: { level: options.level } }
-		}, {
-			collection: "simply-xp-levelroles",
-			data: { guild: guildId, levelrole: { level: options.level, roles: newRoles } }
-		}).then((result) => Boolean(result));
+		return await Database.updateOne(levelRoleQuery(guildId, options.level), levelRoleQuery(guildId, options.level, remaining))
+			.then((result) => Boolean(result));
 	}
 
 	/**
@@ -140,7 +106,7 @@ export class LevelRoles {
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided, or if the database operation fails.
 	 */
 	static async deleteAll(guildId: string): Promise<boolean> {
-		if (!guildId) throw new XpFatal({ function: "LevelRoles.deleteAll()", message: "Guild ID was not provided" });
+		requireGuildId("LevelRoles.deleteAll()", guildId);
 
 		return await Database.deleteMany({
 			collection: "simply-xp-levelroles",
@@ -152,12 +118,12 @@ export class LevelRoles {
 	 * Fetch all roles in a guild's role setup
 	 * @async
 	 * @param {string} guildId - The guild ID
-	 * @link `Documentation:` https://simplyxp.js.org/docs/classes/LevelRoles#levelrolesfetchall
-	 * @returns {Promise<LevelRoleResult[]>} - The level role object
-	 * @throws {XpFatal} If there are no roles in the guild.
+	 * @link `Documentation:` https://simplyxp.js.org/docs/classes/LevelRoles#levelrolesgetguildroles
+	 * @returns {Promise<LevelRoleResult[]>} - Every level role set for the guild (empty when there are none)
+	 * @throws {XpFatal} If the guild ID is not provided.
 	 */
 	static async getGuildRoles(guildId: string): Promise<LevelRoleResult[]> {
-		if (!guildId) throw new XpFatal({ function: "LevelRoles.fetchAll()", message: "Guild ID was not provided" });
+		requireGuildId("LevelRoles.getGuildRoles()", guildId);
 
 		return await Database.find("simply-xp-levelroles", guildId) as LevelRoleResult[];
 	}
@@ -173,16 +139,14 @@ export class LevelRoles {
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided.
 	 */
 	static async getUserRoles(userId: string, guildId: string, options: GetRolesOptions = {}): Promise<string[]> {
-		if (!userId) throw new XpFatal({ function: "LevelRoles.getUserRoles()", message: "User ID was not provided" });
-		if (!guildId) throw new XpFatal({ function: "LevelRoles.getUserRoles()", message: "Guild ID was not provided" });
+		requireUserId("LevelRoles.getUserRoles()", userId);
+		requireGuildId("LevelRoles.getUserRoles()", guildId);
 
-		const user = await Database.findOne({
-			collection: "simply-xps", data: { user: userId, guild: guildId }
-		}) as { level: number };
+		const user = await findUser(guildId, userId);
 
 		if (!user?.level) return [];
 
-		const allRoles = await LevelRoles.getGuildRoles(guildId) as LevelRoleResult[];
+		const allRoles = await LevelRoles.getGuildRoles(guildId);
 		const { includeCurrent = true, includeNext = false, includePrevious = false } = options;
 
 		return allRoles.reduce((roleList: string[], { levelrole: { level, roles } }) => {
@@ -207,31 +171,9 @@ export class LevelRoles {
 	 * @throws {XpFatal} If an invalid type is provided or value is not provided, or if the database operation fails.
 	 */
 	static async set(guildId: string, options: LevelRole): Promise<boolean> {
-		if (!guildId) throw new XpFatal({ function: "LevelRoles.set()", message: "Guild ID was not provided" });
-		if (!options) throw new XpFatal({ function: "LevelRoles.set()", message: "Options were not provided" });
+		requireLevelRole("LevelRoles.set()", guildId, options, true);
 
-		if (isNaN(options?.level)) {
-			throw new XpFatal({
-				function: "LevelRoles.set()",
-				message: "Level must be a number"
-			});
-		}
-
-		if (!Array.isArray(options?.roles) || options?.roles.length === 0) {
-
-			throw new XpFatal({
-				function: "LevelRoles.set()",
-				message: "Roles must be a non-empty array of strings"
-			});
-		}
-
-		return await Database.updateOne({
-			collection: "simply-xp-levelroles",
-			data: { guild: guildId, levelrole: { level: options.level } }
-		}, {
-			collection: "simply-xp-levelroles",
-			data: { guild: guildId, levelrole: { level: options.level, roles: options.roles } }
-		}, {
+		return await Database.updateOne(levelRoleQuery(guildId, options.level), levelRoleQuery(guildId, options.level, options.roles), {
 			upsert: true
 		}).then(() => true);
 	}

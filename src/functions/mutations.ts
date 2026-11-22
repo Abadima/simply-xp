@@ -1,433 +1,219 @@
-import { requireDatabaseConnection, requireFiniteNumber } from "./guards";
+import type { Document } from "mongodb";
 import { parseFlags, type UserResult } from "../classes/Database";
-import type { Database as SQLiteClient } from "better-sqlite3";
-import type { Document, MongoClient } from "mongodb";
+import { insertSqliteUser, mongoCollection, sqlite } from "./db";
+import { convertFrom, levelFromXpExpr, xpFromLevelExpr } from "./curve";
+import { canAutoCreate, requireDatabaseConnection, requireFiniteNumber } from "./guards";
 import { LevelRoles } from "../classes/LevelRoles";
 import { XpEvents, XpFatal } from "./xplogs";
-import { convertFrom } from "./utilities";
+import { isRecord } from "./predicates";
 import { xp } from "../client";
 
-type MutateUserXpOptions = {
-    createIfMissing: boolean;
-    guildId: string;
-    mode: "delta" | "set";
-    userId: string;
-    username?: string;
-    value: number;
+type Field = "level" | "xp";
+
+type MutateOptions = {
+	createIfMissing: boolean;
+	/** The value being changed; the other one follows from the level curve. */
+	field: Field;
+	guildId: string;
+	mode: "delta" | "set";
+	userId: string;
+	username?: string;
+	value: number;
 };
 
-type MutateUserLevelOptions = {
-    createIfMissing: boolean;
-    guildId: string;
-    mode: "delta" | "set";
-    userId: string;
-    username?: string;
-    value: number;
+type Mutation = {
+	current: UserResult;
+	previous: UserResult | null;
 };
 
-export async function mutateUserXpAtomic(options: MutateUserXpOptions): Promise<{
-    current: UserResult;
-    previous: UserResult | null;
-}> {
-    requireDatabaseConnection("mutateUserXpAtomic()");
-    requireFiniteNumber("mutateUserXpAtomic()", options.value, "XP value must be finite");
+const callerOf = (field: Field): string => field === "xp" ? "mutateUserXpAtomic()" : "mutateUserLevelAtomic()";
+const valueOf = (user: UserResult, field: Field): number => Number((field === "xp" ? user.xp : user.level) || 0);
 
-    const now = new Date().toISOString();
-
-    switch (xp.dbType) {
-        case "mongodb": {
-            const collection = (xp.database as MongoClient).db(xp.dbName).collection("simply-xps");
-            const normalizedSetXp = normalizeNonNegativeInteger(options.value);
-            const normalizedDelta = normalizeInteger(options.value);
-
-            if (options.mode === "delta") {
-                const deltaXpExpr = { $max: [0, { $add: [{ $ifNull: ["$xp", 0] }, normalizedDelta] }] };
-                const previousRaw = await collection.findOneAndUpdate(
-                    { guild: options.guildId, user: options.userId },
-                    [{
-                        $set: {
-                            createdAt: { $ifNull: ["$createdAt", now] },
-                            guild: options.guildId,
-                            lastUpdated: now,
-                            level: {
-                                $floor: {
-                                    $multiply: [
-                                        xp.xp_rate,
-                                        { $sqrt: deltaXpExpr }
-                                    ]
-                                }
-                            },
-                            name: options.username ?? { $ifNull: ["$name", options.userId] },
-                            user: options.userId,
-                            xp: deltaXpExpr,
-                            xp_rate: xp.xp_rate,
-                        }
-                    }] as unknown as Document[],
-                    { upsert: options.createIfMissing, returnDocument: "before" }
-                ) as UserResult | null;
-
-                if (!previousRaw && !options.createIfMissing) {
-                    throw new XpFatal({ function: "mutateUserXpAtomic()", message: "User does not exist" });
-                }
-
-                const previous = previousRaw ? parseFlags(previousRaw) : null;
-                const previousXp = Number(previous?.xp || 0);
-                const currentXp = Math.max(0, previousXp + normalizedDelta);
-                const current: UserResult = {
-                    _id: previous?._id,
-                    createdAt: previous?.createdAt || now,
-                    flags: previous?.flags ?? [],
-                    guild: options.guildId,
-                    lastUpdated: now,
-                    level: convertFrom(currentXp, "xp"),
-                    name: options.username ?? previous?.name ?? options.userId,
-                    user: options.userId,
-                    xp: currentXp,
-                    xp_rate: xp.xp_rate,
-                };
-
-                return { current, previous };
-            }
-
-            const previous = await collection.findOne({ guild: options.guildId, user: options.userId }) as UserResult | null;
-            if (!previous && !options.createIfMissing) {
-                throw new XpFatal({ function: "mutateUserXpAtomic()", message: "User does not exist" });
-            }
-
-            const baseXpExpr = { $ifNull: ["$xp", 0] };
-            const nextXpExpr = options.mode === "set"
-                ? normalizedSetXp
-                : { $max: [0, { $add: [baseXpExpr, normalizedDelta] }] };
-            const nextLevelExpr = {
-                $floor: {
-                    $multiply: [
-                        xp.xp_rate,
-                        { $sqrt: nextXpExpr }
-                    ]
-                }
-            };
-
-            const result = await collection.updateOne(
-                { guild: options.guildId, user: options.userId },
-                [{
-                    $set: {
-                        createdAt: { $ifNull: ["$createdAt", now] },
-                        guild: options.guildId,
-                        lastUpdated: now,
-                        level: nextLevelExpr,
-                        name: options.username ?? { $ifNull: ["$name", options.userId] },
-                        user: options.userId,
-                        xp: nextXpExpr,
-                        xp_rate: xp.xp_rate,
-                    }
-                }] as unknown as Document[],
-                { upsert: options.createIfMissing }
-            );
-
-            if (result.matchedCount === 0 && result.upsertedCount === 0) {
-                throw new XpFatal({ function: "mutateUserXpAtomic()", message: "User does not exist" });
-            }
-
-            const current = await collection.findOne({ guild: options.guildId, user: options.userId }) as UserResult | null;
-            if (!current) throw new XpFatal({ function: "mutateUserXpAtomic()", message: "Failed to fetch updated user" });
-
-            return {
-                current: parseFlags(current),
-                previous: previous ? parseFlags(previous) : null,
-            };
-        }
-
-        case "sqlite": {
-            const db = xp.database as SQLiteClient;
-            const previous = db.prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?")
-                .get(options.guildId, options.userId) as UserResult | undefined;
-            if (!previous && !options.createIfMissing) {
-                throw new XpFatal({ function: "mutateUserXpAtomic()", message: "User does not exist" });
-            }
-
-            const normalizedSetXp = normalizeNonNegativeInteger(options.value);
-            const normalizedDelta = normalizeInteger(options.value);
-            const initialXp = options.mode === "set" ? normalizedSetXp : 0;
-
-            const transaction = db.transaction((): UserResult | null => {
-                if (options.createIfMissing) {
-                    db.prepare("INSERT OR IGNORE INTO \"simply-xps\" (user, guild, level, name, xp, xp_rate, flags, createdAt, lastUpdated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-                        .run(
-                            options.userId,
-                            options.guildId,
-                            convertFrom(initialXp, "xp"),
-                            options.username || options.userId,
-                            initialXp,
-                            xp.xp_rate,
-                            JSON.stringify([]),
-                            now,
-                            now
-                        );
-                }
-
-                if (options.mode === "set") {
-                    db.prepare("UPDATE \"simply-xps\" SET name = COALESCE(?, name), xp = ?, xp_rate = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
-                        .run(options.username, normalizedSetXp, xp.xp_rate, now, options.guildId, options.userId);
-                } else {
-                    db.prepare("UPDATE \"simply-xps\" SET name = COALESCE(?, name), xp = MAX(0, xp + ?), xp_rate = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
-                        .run(options.username, normalizedDelta, xp.xp_rate, now, options.guildId, options.userId);
-                }
-
-                const row = db.prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?")
-                    .get(options.guildId, options.userId) as UserResult | undefined;
-                if (!row) return null;
-
-                db.prepare("UPDATE \"simply-xps\" SET level = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
-                    .run(convertFrom(Number(row.xp || 0), "xp"), now, options.guildId, options.userId);
-
-                const updated = db.prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?")
-                    .get(options.guildId, options.userId) as UserResult | undefined;
-                if (!updated) return null;
-
-                return parseFlags(updated);
-            });
-
-            const current = transaction();
-            if (!current) throw new XpFatal({ function: "mutateUserXpAtomic()", message: "Failed to fetch updated user" });
-
-            return {
-                current,
-                previous: previous ? parseFlags(previous) : null,
-            };
-        }
-
-        default:
-            throw new XpFatal({ function: "mutateUserXpAtomic()", message: "Unsupported database type" });
-    }
+/** Both stored values for `value` of `field`. */
+function valuesFor(field: Field, value: number): { level: number; xp: number } {
+	return field === "xp" ? { level: convertFrom(value, "xp"), xp: value } : { level: value, xp: convertFrom(value) };
 }
 
-export async function mutateUserLevelAtomic(options: MutateUserLevelOptions): Promise<{
-    current: UserResult;
-    previous: UserResult | null;
-}> {
-    requireDatabaseConnection("mutateUserLevelAtomic()");
-    requireFiniteNumber("mutateUserLevelAtomic()", options.value, "Level value must be finite");
+function mongoPipeline(options: MutateOptions, now: string, expression: unknown): Document[] {
+	const { field, guildId, userId, username } = options;
+	const values = field === "xp"
+		? { level: levelFromXpExpr(expression), xp: expression }
+		: { level: expression, xp: xpFromLevelExpr(expression) };
 
-    const now = new Date().toISOString();
-
-    switch (xp.dbType) {
-        case "mongodb": {
-            const collection = (xp.database as MongoClient).db(xp.dbName).collection("simply-xps");
-            const normalizedSetLevel = normalizeNonNegativeInteger(options.value);
-            const normalizedDelta = normalizeInteger(options.value);
-
-            if (options.mode === "delta") {
-                const deltaLevelExpr = { $max: [0, { $add: [{ $ifNull: ["$level", 0] }, normalizedDelta] }] };
-                const previousRaw = await collection.findOneAndUpdate(
-                    { guild: options.guildId, user: options.userId },
-                    [{
-                        $set: {
-                            createdAt: { $ifNull: ["$createdAt", now] },
-                            guild: options.guildId,
-                            lastUpdated: now,
-                            level: deltaLevelExpr,
-                            name: options.username ?? { $ifNull: ["$name", options.userId] },
-                            user: options.userId,
-                            xp: {
-                                $pow: [
-                                    { $divide: [deltaLevelExpr, xp.xp_rate] },
-                                    2
-                                ]
-                            },
-                            xp_rate: xp.xp_rate,
-                        }
-                    }] as unknown as Document[],
-                    { upsert: options.createIfMissing, returnDocument: "before" }
-                ) as UserResult | null;
-
-                if (!previousRaw && !options.createIfMissing) {
-                    throw new XpFatal({ function: "mutateUserLevelAtomic()", message: "User does not exist" });
-                }
-
-                const previous = previousRaw ? parseFlags(previousRaw) : null;
-                const previousLevel = Number(previous?.level || 0);
-                const currentLevel = Math.max(0, previousLevel + normalizedDelta);
-                const current: UserResult = {
-                    _id: previous?._id,
-                    createdAt: previous?.createdAt || now,
-                    flags: previous?.flags ?? [],
-                    guild: options.guildId,
-                    lastUpdated: now,
-                    level: currentLevel,
-                    name: options.username ?? previous?.name ?? options.userId,
-                    user: options.userId,
-                    xp: convertFrom(currentLevel),
-                    xp_rate: xp.xp_rate,
-                };
-
-                return { current, previous };
-            }
-
-            const previous = await collection.findOne({ guild: options.guildId, user: options.userId }) as UserResult | null;
-            if (!previous && !options.createIfMissing) {
-                throw new XpFatal({ function: "mutateUserLevelAtomic()", message: "User does not exist" });
-            }
-
-            const baseLevelExpr = { $ifNull: ["$level", 0] };
-            const nextLevelExpr = options.mode === "set"
-                ? normalizedSetLevel
-                : { $max: [0, { $add: [baseLevelExpr, normalizedDelta] }] };
-            const nextXpExpr = {
-                $pow: [
-                    { $divide: [nextLevelExpr, xp.xp_rate] },
-                    2
-                ]
-            };
-
-            const result = await collection.updateOne(
-                { guild: options.guildId, user: options.userId },
-                [{
-                    $set: {
-                        createdAt: { $ifNull: ["$createdAt", now] },
-                        guild: options.guildId,
-                        lastUpdated: now,
-                        level: nextLevelExpr,
-                        name: options.username ?? { $ifNull: ["$name", options.userId] },
-                        user: options.userId,
-                        xp: nextXpExpr,
-                        xp_rate: xp.xp_rate,
-                    }
-                }] as unknown as Document[],
-                { upsert: options.createIfMissing }
-            );
-
-            if (result.matchedCount === 0 && result.upsertedCount === 0) {
-                throw new XpFatal({ function: "mutateUserLevelAtomic()", message: "User does not exist" });
-            }
-
-            const current = await collection.findOne({ guild: options.guildId, user: options.userId }) as UserResult | null;
-            if (!current) throw new XpFatal({ function: "mutateUserLevelAtomic()", message: "Failed to fetch updated user" });
-
-            return {
-                current: parseFlags(current),
-                previous: previous ? parseFlags(previous) : null,
-            };
-        }
-
-        case "sqlite": {
-            const db = xp.database as SQLiteClient;
-            const previous = db.prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?")
-                .get(options.guildId, options.userId) as UserResult | undefined;
-            if (!previous && !options.createIfMissing) {
-                throw new XpFatal({ function: "mutateUserLevelAtomic()", message: "User does not exist" });
-            }
-
-            const normalizedSetLevel = normalizeNonNegativeInteger(options.value);
-            const normalizedDelta = normalizeInteger(options.value);
-            const initialLevel = options.mode === "set" ? normalizedSetLevel : 0;
-
-            const transaction = db.transaction((): UserResult | null => {
-                if (options.createIfMissing) {
-                    db.prepare("INSERT OR IGNORE INTO \"simply-xps\" (user, guild, level, name, xp, xp_rate, flags, createdAt, lastUpdated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-                        .run(
-                            options.userId,
-                            options.guildId,
-                            initialLevel,
-                            options.username || options.userId,
-                            convertFrom(initialLevel),
-                            xp.xp_rate,
-                            JSON.stringify([]),
-                            now,
-                            now
-                        );
-                }
-
-                if (options.mode === "set") {
-                    db.prepare("UPDATE \"simply-xps\" SET name = COALESCE(?, name), level = ?, xp_rate = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
-                        .run(options.username, normalizedSetLevel, xp.xp_rate, now, options.guildId, options.userId);
-                } else {
-                    db.prepare("UPDATE \"simply-xps\" SET name = COALESCE(?, name), level = MAX(0, level + ?), xp_rate = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
-                        .run(options.username, normalizedDelta, xp.xp_rate, now, options.guildId, options.userId);
-                }
-
-                const row = db.prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?")
-                    .get(options.guildId, options.userId) as UserResult | undefined;
-                if (!row) return null;
-
-                db.prepare("UPDATE \"simply-xps\" SET xp = ?, lastUpdated = ? WHERE guild = ? AND user = ?")
-                    .run(convertFrom(Number(row.level || 0)), now, options.guildId, options.userId);
-
-                const updated = db.prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?")
-                    .get(options.guildId, options.userId) as UserResult | undefined;
-                if (!updated) return null;
-
-                return parseFlags(updated);
-            });
-
-            const current = transaction();
-            if (!current) throw new XpFatal({ function: "mutateUserLevelAtomic()", message: "Failed to fetch updated user" });
-
-            return {
-                current,
-                previous: previous ? parseFlags(previous) : null,
-            };
-        }
-
-        default:
-            throw new XpFatal({ function: "mutateUserLevelAtomic()", message: "Unsupported database type" });
-    }
+	return [{
+		$set: {
+			createdAt: { $ifNull: ["$createdAt", now] },
+			guild: guildId,
+			lastUpdated: now,
+			...values,
+			name: username ?? { $ifNull: ["$name", userId] },
+			user: userId,
+			xp_rate: xp.xp_rate,
+		}
+	}];
 }
 
-function normalizeInteger(value: number): number {
-    return Math.floor(value);
+async function mutateMongo(options: MutateOptions, now: string): Promise<Mutation> {
+	const { createIfMissing, field, guildId, mode, userId, username, value } = options;
+	const caller = callerOf(field);
+	const users = mongoCollection("simply-xps");
+	const filter = { guild: guildId, user: userId };
+	const missing = (): XpFatal => new XpFatal({ function: caller, message: "User does not exist" });
+
+	if (mode === "delta") {
+		const delta = Math.floor(value);
+		const expression = { $max: [0, { $add: [{ $ifNull: [`$${field}`, 0] }, delta] }] };
+		const previousRaw = await users.findOneAndUpdate(
+			filter,
+			mongoPipeline(options, now, expression),
+			{ upsert: createIfMissing, returnDocument: "before" }
+		) as UserResult | null;
+
+		if (!previousRaw && !createIfMissing) throw missing();
+
+		const previous = previousRaw ? parseFlags(previousRaw) : null;
+		const next = Math.max(0, (previous ? valueOf(previous, field) : 0) + delta);
+		return {
+			current: {
+				_id: previous?._id,
+				createdAt: previous?.createdAt || now,
+				flags: previous?.flags ?? [],
+				guild: guildId,
+				lastUpdated: now,
+				...valuesFor(field, next),
+				name: username ?? previous?.name ?? userId,
+				user: userId,
+				xp_rate: xp.xp_rate,
+			},
+			previous,
+		};
+	}
+
+	const previous = await users.findOne(filter) as UserResult | null;
+	if (!previous && !createIfMissing) throw missing();
+
+	const result = await users.updateOne(
+		filter,
+		mongoPipeline(options, now, Math.max(0, Math.floor(value))),
+		{ upsert: createIfMissing }
+	);
+	if (result.matchedCount === 0 && result.upsertedCount === 0) throw missing();
+
+	const current = await users.findOne(filter) as UserResult | null;
+	if (!current) throw new XpFatal({ function: caller, message: "Failed to fetch updated user" });
+
+	return { current: parseFlags(current), previous: previous ? parseFlags(previous) : null };
 }
 
-function normalizeNonNegativeInteger(value: number): number {
-    return Math.max(0, normalizeInteger(value));
+function mutateSqlite(options: MutateOptions, now: string): Mutation {
+	const { createIfMissing, field, guildId, mode, userId, username, value } = options;
+	const caller = callerOf(field);
+	const db = sqlite();
+	const find = (): UserResult | undefined => db
+		.prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?")
+		.get(guildId, userId) as UserResult | undefined;
+
+	const previous = find();
+	if (!previous && !createIfMissing) throw new XpFatal({ function: caller, message: "User does not exist" });
+
+	const delta = Math.floor(value);
+	const setValue = Math.max(0, delta);
+	const initial = valuesFor(field, mode === "set" ? setValue : 0);
+
+	const current = db.transaction((): UserResult | null => {
+		if (createIfMissing) {
+			insertSqliteUser({ flags: [], guild: guildId, level: initial.level, name: username || userId, now, user: userId, xp: initial.xp, xp_rate: xp.xp_rate });
+		}
+
+		if (mode === "set") {
+			db.prepare(`UPDATE "simply-xps" SET name = COALESCE(?, name), ${field} = ?, xp_rate = ?, lastUpdated = ? WHERE guild = ? AND user = ?`)
+				.run(username, setValue, xp.xp_rate, now, guildId, userId);
+		} else {
+			db.prepare(`UPDATE "simply-xps" SET name = COALESCE(?, name), ${field} = MAX(0, ${field} + ?), xp_rate = ?, lastUpdated = ? WHERE guild = ? AND user = ?`)
+				.run(username, delta, xp.xp_rate, now, guildId, userId);
+		}
+
+		const row = find();
+		if (!row) return null;
+
+		const next = valuesFor(field, valueOf(row, field));
+		db.prepare(`UPDATE "simply-xps" SET ${field === "xp" ? "level" : "xp"} = ?, lastUpdated = ? WHERE guild = ? AND user = ?`)
+			.run(field === "xp" ? next.level : next.xp, now, guildId, userId);
+
+		const updated = find();
+		return updated ? parseFlags(updated) : null;
+	})();
+
+	if (!current) throw new XpFatal({ function: caller, message: "Failed to fetch updated user" });
+
+	return { current, previous: previous ? parseFlags(previous) : null };
+}
+
+async function mutateUser(options: MutateOptions): Promise<Mutation> {
+	const caller = callerOf(options.field);
+	requireDatabaseConnection(caller);
+
+	const now = new Date().toISOString();
+	switch (xp.dbType) {
+		case "mongodb":
+			return mutateMongo(options, now);
+		case "sqlite":
+			return mutateSqlite(options, now);
+		default:
+			throw new XpFatal({ function: caller, message: "Unsupported database type" });
+	}
+}
+
+/**
+ * Changes a user's XP or level, then fires `levelUp` / `levelDown`. The user is created when `auto_create` is on and a username is given.
+ * @returns The updated user and how many levels it moved.
+ */
+export async function changeUser(options: Omit<MutateOptions, "createIfMissing">): Promise<{ current: UserResult; levelDifference: number }> {
+	const { current, previous } = await mutateUser({ ...options, createIfMissing: canAutoCreate(options.username) });
+	return { current, levelDifference: await fireLevelEvents(current, previous, options.userId, options.guildId) };
 }
 
 export function resolveXpInput(functionName: string, value: number | { min: number, max: number }): number {
-    if (typeof value === "number") {
-        requireFiniteNumber(functionName, value, "XP must be a finite number");
-        return normalizeInteger(value);
-    }
+	if (typeof value === "number") {
+		requireFiniteNumber(functionName, value, "XP must be a finite number");
+		return Math.floor(value);
+	}
 
-    if (!value || typeof value !== "object") {
-        throw new XpFatal({ function: functionName, message: "XP must be a number or an object with min/max" });
-    }
+	if (!isRecord(value)) {
+		throw new XpFatal({ function: functionName, message: "XP must be a number or an object with min/max" });
+	}
 
-    if (!Number.isFinite(value.min) || !Number.isFinite(value.max)) {
-        throw new XpFatal({ function: functionName, message: "XP range min/max must be finite numbers" });
-    }
+	if (!Number.isFinite(value.min) || !Number.isFinite(value.max)) {
+		throw new XpFatal({ function: functionName, message: "XP range min/max must be finite numbers" });
+	}
 
-    const min = normalizeInteger(value.min);
-    const max = normalizeInteger(value.max);
-    if (min > max) {
-        throw new XpFatal({ function: functionName, message: "XP range requires min <= max" });
-    }
+	const min = Math.floor(value.min);
+	const max = Math.floor(value.max);
+	if (min > max) {
+		throw new XpFatal({ function: functionName, message: "XP range requires min <= max" });
+	}
 
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export async function fireLevelEvents(
-    current: UserResult,
-    previous: UserResult | null,
-    userId: string,
-    guildId: string
-): Promise<number> {
-    const levelDifference = previous ? current.level - previous.level : (current.level > 0 ? current.level : 0);
+async function fireLevelEvents(current: UserResult, previous: UserResult | null, userId: string, guildId: string): Promise<number> {
+	const levelDifference = previous ? current.level - previous.level : (current.level > 0 ? current.level : 0);
 
-    if (levelDifference < 0) {
-        const handlers = XpEvents.handlers("levelDown");
-        if (handlers.length > 0) {
-            // Resolved once and shared, so extra listeners cost no extra queries.
-            const lostRoles = await LevelRoles.getUserRoles(userId, guildId, { includeNext: true });
-            for (const handler of handlers) await handler(current, lostRoles);
-        }
-    }
+	if (levelDifference < 0) {
+		const handlers = XpEvents.handlers("levelDown");
+		if (handlers.length > 0) {
+			const lostRoles = await LevelRoles.getUserRoles(userId, guildId, { includeNext: true });
+			for (const handler of handlers) await handler(current, lostRoles);
+		}
+	}
 
-    if (levelDifference > 0) {
-        const handlers = XpEvents.handlers("levelUp");
-        if (handlers.length > 0) {
-            const newRoles = await LevelRoles.getUserRoles(userId, guildId);
-            for (const handler of handlers) await handler(current, newRoles);
-        }
-    }
+	if (levelDifference > 0) {
+		const handlers = XpEvents.handlers("levelUp");
+		if (handlers.length > 0) {
+			const newRoles = await LevelRoles.getUserRoles(userId, guildId);
+			for (const handler of handlers) await handler(current, newRoles);
+		}
+	}
 
-    return levelDifference;
+	return levelDifference;
 }

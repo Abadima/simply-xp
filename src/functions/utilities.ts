@@ -1,51 +1,10 @@
-import { ADAPTER_VERSION_RANGES, checkPackageVersion, clean, ensureMongoSchemaVersion, ensureSqliteSchemaVersion, resolveXpRate, syncUsersXpRate } from "../connect";
-import { GlobalFonts } from "@napi-rs/canvas";
+import { loadCanvas } from "./canvas";
 import { xp, type Plugin } from "../client";
+import { FALLBACK_FONT, PRIMARY_FONT } from "./draw";
+import { isRecord } from "./predicates";
 import { XpFatal, XpLog } from "./xplogs";
-import { Database } from "better-sqlite3";
-import { MongoClient } from "mongodb";
 import { https } from "./https";
-
-/**
- * Options for the XP client.
- * @property {boolean} auto_create - Whether to automatically create a user if they don't exist in the database.
- * @property {object} dbOptions - The database options.
- * @property {"mongodb" | "sqlite"} dbOptions.type - The database type.
- * @property {MongoClient | Database} dbOptions.database - The database connection.
- * @property {string} [dbOptions.name] - MongoDB only: explicit database name. If set, overrides the default derived from the connection URI.
- * @property {boolean} debug - Whether to enable debug logs.
- * @property {boolean} notify - Enable/Disable console notifications.
- * @property {"slow" | "normal" | "fast" | number} xp_rate - The XP rate.
- */
-interface NewClientOptions {
-	auto_create?: boolean;
-	dbOptions?: { type: "mongodb", database: MongoClient, name?: string } | { type: "sqlite", database: Database };
-	debug?: boolean;
-	notify?: boolean;
-	xp_rate?: "slow" | "normal" | "fast" | number;
-}
-
-/**
- * Convert XP to level and vice versa.
- *
- * @param {number} value.
- * @param {"xp" | "level"} type - Type to convert from (Default: level).
- * @link `Documentation:` https://simplyxp.js.org/docs/Functions/convert
- * @returns {number} - The converted value. (XP to level or level to XP)
- * @throws {XpFatal} If an invalid type is provided or if the value is not provided.
- */
-export function convertFrom(value: number, type: ("xp" | "level") = "level"): number {
-	if (isNaN(value)) throw new XpFatal({ function: "convertFrom()", message: "Value was not provided" });
-	if (type !== "xp" && type !== "level") throw new XpFatal({
-		function: "convert()", message: "Invalid type provided"
-	});
-	if (!Number.isFinite(xp.xp_rate) || xp.xp_rate <= 0) throw new XpFatal({
-		function: "convertFrom()", message: "xp_rate must be a finite number greater than 0"
-	});
-
-	if (type === "level") return Math.pow(Math.max(0, value) / xp.xp_rate, 2);
-	return Math.floor(xp.xp_rate * Math.sqrt(Math.max(0, value)));
-}
+import { join } from "path";
 
 /**
  * Registers fonts from URLs or paths (For convenience).
@@ -58,6 +17,7 @@ export function convertFrom(value: number, type: ("xp" | "level") = "level"): nu
  */
 export async function registerFont(pathOrURL: string, name: string, timeout: number = 1500): Promise<void> {
 	if (xp.registeredFonts.includes(name)) return;
+	const { GlobalFonts } = await loadCanvas();
 
 	if (pathOrURL.startsWith("https://")) {
 		await https(pathOrURL, {
@@ -77,14 +37,36 @@ export async function registerFont(pathOrURL: string, name: string, timeout: num
 }
 
 /**
+ * Registers the fonts the cards and charts draw with: the bundled one (or `font`) as "Baloo", plus an optional fallback.
+ * @private
+ */
+export async function registerCardFonts(font?: string, fallbackFont?: string): Promise<void> {
+	await registerFont(font || join(__dirname, "..", "fonts", "Baloo2-Regular.woff2"), PRIMARY_FONT);
+	if (fallbackFont) await registerFont(fallbackFont, FALLBACK_FONT);
+}
+
+/** `"2"`, `"2.0"`, `"2.0.1"` or `"2.0.1-beta.4"` as its numbers and pre-release tag; `null` for anything else. */
+function parseVersionPattern(version: string): { numbers: number[]; preRelease?: string } | null {
+	const dash = version.indexOf("-");
+	const core = dash === -1 ? version : version.slice(0, dash);
+	const preRelease = dash === -1 ? undefined : version.slice(dash + 1);
+	const parts = core.split(".");
+
+	if (parts.length > 3 || !parts.every((part) => /^\d+$/u.test(part))) return null;
+	if (preRelease !== undefined && !/^[\w.-]+$/u.test(preRelease)) return null;
+
+	return { numbers: parts.map(Number), preRelease };
+}
+
+const registeredPlugins = new Map<string, Plugin>();
+
+/**
  * Register Simply-XP Plugins.
  * @param {Plugin[]} plugins - The plugins to register.
  * @link `Documentation:` https://simplyxp.js.org/docs/Functions/registerPlugins
  * @returns {Promise<void>} - Resolves once all plugin initializers have completed.
  * @throws {XpFatal} If an invalid plugin is provided.
  */
-const registeredPlugins = new Map<string, Plugin>();
-
 export async function registerPlugins(plugins: Plugin[]): Promise<void> {
 	if (!Array.isArray(plugins)) throw new XpFatal({
 		function: "registerPlugins()", message: "Plugins must be an array"
@@ -96,7 +78,7 @@ export async function registerPlugins(plugins: Plugin[]): Promise<void> {
 
 	await Promise.all(plugins.map(async (plugin): Promise<void> => {
 		try {
-			if (!plugin || typeof plugin !== "object") {
+			if (!isRecord(plugin)) {
 				XpLog.warn("registerPlugins()", "INVALID PLUGIN PROVIDED");
 				return;
 			}
@@ -118,20 +100,24 @@ export async function registerPlugins(plugins: Plugin[]): Promise<void> {
 
 			if (Array.isArray(plugin.requiredVersions) && plugin.requiredVersions.length > 0 && !plugin.requiredVersions.includes(xp.version)) {
 				let invalidVersioning = false;
-				const passedChecks = plugin.requiredVersions.some((version: string) => {
-					const match = version.match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([\w\d.-]+))?$/u);
-					if (!match) {
+				let passedChecks = false;
+
+				for (const version of plugin.requiredVersions) {
+					const pattern = parseVersionPattern(version);
+					if (!pattern) {
 						invalidVersioning = true;
-						return false;
+						continue;
 					}
 
-					if (parseInt(match[1] || "0", 10) !== xpMajor) return false;
-					if (match[2] && parseInt(match[2], 10) !== xpMinor) return false;
-					if (match[3] && parseInt(match[3], 10) !== xpPatch) return false;
-					if (match[4] && match[4] !== xpPreRelease) return false;
+					const [major, minor, patch] = pattern.numbers;
+					if (major !== xpMajor) continue;
+					if (minor !== undefined && minor !== xpMinor) continue;
+					if (patch !== undefined && patch !== xpPatch) continue;
+					if (pattern.preRelease && pattern.preRelease !== xpPreRelease) continue;
 
-					return true;
-				});
+					passedChecks = true;
+					break;
+				}
 
 				if (invalidVersioning) {
 					XpLog.warn("registerPlugins()", `${pluginName.toUpperCase()} PLUGIN PROVIDED INVALID VERSION PATTERN(S) IN requiredVersions.`);
@@ -147,7 +133,7 @@ export async function registerPlugins(plugins: Plugin[]): Promise<void> {
 			registeredPlugins.set(pluginName, plugin);
 			XpLog.info("registerPlugins()", `${pluginName.toUpperCase()} PLUGIN INITIALIZED`);
 		} catch (error) {
-			XpLog.err("registerPlugins()", `Failed to register plugin: ${plugin?.name || "unknown"}\n${error}`);
+			XpLog.err("registerPlugins()", `Failed to register plugin: ${plugin.name || "unknown"}\n${String(error)}`);
 		}
 	}));
 }
@@ -173,86 +159,9 @@ export async function unregisterPlugins(names?: string[]): Promise<void> {
 			if (typeof plugin.destroy === "function") await Promise.resolve(plugin.destroy(xp));
 			XpLog.info("unregisterPlugins()", `${name.toUpperCase()} PLUGIN UNREGISTERED`);
 		} catch (error) {
-			XpLog.err("unregisterPlugins()", `Failed to unregister plugin: ${name}\n${error}`);
+			XpLog.err("unregisterPlugins()", `Failed to unregister plugin: ${name}\n${String(error)}`);
 		} finally {
 			registeredPlugins.delete(name);
 		}
 	}));
-}
-
-
-/**
- * Updates the options of the XP client.
- * @param {NewClientOptions} clientOptions - The new options to update.
- * @link `Documentation:` https://simplyxp.js.org/docs/Functions/updateOptions
- * @returns {void} - Nothing.
- * @throws {XpFatal} If an invalid option is provided.
- */
-export async function updateOptions(clientOptions: NewClientOptions): Promise<void> {
-	if (!clientOptions) throw new XpFatal({ function: "updateOptions()", message: "Options were not provided" });
-
-	if (typeof clientOptions !== "object" || clientOptions === null) throw new XpFatal({
-		function: "updateOptions()", message: "Options must be an object"
-	});
-
-	if (typeof clientOptions.auto_create === "boolean") xp.auto_create = clientOptions.auto_create;
-	if (typeof clientOptions.debug === "boolean") xp.debug = clientOptions.debug;
-	if (typeof clientOptions.notify === "boolean") xp.notify = clientOptions.notify;
-	if (clientOptions.xp_rate !== undefined) xp.xp_rate = resolveXpRate("updateOptions()", clientOptions.xp_rate);
-
-	if (clientOptions.dbOptions && typeof clientOptions.dbOptions === "object" && clientOptions.dbOptions.type && clientOptions.dbOptions.database) {
-		const { type, database } = clientOptions.dbOptions;
-
-		if ((type && type === "mongodb") || type === "sqlite") xp.dbType = type;
-		else throw new XpFatal({ function: "updateOptions()", message: "Invalid database type provided" });
-
-		if (database) {
-			xp.database = database;
-			if (type === "mongodb") xp.dbName = (clientOptions.dbOptions as { name?: string }).name;
-			if (type === "mongodb" && !xp.dbName) throw new XpFatal({
-				function: "updateOptions()", message: "MongoDB requires dbOptions.name so simply-xp knows which database to use"
-			});
-			const dbInfo = xp.dbType === "mongodb" ?
-				{ name: "MONGODB", type: "mongodb", ...ADAPTER_VERSION_RANGES.mongodb } :
-				{ name: "BETTER-SQLITE3", type: "better-sqlite3", ...ADAPTER_VERSION_RANGES["better-sqlite3"] };
-
-			const result = await checkPackageVersion(dbInfo.type, dbInfo.min, dbInfo.max);
-			switch (result) {
-				case "too_low":
-					throw new XpFatal({
-						function: "updateOptions()", message: `${dbInfo.name} V${dbInfo.min} OR NEWER IS REQUIRED`
-					});
-				case "too_high":
-					XpLog.warn("updateOptions()", `${dbInfo.name} VERSION IS NEWER THAN TESTED (V${dbInfo.max}) -- CONTINUE WITH CAUTION`);
-					break;
-				case "ok":
-					XpLog.debug("updateOptions()", `${dbInfo.name} is natively compatible with our package! 🎉`);
-					break;
-			}
-
-			switch (xp.dbType) {
-				case "mongodb":
-					try {
-						await (xp.database as MongoClient).db(xp.dbName).command({ ping: 1 });
-						await ensureMongoSchemaVersion(xp.database as MongoClient);
-					} catch {
-						xp.database = undefined;
-						throw new XpFatal({ function: "updateOptions()", message: "Invalid MongoDB connection" });
-					}
-					break;
-
-				case "sqlite":
-					try {
-						(xp.database as Database).prepare("SELECT 1").get();
-						ensureSqliteSchemaVersion(xp.database as Database);
-					} catch {
-						throw new XpFatal({ function: "updateOptions()", message: "Invalid SQLite connection" });
-					}
-					break;
-			}
-		}
-	}
-
-	await clean({ db: true });
-	await syncUsersXpRate("updateOptions()");
 }

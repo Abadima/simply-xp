@@ -6,9 +6,11 @@ export { charts } from "./src/charts";
 
 export { compareCard, leaderboardCard, rankCard } from "./src/cards";
 
-export { clean, connect } from "./src/connect";
+export { clean, connect, updateOptions } from "./src/connect";
 
-export { convertFrom, registerFont, registerPlugins, unregisterPlugins, updateOptions } from "./src/functions/utilities";
+export { convertFrom } from "./src/functions/curve";
+
+export { registerFont, registerPlugins, unregisterPlugins } from "./src/functions/utilities";
 
 export { create } from "./src/create";
 

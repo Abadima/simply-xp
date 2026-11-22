@@ -1,8 +1,7 @@
-import { requireGuildId, requireUserId } from "./functions/guards";
-import { Database, UserResult } from "./classes/Database";
+import { findOrCreateUser, positionOf } from "./functions/users";
+import { requireIds } from "./functions/guards";
 import { XpFatal } from "./functions/xplogs";
-import { xp, type User } from "./client";
-import { create } from "./create";
+import type { User } from "./client";
 
 /**
  * Fetch user data
@@ -15,22 +14,15 @@ import { create } from "./create";
  * @throws {XpFatal} If invalid parameters are provided, or if the user data is not found.
  */
 export async function fetch(userId: string, guildId: string, username?: string): Promise<User> {
-	requireUserId("fetch()", userId);
-	requireGuildId("fetch()", guildId);
+	requireIds("fetch()", userId, guildId);
 
-	let user = await Database.findOne({ collection: "simply-xps", data: { guild: guildId, user: userId } }) as UserResult | null;
+	const user = await findOrCreateUser(guildId, userId, username);
+	if (!user) throw new XpFatal({ function: "fetch()", message: "User data not found" });
 
-	if (!user) {
-		if (xp.auto_create && username) {
-			user = await create(userId, guildId, username);
-		} else throw new XpFatal({ function: "fetch()", message: "User data not found" });
-	}
-
-	const position = 1 + await Database.countUsersWithMoreXp(guildId, user.xp);
 	return {
 		flags: Array.isArray(user.flags) ? user.flags : [], guild: user.guild,
-		user: user.user, name: user?.name,
-		level: user.level, position,
+		user: user.user, name: user.name,
+		level: user.level, position: await positionOf(guildId, user.xp),
 		xp: user.xp
 	};
 }

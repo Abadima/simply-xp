@@ -1,44 +1,23 @@
-import { mutateUserLevelAtomic, mutateUserXpAtomic, resolveXpInput, fireLevelEvents } from "./functions/mutations";
-import { requireFiniteNumber, requireGuildId, requireUserId } from "./functions/guards";
-import { UserResult } from "./classes/Database";
-import { xp } from "./client";
+import { changeUser, resolveXpInput } from "./functions/mutations";
+import { requireFiniteNumber, requireIds } from "./functions/guards";
+import type { UserResult, XPResult } from "./classes/Database";
 
 /**
- * Add XP to a user
+ * Add levels to a user
  * @async
  * @param {string} userId
  * @param {string} guildId
- * @param {number} level
+ * @param {number} level - Levels to add. Negative values remove levels.
  * @param {string} username - Username to use if auto_create is enabled
  * @link `Documentation:` https://simplyxp.js.org/docs/functions/addlevel
  * @returns {Promise<UserResult>} - Object of user data on success
  * @throws {XpFatal} - If parameters are not provided correctly
  */
-
 export async function addLevel(userId: string, guildId: string, level: number, username?: string): Promise<UserResult> {
-	requireUserId("addLevel()", userId);
-	requireGuildId("addLevel()", guildId);
+	requireIds("addLevel()", userId, guildId);
 	requireFiniteNumber("addLevel()", level, "Level was not provided");
 
-	const { current, previous } = await mutateUserLevelAtomic({
-		createIfMissing: Boolean(xp.auto_create && username),
-		guildId,
-		mode: "delta",
-		userId,
-		username,
-		value: Math.floor(level),
-	});
-
-	await fireLevelEvents(current, previous, userId, guildId);
-	return current;
-}
-
-/**
- * XP Results
- * @property {boolean} levelDifference - Whether the user has levelled up or not.
- */
-export interface XPResult extends UserResult {
-	levelDifference: number;
+	return (await changeUser({ field: "level", guildId, mode: "delta", userId, username, value: Math.floor(level) })).current;
 }
 
 /**
@@ -55,19 +34,10 @@ export interface XPResult extends UserResult {
 export async function addXP(userId: string, guildId: string, xpData: number | {
 	min: number, max: number
 }, username?: string): Promise<XPResult> {
-	requireUserId("addXP()", userId);
-	requireGuildId("addXP()", guildId);
+	requireIds("addXP()", userId, guildId);
 
-	const resolvedXp = resolveXpInput("addXP()", xpData);
-	const { current, previous } = await mutateUserXpAtomic({
-		createIfMissing: Boolean(xp.auto_create && username),
-		guildId,
-		mode: "delta",
-		userId,
-		username,
-		value: resolvedXp,
+	const { current, levelDifference } = await changeUser({
+		field: "xp", guildId, mode: "delta", userId, username, value: resolveXpInput("addXP()", xpData)
 	});
-
-	const levelDifference = await fireLevelEvents(current, previous, userId, guildId);
 	return { ...current, levelDifference };
 }

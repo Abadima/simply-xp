@@ -1,9 +1,6 @@
-import { mutateUserLevelAtomic, mutateUserXpAtomic, fireLevelEvents } from "./functions/mutations";
-import { requireFiniteNumber, requireGuildId, requireUserId } from "./functions/guards";
-import { UserResult } from "./classes/Database";
-import { XpFatal } from "./functions/xplogs";
-import { XPResult } from "./add";
-import { xp } from "./client";
+import { changeUser } from "./functions/mutations";
+import { requireFiniteNumber, requireIds } from "./functions/guards";
+import type { UserResult, XPResult } from "./classes/Database";
 
 /**
  * Set user level
@@ -16,25 +13,11 @@ import { xp } from "./client";
  * @returns {Promise<UserResult>} - Object of user data on success
  * @throws {XpFatal} - If parameters are not provided correctly
  */
-
 export async function setLevel(userId: string, guildId: string, level: number, username?: string): Promise<UserResult> {
-	requireUserId("setLevel()", userId);
-	requireGuildId("setLevel()", guildId);
+	requireIds("setLevel()", userId, guildId);
 	requireFiniteNumber("setLevel()", level, "Level was not provided");
 
-	const normalizedLevel = Math.max(0, Math.floor(level));
-	const { current, previous } = await mutateUserLevelAtomic({
-		createIfMissing: Boolean(xp.auto_create && username),
-		guildId,
-		mode: "set",
-		userId,
-		username,
-		value: normalizedLevel,
-	});
-
-	if (!current) throw new XpFatal({ function: "setLevel()", message: "User does not exist" });
-	await fireLevelEvents(current, previous, userId, guildId);
-	return current;
+	return (await changeUser({ field: "level", guildId, mode: "set", userId, username, value: Math.max(0, Math.floor(level)) })).current;
 }
 
 /**
@@ -48,22 +31,12 @@ export async function setLevel(userId: string, guildId: string, level: number, u
  * @returns {Promise<XPResult>} - Object of user data on success
  * @throws {XpFatal} - If parameters are not provided correctly
  */
-
 export async function setXP(userId: string, guildId: string, xpData: number, username?: string): Promise<XPResult> {
-	requireUserId("setXP()", userId);
-	requireGuildId("setXP()", guildId);
+	requireIds("setXP()", userId, guildId);
 	requireFiniteNumber("setXP()", xpData, "XP was not provided");
 
-	const normalizedXp = Math.max(0, Math.floor(xpData));
-	const { current, previous } = await mutateUserXpAtomic({
-		createIfMissing: Boolean(xp.auto_create && username),
-		guildId,
-		mode: "set",
-		userId,
-		username,
-		value: normalizedXp,
+	const { current, levelDifference } = await changeUser({
+		field: "xp", guildId, mode: "set", userId, username, value: Math.max(0, Math.floor(xpData))
 	});
-
-	const levelDifference = await fireLevelEvents(current, previous, userId, guildId);
 	return { ...current, levelDifference };
 }

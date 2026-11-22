@@ -1,6 +1,12 @@
 import { XpFatal, XpLog } from "./functions/xplogs";
+import { canAutoCreate } from "./functions/guards";
+import { findUser } from "./functions/users";
 import { Database } from "./classes/Database";
 import { xp } from "./client";
+
+const failed = (error: Error): never => {
+	throw new XpFatal({ function: "reset()", message: error });
+};
 
 /**
  * Reset user levels to 0 in a guild
@@ -19,33 +25,22 @@ export async function reset(userId: string, guildId: string, erase: boolean = fa
 	}
 
 	const userFilter = { guild: guildId, user: userId };
-	const userData = await Database.findOne({ collection: "simply-xps", data: userFilter });
+	const userData = await findUser(guildId, userId);
 
 	if (!userData) {
-		if (xp.auto_create && !erase && username) {
-			await Database.createOne({
-				collection: "simply-xps",
-				data: {
-					guild: guildId,
-					level: 0,
-					name: username,
-					user: userId,
-					xp: 0,
-					xp_rate: xp.xp_rate
-				}
-			}).catch((error) => {
-				throw new XpFatal({ function: "reset()", message: error.stack });
-			});
-			return true;
-		} else {
+		if (erase || !canAutoCreate(username)) {
 			return XpLog.info("reset()", "User was not found, we did not know what to do without a username.");
 		}
+
+		await Database.createOne({
+			collection: "simply-xps",
+			data: { guild: guildId, level: 0, name: username, user: userId, xp: 0, xp_rate: xp.xp_rate }
+		}).catch(failed);
+		return true;
 	}
 
 	if (erase) {
-		await Database.deleteOne({ collection: "simply-xps", data: userFilter }).catch((error) => {
-			throw new XpFatal({ function: "reset()", message: error });
-		});
+		await Database.deleteOne({ collection: "simply-xps", data: userFilter }).catch(failed);
 		return true;
 	}
 
@@ -53,18 +48,9 @@ export async function reset(userId: string, guildId: string, erase: boolean = fa
 		{ collection: "simply-xps", data: userFilter },
 		{
 			collection: "simply-xps",
-			data: {
-				guild: guildId,
-				level: 0,
-				name: username || (userData as { name?: string }).name || userId,
-				user: userId,
-				xp: 0,
-				xp_rate: xp.xp_rate
-			}
+			data: { guild: guildId, level: 0, name: username || userData.name || userId, user: userId, xp: 0, xp_rate: xp.xp_rate }
 		}
-	).catch((error) => {
-		throw new XpFatal({ function: "reset()", message: error });
-	});
+	).catch(failed);
 
 	return true;
 }

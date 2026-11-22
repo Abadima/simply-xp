@@ -1,11 +1,11 @@
-import { requireDatabaseConnection as requireConnected } from "../functions/guards";
-import { Collection, Document, MongoClient } from "mongodb";
-import { Database as SQLite } from "better-sqlite3";
+import { requireDatabaseConnection } from "../functions/guards";
+import { Collection, Document } from "mongodb";
+import { insertSqliteUser, mongoCollection, sqlite } from "../functions/db";
 import { XpFatal } from "../functions/xplogs";
 import { xp } from "../client";
 
 /**
- * Options for creating a user document.
+ * A user document, as used in queries and updates.
  * @property {string} collection - The collection to create the document in.
  * @property {object} data - The data to create the document with.
  * @property {string} [data.guild] - The guild ID.
@@ -51,6 +51,14 @@ export interface UserResult {
 	xp_rate?: number;
 	createdAt?: string;
 	lastUpdated: string;
+}
+
+/**
+ * XP Results
+ * @property {number} levelDifference - How many levels the user moved (negative when they lost levels).
+ */
+export interface XPResult extends UserResult {
+	levelDifference: number;
 }
 
 /**
@@ -107,24 +115,20 @@ export interface UpdateOptions {
  * @class Database
  */
 export class Database {
-	private static requireDatabaseConnection(functionName: string): void {
-		requireConnected(functionName);
-	}
-
 	/**
 	 * Gets a collection from the database.
-	 * @param {collection} collection - The collection to get.
+	 * @param {string} collection - The collection to get.
 	 * @link `Documentation:` https://simplyxp.js.org/docs/Classes/database#getCollection
 	 * @returns {Collection} The collection.
 	 * @throws {XpFatal} Throws an error if there is no database connection, or database type is invalid.
 	 */
 	static getCollection(collection: string): Collection {
-		this.requireDatabaseConnection("getCollection()");
+		requireDatabaseConnection("getCollection()");
 		if (xp.dbType !== "mongodb") throw new XpFatal({
 			function: "getCollection()",
 			message: "MongoDB has to be your database type to use this function."
 		});
-		return (xp.database as MongoClient).db(xp.dbName).collection(collection);
+		return mongoCollection(collection);
 	}
 
 	/**
@@ -137,7 +141,7 @@ export class Database {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async createOne(query: UserOptions | LevelRoleOptions): Promise<UserResult | LevelRoleResult> {
-		this.requireDatabaseConnection("createOne()");
+		requireDatabaseConnection("createOne()");
 		const createdAt = new Date().toISOString();
 		const normalizedUserCreateData = query.collection === "simply-xps"
 			? normalizeUserCreateData(query.data as UserOptions["data"])
@@ -165,9 +169,13 @@ export class Database {
 
 			case "sqlite":
 				if (query.collection === "simply-xps") {
-					(xp.database as SQLite).prepare("INSERT OR IGNORE INTO \"simply-xps\" (user, guild, level, name, xp, xp_rate, flags, createdAt, lastUpdated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(normalizedUserCreateData?.user, normalizedUserCreateData?.guild, normalizedUserCreateData?.level, normalizedUserCreateData?.name, normalizedUserCreateData?.xp, normalizedUserCreateData?.xp_rate, JSON.stringify(normalizedUserCreateData?.flags || []), createdAt, createdAt);
+					const user = normalizedUserCreateData as UserOptions["data"];
+					insertSqliteUser({
+						flags: user.flags ?? [], guild: user.guild, level: user.level as number, name: user.name as string,
+						now: createdAt, user: user.user as string, xp: user.xp as number, xp_rate: user.xp_rate as number
+					});
 				} else {
-					(xp.database as SQLite).prepare("INSERT OR IGNORE INTO \"simply-xp-levelroles\" (guild, levelrole, createdAt, lastUpdated) VALUES (?, ?, ?, ?)").run(query.data.guild, JSON.stringify(query.data.levelrole), createdAt, createdAt);
+					sqlite().prepare("INSERT OR IGNORE INTO \"simply-xp-levelroles\" (guild, levelrole, createdAt, lastUpdated) VALUES (?, ?, ?, ?)").run(query.data.guild, JSON.stringify(query.data.levelrole), createdAt, createdAt);
 				}
 				break;
 		}
@@ -203,7 +211,7 @@ export class Database {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async deleteMany(query: UserOptions | LevelRoleOptions): Promise<boolean> {
-		this.requireDatabaseConnection("deleteMany()");
+		requireDatabaseConnection("deleteMany()");
 		let result: Document;
 
 		switch (xp.dbType) {
@@ -213,9 +221,9 @@ export class Database {
 
 			case "sqlite":
 				if (query.collection === "simply-xps") {
-					result = (xp.database as SQLite).prepare("DELETE FROM \"simply-xps\" WHERE guild = ?").run(query.data.guild);
+					result = sqlite().prepare("DELETE FROM \"simply-xps\" WHERE guild = ?").run(query.data.guild);
 				} else {
-					result = (xp.database as SQLite).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE guild = ?").run(query.data.guild);
+					result = sqlite().prepare("DELETE FROM \"simply-xp-levelroles\" WHERE guild = ?").run(query.data.guild);
 				}
 				return result.changes > 0;
 		}
@@ -231,7 +239,7 @@ export class Database {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async deleteOne(query: UserOptions | LevelRoleOptions): Promise<boolean> {
-		this.requireDatabaseConnection("deleteOne()");
+		requireDatabaseConnection("deleteOne()");
 
 		switch (xp.dbType) {
 			case "mongodb":
@@ -239,11 +247,11 @@ export class Database {
 
 			case "sqlite":
 				if (query.collection === "simply-xps") {
-					return ((xp.database as SQLite).prepare("DELETE FROM \"simply-xps\" WHERE guild = ? AND user = ?").run(query.data.guild, query.data.user)).changes > 0;
+					return (sqlite().prepare("DELETE FROM \"simply-xps\" WHERE guild = ? AND user = ?").run(query.data.guild, query.data.user)).changes > 0;
 				} else {
 					const level = getLevelRoleLevel(query.data);
 					if (level === null) return false;
-					return ((xp.database as SQLite).prepare("DELETE FROM \"simply-xp-levelroles\" WHERE guild = ? AND json_extract(levelrole, '$.level') = ?").run(query.data.guild, level)).changes > 0;
+					return (sqlite().prepare("DELETE FROM \"simply-xp-levelroles\" WHERE guild = ? AND json_extract(levelrole, '$.level') = ?").run(query.data.guild, level)).changes > 0;
 				}
 		}
 	}
@@ -258,11 +266,11 @@ export class Database {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async findOne(query: UserOptions | LevelRoleOptions): Promise<UserResult | LevelRoleResult | null> {
-		this.requireDatabaseConnection("findOne()");
+		requireDatabaseConnection("findOne()");
 
 		switch (xp.dbType) {
 			case "mongodb": {
-				const mongoResult = await this.getCollection(query.collection).findOne(normalizeCollectionFilter(query)).catch(error => handleError(error, "findOne()")) as Document;
+				const mongoResult = await this.getCollection(query.collection).findOne(normalizeCollectionFilter(query)).catch(error => handleError(error, "findOne()")) as Document | null;
 				if (!mongoResult) return null;
 				if (query.collection === "simply-xps") return parseFlags(mongoResult as UserResult);
 				return parseLevelRoleRow(mongoResult as LevelRoleResult) as LevelRoleResult;
@@ -270,7 +278,7 @@ export class Database {
 
 			case "sqlite":
 				if (query.collection === "simply-xps") {
-					const row = (xp.database as SQLite).prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?").get(query.data.guild, query.data.user) as Document;
+					const row = sqlite().prepare("SELECT * FROM \"simply-xps\" WHERE guild = ? AND user = ?").get(query.data.guild, query.data.user) as Document | undefined;
 					if (!row) return null;
 					return parseFlags(row as UserResult);
 				}
@@ -278,7 +286,7 @@ export class Database {
 				else {
 					const level = getLevelRoleLevel(query.data);
 					if (level === null) handleError(new Error("levelrole is undefined"), "findOne()");
-					const row = (xp.database as SQLite).prepare(`SELECT * FROM "simply-xp-levelroles" WHERE guild = ? AND json_extract(levelrole, '$.level') = ?`).get(query.data.guild, level) as Document;
+					const row = sqlite().prepare(`SELECT * FROM "simply-xp-levelroles" WHERE guild = ? AND json_extract(levelrole, '$.level') = ?`).get(query.data.guild, level) as Document | undefined;
 					if (!row) return null;
 					return parseLevelRoleRow(row as LevelRoleResult) as LevelRoleResult;
 				}
@@ -297,11 +305,11 @@ export class Database {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async find(collection: "simply-xps" | "simply-xp-levelroles", guild: string, limit?: number): Promise<UserResult[] | LevelRoleResult[]> {
-		this.requireDatabaseConnection("find()");
+		requireDatabaseConnection("find()");
 
 		switch (xp.dbType) {
 			case "mongodb": {
-				const mongoCursor = (xp.database as MongoClient).db(xp.dbName).collection(collection).find({ guild });
+				const mongoCursor = mongoCollection(collection).find({ guild });
 				if (limit && limit > 0 && collection === "simply-xps") {
 					mongoCursor.sort({ xp: -1 }).limit(limit);
 				}
@@ -316,13 +324,13 @@ export class Database {
 						"SELECT * FROM \"simply-xps\" WHERE guild = ? ORDER BY xp DESC LIMIT ?" :
 						"SELECT * FROM \"simply-xps\" WHERE guild = ?";
 					const rows = (limit && limit > 0 ?
-						(xp.database as SQLite).prepare(query).all(guild, limit) :
-						(xp.database as SQLite).prepare(query).all(guild)) as UserResult[];
+						sqlite().prepare(query).all(guild, limit) :
+						sqlite().prepare(query).all(guild)) as UserResult[];
 					return rows.map(row => {
 						return parseFlags(row);
 					}) as UserResult[];
 				} else {
-					const rows = (xp.database as SQLite).prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE guild = ?").all(guild) as LevelRoleResult[];
+					const rows = sqlite().prepare("SELECT * FROM \"simply-xp-levelroles\" WHERE guild = ?").all(guild) as LevelRoleResult[];
 					return rows.map(row => parseLevelRoleRow(row)).filter(Boolean) as LevelRoleResult[];
 				}
 		}
@@ -337,11 +345,11 @@ export class Database {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async findAll(collection: "simply-xps" | "simply-xp-levelroles", limit?: number): Promise<UserResult[] | LevelRoleResult[]> {
-		this.requireDatabaseConnection("findAll()");
+		requireDatabaseConnection("findAll()");
 
 		switch (xp.dbType) {
 			case "mongodb": {
-				const mongoCursor = (xp.database as MongoClient).db(xp.dbName).collection(collection).find();
+				const mongoCursor = mongoCollection(collection).find();
 				if (limit && limit > 0 && collection === "simply-xps") {
 					mongoCursor.sort({ xp: -1 }).limit(limit);
 				}
@@ -356,13 +364,13 @@ export class Database {
 						"SELECT * FROM \"simply-xps\" ORDER BY xp DESC LIMIT ?" :
 						"SELECT * FROM \"simply-xps\"";
 					const rows = (limit && limit > 0 ?
-						(xp.database as SQLite).prepare(query).all(limit) :
-						(xp.database as SQLite).prepare(query).all()) as UserResult[];
+						sqlite().prepare(query).all(limit) :
+						sqlite().prepare(query).all()) as UserResult[];
 					return rows.map(row => {
 						return parseFlags(row);
 					}) as UserResult[];
 				} else {
-					const rows = (xp.database as SQLite).prepare("SELECT * FROM \"simply-xp-levelroles\"").all() as LevelRoleResult[];
+					const rows = sqlite().prepare("SELECT * FROM \"simply-xp-levelroles\"").all() as LevelRoleResult[];
 					return rows.map(row => parseLevelRoleRow(row)).filter(Boolean) as LevelRoleResult[];
 				}
 		}
@@ -376,7 +384,7 @@ export class Database {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async findGlobalLeaderboard(limit?: number): Promise<UserResult[]> {
-		this.requireDatabaseConnection("findGlobalLeaderboard()");
+		requireDatabaseConnection("findGlobalLeaderboard()");
 		const normalizedLimit = typeof limit === "number" && Number.isInteger(limit) && limit > 0 ? limit : undefined;
 
 		switch (xp.dbType) {
@@ -391,9 +399,7 @@ export class Database {
 
 				if (normalizedLimit) pipeline.push({ $limit: normalizedLimit });
 
-				const rows = await (xp.database as MongoClient)
-					.db(xp.dbName)
-					.collection("simply-xps")
+				const rows = await mongoCollection("simply-xps")
 					.aggregate(pipeline)
 					.toArray()
 					.catch((error) => handleError(error, "findGlobalLeaderboard()")) as Document[];
@@ -419,8 +425,8 @@ export class Database {
 				`;
 
 				const rows = normalizedLimit
-					? (xp.database as SQLite).prepare(`${baseQuery} LIMIT ?`).all(normalizedLimit)
-					: (xp.database as SQLite).prepare(baseQuery).all();
+					? sqlite().prepare(`${baseQuery} LIMIT ?`).all(normalizedLimit)
+					: sqlite().prepare(baseQuery).all();
 
 				return (rows as Array<UserResult & { _rowid: number; rn: number }>).map((row) => {
 					const { _rowid, rn, ...userRow } = row;
@@ -443,17 +449,15 @@ export class Database {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async countUsersWithMoreXp(guildId: string, xpValue: number): Promise<number> {
-		this.requireDatabaseConnection("countUsersWithMoreXp()");
+		requireDatabaseConnection("countUsersWithMoreXp()");
 
 		switch (xp.dbType) {
 			case "mongodb":
-				return await (xp.database as MongoClient)
-					.db(xp.dbName)
-					.collection("simply-xps")
+				return await mongoCollection("simply-xps")
 					.countDocuments({ guild: guildId, xp: { $gt: xpValue } });
 
 			case "sqlite": {
-				const row = (xp.database as SQLite)
+				const row = sqlite()
 					.prepare("SELECT COUNT(*) as count FROM \"simply-xps\" WHERE guild = ? AND xp > ?")
 					.get(guildId, xpValue) as { count?: number } | undefined;
 				return row?.count || 0;
@@ -473,7 +477,7 @@ export class Database {
 	 * @throws {XpFatal} Throws an error if there is no database connection.
 	 */
 	static async updateOne(filter: UserOptions | LevelRoleOptions, update: UserOptions | LevelRoleOptions, options?: UpdateOptions): Promise<UserResult | LevelRoleResult | null> {
-		this.requireDatabaseConnection("updateOne()");
+		requireDatabaseConnection("updateOne()");
 		const now = new Date().toISOString();
 
 		switch (xp.dbType) {
@@ -510,24 +514,18 @@ export class Database {
 				let shouldReturnNull = false;
 
 				if (update.collection === "simply-xps") {
-					const fields: Array<keyof UserOptions['data']> = ['level', 'name', 'xp', 'xp_rate', 'flags'];
-					const hasFlagsField = Object.prototype.hasOwnProperty.call(update.data, "flags");
+					const { level, name, xp: xpValue, xp_rate, flags } = update.data;
 
-					for (const f of fields) {
-						const value = update.data[f];
-
-						if (f === "flags") {
-							if (hasFlagsField) {
-								setClause.push("flags = ?");
-								params.push(JSON.stringify(normalizeUserFlags((update.data as UserOptions["data"]).flags)));
-							}
-							continue;
-						}
-
+					for (const [column, value] of [["level", level], ["name", name], ["xp", xpValue], ["xp_rate", xp_rate]] as const) {
 						if (value !== undefined) {
-							setClause.push(`${f} = ?`);
+							setClause.push(`${column} = ?`);
 							params.push(value);
 						}
+					}
+
+					if (Object.prototype.hasOwnProperty.call(update.data, "flags")) {
+						setClause.push("flags = ?");
+						params.push(JSON.stringify(normalizeUserFlags(flags)));
 					}
 
 					setClause.push("lastUpdated = ?");
@@ -536,7 +534,7 @@ export class Database {
 					const filterParams = [filter.data.guild, (filter.data as UserOptions["data"]).user];
 					params.push(...filterParams);
 
-					const stmt = (xp.database as SQLite).prepare(
+					const stmt = sqlite().prepare(
 						`UPDATE "simply-xps" SET ${setClause.join(", ")} WHERE guild = ? AND user = ?`
 					);
 					const result = stmt.run(...params);
@@ -555,11 +553,11 @@ export class Database {
 							}
 						});
 					} else if (result.changes === 0) {
-						const existing = (xp.database as SQLite).prepare("SELECT 1 FROM \"simply-xps\" WHERE guild = ? AND user = ?").get(filter.data.guild, (filter.data as UserOptions["data"]).user);
+						const existing = sqlite().prepare("SELECT 1 FROM \"simply-xps\" WHERE guild = ? AND user = ?").get(filter.data.guild, (filter.data as UserOptions["data"]).user);
 						if (!existing) shouldReturnNull = true;
 					}
 
-				} else if (update.collection === "simply-xp-levelroles") {
+				} else {
 					const level = getLevelRoleLevel((filter.data as LevelRoleOptions["data"])) ?? getLevelRoleLevel((update.data as LevelRoleOptions["data"]));
 					if (level === null) throw new XpFatal({
 						function: "updateOne()",
@@ -572,7 +570,7 @@ export class Database {
 					const filterParams = [filter.data.guild, level];
 					params.push(...filterParams);
 
-					const stmt = (xp.database as SQLite).prepare(
+					const stmt = sqlite().prepare(
 						`UPDATE "simply-xp-levelroles" SET ${setClause.join(", ")} WHERE guild = ? AND json_extract(levelrole, '$.level') = ?`
 					);
 					const result = stmt.run(...params);
@@ -586,7 +584,7 @@ export class Database {
 							}
 						});
 					} else if (result.changes === 0) {
-						const existing = (xp.database as SQLite).prepare("SELECT 1 FROM \"simply-xp-levelroles\" WHERE guild = ? AND json_extract(levelrole, '$.level') = ?").get(filter.data.guild, level);
+						const existing = sqlite().prepare("SELECT 1 FROM \"simply-xp-levelroles\" WHERE guild = ? AND json_extract(levelrole, '$.level') = ?").get(filter.data.guild, level);
 						if (!existing) shouldReturnNull = true;
 					}
 				}
@@ -671,7 +669,7 @@ let sqlitePluginTableFor: unknown = null;
 function sqlitePluginTableExists(): boolean {
 	if (sqlitePluginTableFor === xp.database) return true;
 
-	const exists = Boolean((xp.database as SQLite)
+	const exists = Boolean(sqlite()
 		.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?")
 		.get(PLUGIN_COLLECTION));
 	if (exists) sqlitePluginTableFor = xp.database;
@@ -683,11 +681,11 @@ function sqlitePluginTableExists(): boolean {
  * @private
  */
 async function ensurePluginStorage(functionName: string): Promise<void> {
-	requireConnected(functionName);
+	requireDatabaseConnection(functionName);
 
 	if (xp.dbType === "sqlite") {
 		if (sqlitePluginTableFor === xp.database) return;
-		(xp.database as SQLite).exec(`
+		sqlite().exec(`
 			CREATE TABLE IF NOT EXISTS "${PLUGIN_COLLECTION}" (
 				namespace   TEXT NOT NULL,
 				key         TEXT NOT NULL,
@@ -700,7 +698,7 @@ async function ensurePluginStorage(functionName: string): Promise<void> {
 		return;
 	}
 
-	await (xp.database as MongoClient).db(xp.dbName).collection(PLUGIN_COLLECTION).createIndex(
+	await mongoCollection(PLUGIN_COLLECTION).createIndex(
 		{ namespace: 1, key: 1 },
 		{ unique: true, name: "idx_simply_xp_plugins_namespace_key" }
 	);
@@ -720,19 +718,18 @@ function createPluginStore(namespace: string): PluginStore {
 	return {
 		async get<T = unknown>(key: string): Promise<T | null> {
 			requireKey("namespace().get()", key);
-			requireConnected("namespace().get()");
+			requireDatabaseConnection("namespace().get()");
 
 			if (xp.dbType === "sqlite") {
 				if (!sqlitePluginTableExists()) return null;
-				const row = (xp.database as SQLite)
+				const row = sqlite()
 					.prepare(`SELECT value FROM "${PLUGIN_COLLECTION}" WHERE namespace = ? AND key = ?`)
 					.get(namespace, key) as { value?: string } | undefined;
 				if (!row || typeof row.value !== "string") return null;
 				return safeJsonParse<T | null>(row.value, null);
 			}
 
-			const document = await (xp.database as MongoClient).db(xp.dbName)
-				.collection(PLUGIN_COLLECTION)
+			const document = await mongoCollection(PLUGIN_COLLECTION)
 				.findOne({ namespace, key })
 				.catch(error => handleError(error, "namespace().get()"));
 			return document ? (document.value as T) : null;
@@ -744,50 +741,47 @@ function createPluginStore(namespace: string): PluginStore {
 			const now = new Date().toISOString();
 
 			if (xp.dbType === "sqlite") {
-				(xp.database as SQLite)
+				sqlite()
 					.prepare(`INSERT INTO "${PLUGIN_COLLECTION}" (namespace, key, value, lastUpdated) VALUES (?, ?, ?, ?)
 						ON CONFLICT(namespace, key) DO UPDATE SET value = excluded.value, lastUpdated = excluded.lastUpdated`)
 					.run(namespace, key, JSON.stringify(value ?? null), now);
 				return;
 			}
 
-			await (xp.database as MongoClient).db(xp.dbName)
-				.collection(PLUGIN_COLLECTION)
+			await mongoCollection(PLUGIN_COLLECTION)
 				.updateOne({ namespace, key }, { $set: { value, lastUpdated: now } }, { upsert: true })
 				.catch(error => handleError(error, "namespace().set()"));
 		},
 
 		async delete(key: string): Promise<boolean> {
 			requireKey("namespace().delete()", key);
-			requireConnected("namespace().delete()");
+			requireDatabaseConnection("namespace().delete()");
 
 			if (xp.dbType === "sqlite") {
 				if (!sqlitePluginTableExists()) return false;
-				return (xp.database as SQLite)
+				return sqlite()
 					.prepare(`DELETE FROM "${PLUGIN_COLLECTION}" WHERE namespace = ? AND key = ?`)
 					.run(namespace, key).changes > 0;
 			}
 
-			const result = await (xp.database as MongoClient).db(xp.dbName)
-				.collection(PLUGIN_COLLECTION)
+			const result = await mongoCollection(PLUGIN_COLLECTION)
 				.deleteOne({ namespace, key })
 				.catch(error => handleError(error, "namespace().delete()"));
 			return result.deletedCount > 0;
 		},
 
 		async keys(): Promise<string[]> {
-			requireConnected("namespace().keys()");
+			requireDatabaseConnection("namespace().keys()");
 
 			if (xp.dbType === "sqlite") {
 				if (!sqlitePluginTableExists()) return [];
-				const rows = (xp.database as SQLite)
+				const rows = sqlite()
 					.prepare(`SELECT key FROM "${PLUGIN_COLLECTION}" WHERE namespace = ?`)
 					.all(namespace) as { key: string }[];
 				return rows.map((row) => row.key);
 			}
 
-			const documents = await (xp.database as MongoClient).db(xp.dbName)
-				.collection(PLUGIN_COLLECTION)
+			const documents = await mongoCollection(PLUGIN_COLLECTION)
 				.find({ namespace })
 				.toArray()
 				.catch(error => handleError(error, "namespace().keys()"));
@@ -795,17 +789,16 @@ function createPluginStore(namespace: string): PluginStore {
 		},
 
 		async clear(): Promise<number> {
-			requireConnected("namespace().clear()");
+			requireDatabaseConnection("namespace().clear()");
 
 			if (xp.dbType === "sqlite") {
 				if (!sqlitePluginTableExists()) return 0;
-				return (xp.database as SQLite)
+				return sqlite()
 					.prepare(`DELETE FROM "${PLUGIN_COLLECTION}" WHERE namespace = ?`)
 					.run(namespace).changes;
 			}
 
-			const result = await (xp.database as MongoClient).db(xp.dbName)
-				.collection(PLUGIN_COLLECTION)
+			const result = await mongoCollection(PLUGIN_COLLECTION)
 				.deleteMany({ namespace })
 				.catch(error => handleError(error, "namespace().clear()"));
 			return result.deletedCount;
@@ -818,7 +811,7 @@ function createPluginStore(namespace: string): PluginStore {
  * Handle database errors
  * @param {Error} error
  * @param {string} functionName
- * @returns {void}
+ * @returns {never}
  * @private
  */
 function handleError(error: Error, functionName: string): never {
@@ -826,7 +819,6 @@ function handleError(error: Error, functionName: string): never {
 }
 
 export function parseFlags<T extends UserResult | LevelRoleResult>(row: T): T {
-	if (!row) return row;
 	if ('flags' in row) {
 		(row as UserResult).flags = normalizeUserFlags((row as UserResult).flags);
 	}
@@ -892,7 +884,7 @@ function safeJsonParse<T>(value: string, fallback: T): T {
 }
 
 function getLevelRoleLevel(data: LevelRoleOptions["data"]): number | null {
-	if (!data?.levelrole || typeof data.levelrole.level !== "number" || isNaN(data.levelrole.level)) return null;
+	if (!data.levelrole || typeof data.levelrole.level !== "number" || isNaN(data.levelrole.level)) return null;
 	return data.levelrole.level;
 }
 
@@ -907,9 +899,3 @@ function normalizeCollectionFilter(query: UserOptions | LevelRoleOptions): Recor
 		"levelrole.level": level
 	};
 }
-
-/**
- * Exports the `Database` class as `db`.
- * @deprecated Use `Database` class instead, this will be removed in the near future.
- */
-export const db = Database;

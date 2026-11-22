@@ -1,5 +1,6 @@
 import { Database } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
+import { requireGuildId } from "./functions/guards";
 import type { User } from "./client";
 
 /**
@@ -19,6 +20,7 @@ export async function leaderboard(guildId?: string, limit?: number): Promise<Use
 	let users: User[];
 
 	if (guildId) {
+		requireGuildId("leaderboard()", guildId);
 		users = await Database.find("simply-xps", guildId, limit) as User[];
 		if (!limit) users = users.sort(compareLeaderboardUsers);
 	} else {

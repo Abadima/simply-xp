@@ -1,4 +1,4 @@
-import { requireDatabaseConnection, requireGuildId, requireUserId } from "./functions/guards";
+import { requireDatabaseConnection, requireIds } from "./functions/guards";
 import { Database, UserResult } from "./classes/Database";
 import { XpFatal } from "./functions/xplogs";
 
@@ -13,8 +13,7 @@ import { XpFatal } from "./functions/xplogs";
  * @throws {XpFatal} If invalid parameters are provided
  */
 export async function create(userId: string, guildId: string, username: string): Promise<UserResult> {
-	requireUserId("create()", userId);
-	requireGuildId("create()", guildId);
+	requireIds("create()", userId, guildId);
 
 	if (!username) throw new XpFatal({ function: "create()", message: "Username was not provided" });
 
