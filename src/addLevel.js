@@ -1,58 +1,18 @@
-const levels = require("../src/models/level.js");
-const notifyLevelUp = require("./utils/levelUpNotifier");
-const buildLevelPayload = require("./utils/levelPayload");
+const changeXP = require("./core/progress");
+const { xpForLevel } = require("./core/curve");
+const { requireIds, requireAmount } = require("./core/validate");
 
 /**
- * @param {Discord.Message} message
+ * @param {import("discord.js").Message} message
  * @param {string} userID
  * @param {string} guildID
- * @param {number} level
+ * @param {number|string} level
  */
 async function addLevel(message, userID, guildID, level) {
-	if (!userID) throw new Error("[XP] User ID was not provided.");
+	requireIds(userID, guildID);
+	const levelsToAdd = requireAmount(level, "level");
 
-	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
-
-	if (level == null || Number.isNaN(Number(level))) throw new Error("[XP] Invalid level amount.");
-
-	const user = await levels.findOne({ user: userID, guild: guildID });
-
-	if (!user) {
-		const newUser = new levels({
-			user: userID,
-			guild: guildID,
-			xp: 0,
-			level: 0
-		});
-
-		await newUser.save().catch(() => console.log("[XP] Failed to save new user to database"));
-
-		let xp = (level * 10) ** 2;
-
-		return {
-			level: level,
-			exp: xp
-		};
-	}
-	let level1 = user.level;
-
-	user.level += parseFloat(level);
-	user.xp = (user.level * 10) ** 2;
-
-	await user.save().catch((e) =>
-		console.log(`[XP] Failed to add Level | User: ${userID} | Err: ${e}`)
-	);
-
-	if (level1 !== user.level) {
-		const data = buildLevelPayload(user, userID, guildID);
-
-		await notifyLevelUp(message, data, user.level);
-	}
-
-	return {
-		level: user.level,
-		xp: user.xp
-	};
+	return changeXP(message, userID, guildID, ({ level: current }) => xpForLevel(current + levelsToAdd));
 }
 
 module.exports = addLevel;

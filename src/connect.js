@@ -1,26 +1,22 @@
-const mongoose = require("mongoose");
-const simplyxp = require("../simplyxp");
+const database = require("./core/database");
+const options = require("./core/options");
+const store = require("./core/store");
 
 /**
  * @param {string} db
- * @param {import("../index").connectOptions} options
+ * @param {import("../index").connectOptions} connectOptions
  */
-
-async function connect(db, options = {}) {
+async function connect(db, connectOptions = {}) {
 	if (!db) throw new Error("[XP] Database URL was not provided");
-	mongoose.set("strictQuery", true);
 
-	mongoose.connect(db, {
-		useNewUrlParser: true,
-		useUnifiedTopology: true
-	});
-
-	// Propagate auto_purge option to module options
-	if (options.auto_purge !== undefined) {
-		simplyxp.options.auto_purge = options.auto_purge;
+	if (connectOptions.auto_purge !== undefined) {
+		options.auto_purge = connectOptions.auto_purge;
 	}
 
-	if (options.notify) return console.log("{ XP } Database Connected");
+	await database.connect(db);
+	await store.setup();
+
+	if (connectOptions.notify) console.log("{ XP } Database Connected");
 }
 
 module.exports = connect;

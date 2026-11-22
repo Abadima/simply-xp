@@ -1,28 +1,16 @@
-const levels = require("../src/models/level.js");
+const store = require("./core/store");
+const { requireIds } = require("./core/validate");
 
 /**
  * @param {string} userID
  * @param {string} guildID
+ * @returns {Promise<true|undefined>} `true` if the user was created.
  */
-
 async function create(userID, guildID) {
-	if (!userID) throw new Error("[XP] User ID was not provided.");
+	requireIds(userID, guildID);
 
-	if (!guildID) throw new Error("[XP] Guild ID was not provided.");
-
-	let uzer = await levels.findOne({ user: userID, guild: guildID });
-
-	if (uzer) return;
-
-	const newuser = new levels({
-		user: userID,
-		guild: guildID
-	});
-	await newuser
-		.save()
-		.catch(() => console.log("[XP] Failed to save new use to database"));
-
-	return true;
+	const { created } = await store.ensure(userID, guildID);
+	if (created) return true;
 }
 
 module.exports = create;

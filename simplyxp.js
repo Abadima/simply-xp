@@ -1,10 +1,10 @@
 try {
 	require("discord.js");
-} catch (e) {
+} catch {
 	console.warn("[XP] Discord.js is recommended for this package.");
 }
 
-module.exports.options = { auto_purge: false };
+module.exports.options = require("./src/core/options");
 
 module.exports.roleSetup = require("./src/roleSetup");
 

@@ -1,120 +1,79 @@
-const lrole = require("../src/models/lvlrole.js");
+const database = require("./core/database");
+const { cachedGuild } = require("./core/validate");
+
+const roles = () => database.collection("simply-xp-levelroles");
+
+const keyOf = (guildID) => ({ gid: String(guildID) });
+
+const sameLevel = (a, b) => String(a) === String(b);
+
+/** Entries from every document of the guild; older versions could leave several. */
+async function entriesOf(guildID) {
+	const collection = await roles();
+	const documents = await collection.find(keyOf(guildID)).toArray();
+	if (documents.length > 0) return documents.flatMap((document) => document.lvlrole ?? []);
+}
 
 class roleSetup {
 	/**
-	 * @param {Discord.Client} client
+	 * @param {import("discord.js").Client} client
 	 * @param {string} guildID
 	 * @param {import("../index").lvladdOptions} options
 	 */
+	static async add(client, guildID, options = {}) {
+		const { level, role } = options;
 
-	static async add(client, guildID, options = []) {
-		let rol = await lrole.findOne({
-			gid: guildID,
-			lvlrole: {
-				lvl: options.level,
-				role: options.role
-			}
-		});
-
-		let g = client.guilds.cache.get(guildID);
-
-		let roll = g.roles.cache.find((r) => r.id === options.role);
-
-		if (roll) {
-			if (rol) throw new Error("Level Already Exist. Use delete");
-			else if (!rol) {
-				let newrol = await lrole.findOne({
-					gid: guildID
-				});
-
-				if (!newrol) {
-					newrol = new lrole({
-						gid: guildID,
-						lvlrole: []
-					});
-
-					await newrol.save();
-				}
-
-				newrol.lvlrole.push({ lvl: options.level, role: options.role });
-
-				await newrol
-					.save()
-					.catch((e) =>
-						console.log(`[XP] Failed to add lvlrole to database | ${e}`)
-					);
-
-				return true;
-			}
-		} else {
-			throw new Error(
-				"Role ID is invalid. | " +
-				`Guild ID: ${guildID} | Role ID: ${options.role}`
-			);
+		if (!cachedGuild(client, guildID).roles.cache.has(role)) {
+			throw new Error("Role ID is invalid. | " + `Guild ID: ${guildID} | Role ID: ${role}`);
 		}
+
+		const existing = (await entriesOf(guildID)) ?? [];
+		if (existing.some((entry) => entry.lvl === level && entry.role === role)) {
+			throw new Error("Level Already Exist. Use delete");
+		}
+
+		const collection = await roles();
+		await collection.updateOne(keyOf(guildID), { $push: { lvlrole: { lvl: level, role } } }, { upsert: true });
+
+		return true;
 	}
 
 	/**
-	 * @param {Discord.Client} client
+	 * Removes every role set for the level.
+	 * @param {import("discord.js").Client} client Unused.
 	 * @param {string} guildID
 	 * @param {import("../index").lvlremoveOptions} options
 	 */
+	static async remove(client, guildID, options = {}) {
+		const matches = ((await entriesOf(guildID)) ?? []).filter((entry) => sameLevel(entry.lvl, options.level));
+		if (matches.length === 0) throw new Error("Level role with this level does not exist");
 
-	static async remove(client, guildID, options = []) {
-		let rol = await lrole.find({
-			gid: guildID
+		const collection = await roles();
+		await collection.updateMany(keyOf(guildID), {
+			$pull: { lvlrole: { lvl: { $in: matches.map((entry) => entry.lvl) } } }
 		});
 
-		if (!rol || rol.length === 0)
-			throw new Error("Level role with this level does not exist");
-		rol = rol[0].lvlrole.find((item) => item.lvl === options.level) || undefined;
-
-		if (rol) {
-			await lrole.findOneAndUpdate(
-				{
-					gid: guildID
-				},
-				{
-					$pull: { lvlrole: { lvl: options.level } }
-				}
-			);
-
-			return true;
-		} else throw new Error("Level role with this level does not exist");
+		return true;
 	}
 
 	/**
-	 * @param {Discord.Client} client
+	 * @param {import("discord.js").Client} client Unused.
 	 * @param {string} guildID
+	 * @returns {Promise<{lvl: string|number, role: string}[]|undefined>}
 	 */
-
 	static async fetch(client, guildID) {
-		let rol = await lrole.find({
-			gid: guildID
-		});
-
-		if (!rol || rol.length === 0) return;
-
-		return rol[0].lvlrole;
+		return entriesOf(guildID);
 	}
 
 	/**
-	 * @param {Discord.Client} client
+	 * @param {import("discord.js").Client} client Unused.
 	 * @param {string} guildID
-	 * @param {string} level
+	 * @param {string|number} level
+	 * @returns {Promise<{lvl: string|number, role: string}[]|undefined>}
 	 */
-
 	static async find(client, guildID, level) {
-		let rol = await lrole.find({
-			gid: guildID
-		});
-
-		if (!rol || !rol.length) return;
-		rol = rol[0].lvlrole.filter((i) => i.lvl == level) || undefined;
-
-		if (rol) {
-			return rol;
-		}
+		const entries = await entriesOf(guildID);
+		return entries?.filter((entry) => sameLevel(entry.lvl, level));
 	}
 }
 
