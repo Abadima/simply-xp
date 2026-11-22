@@ -1,6 +1,6 @@
 {
   "name": "simply-xp",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "The easiest way to implement an xp system",
   "main": "lib/xp.js",
   "types": "lib/xp.d.ts",
@@ -22,7 +22,7 @@
     "latest": "npx oxlint && npx tsc && node Tests/clean.mjs && npm update && npm publish",
     "lint": "npx oxlint",
     "lint:fix": "npx oxlint --fix",
-    "performance": "npx tsc && node Tests/performance.test.cjs",
+    "performance": "npx tsc && node Tests/clean.mjs && node Tests/performance.test.cjs",
     "test": "npx oxlint && npx tsc && node Tests/clean.mjs && node Tests/regression.test.cjs && node Tests/performance.test.cjs",
     "typecheck": "npx tsc --noEmit"
   },
@@ -63,11 +63,11 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
-    "@types/node": "^26.4.1",
-    "better-sqlite3": "^13.0.3",
+    "@types/node": "^26.6.6",
+    "better-sqlite3": "^13.2.0",
     "logena": "^1.1.0",
-    "mongodb": "^7.6.0",
-    "oxlint": "^1.81.0",
+    "mongodb": "^7.9.1",
+    "oxlint": "^1.94.0",
     "typescript": "^7.0.2",
     "uglify-js": "^3.19.3"
   },
