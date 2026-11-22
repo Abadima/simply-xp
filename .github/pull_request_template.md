@@ -1,14 +1,14 @@
-# Information
+## Information
 
-_Overview of the things you changed_
+_Overview of the things you changed._
 
-# Issue Related
+## Issue Related
 
 Issue **#**
 
 Issue URL: URL
 
-# Checks
+## Checks
 
 - [ ] Does the package work as intended?
 - [ ] `npm run lint` passes (Oxlint)

@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD033 -->
 <p align="center">
   <img src="https://i.ibb.co/cCKJ9FS/simplyxp.png" width="320" height="125" alt="XP Logo">
 </p>
@@ -73,11 +74,11 @@ const { addXP, fetch } = require("simply-xp");
 
 const result = await addXP(userId, guildId, { min: 10, max: 25 }, username);
 if (result.levelDifference > 0)
-	console.log(`${username} levelled up to ${result.level}!`);
+  console.log(`${username} levelled up to ${result.level}!`);
 
 const user = await fetch(userId, guildId);
 console.log(
-	`${user.name} is level ${user.level} with ${user.xp} XP (rank #${user.position})`,
+  `${user.name} is level ${user.level} with ${user.xp} XP (rank #${user.position})`,
 );
 ```
 
@@ -88,7 +89,7 @@ const { leaderboard } = require("simply-xp");
 
 const top10 = await leaderboard(guildId, 10);
 for (const user of top10)
-	console.log(`#${user.position} ${user.name} - ${user.xp} XP`);
+  console.log(`#${user.position} ${user.name} - ${user.xp} XP`);
 ```
 
 ### Level roles and events
@@ -99,10 +100,10 @@ const { LevelRoles, XpEvents } = require("simply-xp");
 await LevelRoles.add(guildId, { level: 5, roles: [roleId] });
 
 XpEvents.on({
-	levelUp: (user, newRoles) => {
-		console.log(`${user.name} reached level ${user.level}!`);
-		// newRoles are the role IDs LevelRoles has set for this level
-	},
+  levelUp: (user, newRoles) => {
+    console.log(`${user.name} reached level ${user.level}!`);
+    // newRoles are the role IDs LevelRoles has set for this level
+  },
 });
 ```
 
