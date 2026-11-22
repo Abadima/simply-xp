@@ -7,3 +7,12 @@ node_modules
 # Lock files
 pnpm-lock.yaml
 pnpm-workspace.yaml
+
+# Codacy CLI: the config is fetched from the cloud on every run
+.codacy/
+
+# Secrets
+secrets.cjs
+
+# Images the tests draw, to look at
+Tests/Images/
