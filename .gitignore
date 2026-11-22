@@ -15,3 +15,6 @@ secrets.cjs
 
 # Generated test databases
 Tests/*.sqlite
+
+# Codacy CLI: the config is fetched from the cloud on every run
+.codacy/
