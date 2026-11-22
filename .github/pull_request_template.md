@@ -1,8 +1,11 @@
-# Information
-_Overview of the things you changed_
+## Information
 
-# Issue Related
+_Overview of the things you changed._
+
+## Issue Related
+
 [Issue Name](provide-link-to-related-issue-if-any)
 
-# Checks
+## Checks
+
 - [ ] Does the package work as intended?
