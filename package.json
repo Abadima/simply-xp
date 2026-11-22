@@ -1,14 +1,40 @@
 {
   "name": "simply-xp",
-  "version": "1.3.8-fix.0",
+  "version": "1.4.0",
   "description": "A Simple, Easy and Beginner Friendly XP System",
-  "main": "simplyxp.js",
-  "typings": "index.d.ts",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "beta": "eslint . --fix && pnpm update && npm publish --tag beta",
-    "legacy": "eslint . --fix && pnpm update && npm publish --tag legacy"
+  "keywords": [
+    "@napi-rs/canvas",
+    "amari",
+    "bot",
+    "charts",
+    "discord",
+    "discord bot",
+    "discord-xp",
+    "discord.js",
+    "experience",
+    "gamification",
+    "leaderboard",
+    "leaderboard card",
+    "level",
+    "leveling",
+    "leveling system",
+    "mee6",
+    "mongodb",
+    "nodejs",
+    "rank",
+    "rank card",
+    "simply",
+    "simplydjs",
+    "sqlite",
+    "weky",
+    "xp",
+    "xp system"
+  ],
+  "homepage": "https://simplyxp.js.org",
+  "bugs": {
+    "url": "https://github.com/Abadima/simply-xp/issues"
   },
+  "license": "Apache-2.0",
   "author": {
     "name": "Abadima",
     "url": "https://abadima.dev"
@@ -26,55 +52,33 @@
       "url": "https://marban.is-a.dev/"
     }
   ],
-  "license": "Apache-2.0",
-  "keywords": [
-    "xp",
-    "experience",
-    "level",
-    "leveling",
-    "leveling system",
-    "discord",
-    "discord bot",
-    "discord.js",
-    "discord-xp",
-    "leaderboard",
-    "rank",
-    "rank card",
-    "leaderboard card",
-    "gamification",
-    "xp system",
-    "simply",
-    "simplydjs",
-    "charts",
-    "@napi-rs/canvas",
-    "chart.js",
-    "mongoose",
-    "mongodb",
-    "sqlite",
-    "nodejs",
-    "bot",
-    "mee6",
-    "amari",
-    "weky"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Abadima/simply-xp.git"
   },
-  "homepage": "https://simplyxp.js.org",
-  "bugs": {
-    "url": "https://github.com/Abadima/simply-xp/issues"
+  "main": "simplyxp.js",
+  "typings": "index.d.ts",
+  "scripts": {
+    "test": "node Tests/regression.test.cjs && node Tests/cards.test.cjs",
+    "test:cards": "node Tests/cards.test.cjs",
+    "lint": "oxlint && oxfmt --check simplyxp.js src Tests",
+    "fix": "oxlint --fix && oxfmt simplyxp.js src Tests",
+    "codacy": "rm -f .codacy/remote.config.json .codacy/remote.config.baseline.json && codacy-analysis init --remote gh Abadima simply-xp --config-file .codacy/remote.config.json --no-update-notifier && codacy-analysis analyze . --config-file .codacy/remote.config.json --install-dependencies --no-update-notifier",
+    "legacy": "pnpm run fix && pnpm update && npm publish --tag legacy"
   },
-  "readme": "README.md",
   "dependencies": {
-    "@napi-rs/canvas": "0.1.88",
-    "chart.js": "^3.9.1",
-    "mongoose": "^7.8.8"
-  },
-  "peerDependencies": {
-    "discord.js": ">=13.12.0"
+    "@napi-rs/canvas": "1.1.1",
+    "mongodb": "^6.22.0"
   },
   "devDependencies": {
-    "eslint": "^9.39.2"
-  }
+    "oxfmt": "^0.79.0",
+    "oxlint": "^1.94.0"
+  },
+  "peerDependencies": {
+    "discord.js": "^13.12.0 || ^14.19.0"
+  },
+  "engines": {
+    "node": ">=16.20.1"
+  },
+  "readme": "README.md"
 }

@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD033 -->
 <p align="center">
   <img src="https://i.ibb.co/cCKJ9FS/simplyxp.png" width="320" height="125" alt="Simply-XP logo" />
 </p>
@@ -27,12 +28,15 @@ npm install simply-xp
 yarn add simply-xp
 ```
 
+Requires Node.js 16.20.1 or newer (or Bun 1.1.39 or newer), a MongoDB 4.2 or newer database, and `discord.js` 13 or 14.
+
 ## 🎉 Recent Updates
 
+- Lighter install: `mongoose` is replaced by the official `mongodb` driver and `chart.js` is gone (15 packages instead of 28)
+- Charts are now drawn by simply-xp itself
+- Simultaneous XP gains are no longer lost
+- `discord.js` v13 and v14 support
 - Fixed Various Bugs
-- Updated `Chart.js`
-- D.JS v14 Support
-- Patched v1.3.5 Bugs
 
 # ⭐ Features
 

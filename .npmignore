@@ -1,11 +1,12 @@
 # Configurations
-eslint.config.cjs
-.eslintrc.json
+.oxlintrc.json
+.oxfmtrc.json
 tsconfig.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
 
 # Version control / CI
+.codacy
 .github
 .gitignore
 
@@ -18,3 +19,7 @@ node_modules
 
 # Documentation
 Examples
+
+# Tests
+Tests
+secrets.cjs
